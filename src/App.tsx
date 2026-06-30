@@ -38,6 +38,7 @@ type SharedMaterial = {
   title: string;
   material: string;
   created_at: string;
+  user_id: string | null;
 };
 
 type TutorMessage = {
@@ -287,7 +288,7 @@ export default function App() {
     setIsSharedLoading(true);
     const { data, error: loadError } = await supabase
       .from('shared_materials')
-      .select('id, subject, title, material, created_at')
+      .select('id, subject, title, material, created_at, user_id')
       .order('created_at', { ascending: false });
     setIsSharedLoading(false);
 
@@ -348,6 +349,34 @@ export default function App() {
     setIsUploadingSharedMaterial(false);
     setSharedNotice('Material uploaded for other students.');
     loadSharedMaterials();
+  }
+
+  async function deleteSharedMaterial(item: SharedMaterial) {
+    if (!session || item.user_id !== session.user.id) {
+      setSharedError('You can only delete materials you uploaded.');
+      setSharedNotice('');
+      return;
+    }
+
+    setIsSharedLoading(true);
+    setSharedError('');
+    setSharedNotice('');
+
+    const { error: deleteError } = await supabase
+      .from('shared_materials')
+      .delete()
+      .eq('id', item.id)
+      .eq('user_id', session.user.id);
+
+    setIsSharedLoading(false);
+
+    if (deleteError) {
+      setSharedError(deleteError.message);
+      return;
+    }
+
+    setSharedMaterials(sharedMaterials.filter((materialItem) => materialItem.id !== item.id));
+    setSharedNotice('Material deleted.');
   }
 
   async function submitAccount() {
@@ -850,10 +879,20 @@ ${trimmedMaterial}`;
                             <span>{getWordCount(item.material)} words</span>
                           </p>
                         </div>
-                        <div className="lesson-actions one-action">
+                        <div className={session?.user.id === item.user_id ? 'lesson-actions two-actions' : 'lesson-actions one-action'}>
                           <button className="small-button" type="button" onClick={() => useSharedMaterial(item)}>
                             Use material
                           </button>
+                          {session?.user.id === item.user_id && (
+                            <button
+                              className="small-button danger-button"
+                              type="button"
+                              onClick={() => deleteSharedMaterial(item)}
+                              disabled={isSharedLoading}
+                            >
+                              Delete
+                            </button>
+                          )}
                         </div>
                       </article>
                     ))

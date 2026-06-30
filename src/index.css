@@ -447,6 +447,10 @@ input:focus {
   grid-template-columns: 1fr;
 }
 
+.lesson-actions.two-actions {
+  grid-template-columns: 1fr 1fr;
+}
+
 .small-button,
 .secondary-button {
   min-height: 36px;
