@@ -1043,6 +1043,53 @@ select:focus {
   line-height: 1.6;
 }
 
+.summary-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(20, 33, 38, 0.44);
+}
+
+.summary-modal {
+  width: min(620px, 100%);
+  max-height: min(76vh, 720px);
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid rgba(47, 111, 115, 0.22);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 20px 70px rgba(20, 33, 38, 0.24);
+}
+
+.summary-modal-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.summary-modal-heading h2 {
+  font-size: 22px;
+}
+
+.summary-modal pre {
+  max-height: 46vh;
+  overflow: auto;
+  white-space: pre-wrap;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.summary-copy-button {
+  justify-self: end;
+  min-height: 42px;
+}
+
 .flashcard-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

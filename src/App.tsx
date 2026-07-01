@@ -1434,6 +1434,17 @@ ${trimmedMaterial}`;
     markStudyActivity();
   }
 
+  async function copySummaryToClipboard() {
+    if (!summary) return;
+
+    try {
+      await navigator.clipboard.writeText(summary);
+      setNotice('Summary copied.');
+    } catch {
+      setError('Could not copy the summary.');
+    }
+  }
+
   return (
     <main className="app-shell">
       <section className="study-tool">
@@ -2024,16 +2035,26 @@ ${trimmedMaterial}`;
               </div>
             </div>
 
-            {summary && (
-              <section className="result" aria-label="Generated summary">
-                <h2>{copy.quickSummary}</h2>
-                <pre>{summary}</pre>
-              </section>
-            )}
-
           </>
         )}
       </section>
+
+      {summary && (
+        <div className="summary-modal-backdrop" role="presentation">
+          <section className="summary-modal" role="dialog" aria-modal="true" aria-label={copy.quickSummary}>
+            <div className="summary-modal-heading">
+              <h2>{copy.quickSummary}</h2>
+              <button className="small-button" type="button" onClick={() => setSummary('')}>
+                Close
+              </button>
+            </div>
+            <pre>{summary}</pre>
+            <button className="generate-button summary-copy-button" type="button" onClick={copySummaryToClipboard}>
+              Copy
+            </button>
+          </section>
+        </div>
+      )}
 
       <button className="home-button" type="button" onClick={goHome} aria-label="Go to study home">
         <svg viewBox="0 0 64 64" aria-hidden="true">
