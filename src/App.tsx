@@ -486,6 +486,15 @@ export default function App() {
       ? `Current lesson name: ${lessonName || 'Untitled lesson'}\n\nStudy material:\n${material.trim()}`
       : 'No study material has been pasted yet.';
 
+    const savedLessonsContext = savedLessons.length
+      ? savedLessons
+          .map((lesson, index) => {
+            const lessonMaterial = getLessonMaterial(lesson);
+            return `Saved lesson ${index + 1}: ${lesson.title}\n${lessonMaterial}`;
+          })
+          .join('\n\n---\n\n')
+      : 'No saved lessons yet.';
+
     const recentChat = nextMessages
       .slice(-8)
       .map((message) => `${message.role === 'user' ? 'Student' : 'Tutor'}: ${message.text}`)
@@ -493,8 +502,12 @@ export default function App() {
 
     const { data, error: invokeError } = await supabase.functions.invoke<AiResponse>('ai', {
       body: {
-        prompt: `Use the study material when it is relevant. Answer like a patient tutor, not just a summary bot.
+        prompt: `Tutor primarily from the saved lessons. Use the current pasted material too when it is relevant. Answer like a patient tutor, not just a summary bot.
 
+Saved lessons:
+${savedLessonsContext}
+
+Current material:
 ${materialContext}
 
 Recent chat:
@@ -502,7 +515,7 @@ ${recentChat}
 
 Student question:
 ${question}`,
-        system: 'You are a friendly AI tutor. Explain step by step, keep answers clear, ask one follow-up question when useful, and do not invent facts outside the provided material unless the student asks for general explanation.',
+        system: 'You are a friendly AI tutor. Prioritize the student saved lessons over general knowledge. Explain step by step, keep answers clear, ask one follow-up question when useful, and do not invent facts outside the provided material unless the student asks for general explanation.',
       },
     });
 
