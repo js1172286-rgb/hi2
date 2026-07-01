@@ -28,6 +28,15 @@ type QuizResponse = {
   quiz?: QuizQuestion[];
 };
 
+type QuizGrade = {
+  correct: boolean;
+  feedback: string;
+};
+
+type QuizGradeResponse = {
+  grades?: QuizGrade[];
+};
+
 type SavedLesson = {
   id: string;
   title: string;
@@ -131,8 +140,11 @@ export default function App() {
   const [isFlashcardFlipped, setIsFlashcardFlipped] = useState(false);
   const [quiz, setQuiz] = useState<QuizQuestion[]>([]);
   const [quizAnswers, setQuizAnswers] = useState<string[]>([]);
+  const [quizGrades, setQuizGrades] = useState<QuizGrade[]>([]);
   const [showQuizAnswers, setShowQuizAnswers] = useState(false);
   const [isQuizSubmitted, setIsQuizSubmitted] = useState(false);
+  const [isQuizChecking, setIsQuizChecking] = useState(false);
+  const [quizError, setQuizError] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -248,8 +260,11 @@ export default function App() {
     setIsFlashcardFlipped(false);
     setQuiz([]);
     setQuizAnswers([]);
+    setQuizGrades([]);
     setShowQuizAnswers(false);
     setIsQuizSubmitted(false);
+    setIsQuizChecking(false);
+    setQuizError('');
   }
 
   function goHome() {
@@ -538,7 +553,61 @@ ${question}`,
     setIsFlashcardFlipped(false);
   }
 
-  function submitQuiz() {
+  async function submitQuiz() {
+    if (!isSupabaseConfigured) {
+      setQuizError('Connect Supabase and the AI function first so answers can be checked by AI.');
+      return;
+    }
+
+    if (quiz.length === 0) return;
+
+    setIsQuizChecking(true);
+    setQuizError('');
+
+    const quizToGrade = quiz.map((item, index) => ({
+      question: item.question,
+      correctAnswer: item.answer,
+      studentAnswer: quizAnswers[index]?.trim() || '',
+    }));
+
+    const { data, error: invokeError } = await supabase.functions.invoke<AiResponse>('ai', {
+      body: {
+        prompt: `Grade these quiz answers. Mark an answer correct when it means the same thing as the correct answer, even if the wording is different. Be fair with short explanation answers.
+
+Return only valid JSON in this exact shape:
+{
+  "grades": [
+    { "correct": true, "feedback": "short feedback for the student" }
+  ]
+}
+
+Quiz answers to grade:
+${JSON.stringify(quizToGrade, null, 2)}`,
+        system: 'You are a fair quiz grader. Accept answers that are semantically correct. Keep feedback short and helpful.',
+      },
+    });
+
+    setIsQuizChecking(false);
+
+    if (invokeError) {
+      setQuizError(invokeError.message);
+      return;
+    }
+
+    if (data?.error) {
+      setQuizError(data.error);
+      return;
+    }
+
+    const parsed = parseAiJson<QuizGradeResponse>(data?.text?.trim() ?? '');
+    const nextGrades = parsed?.grades ?? [];
+
+    if (nextGrades.length !== quiz.length) {
+      setQuizError('The AI did not return grades for every question. Try submitting again.');
+      return;
+    }
+
+    setQuizGrades(nextGrades);
     setIsQuizSubmitted(true);
     setShowQuizAnswers(true);
   }
@@ -731,8 +800,10 @@ ${trimmedMaterial}`;
       }
       setQuiz(nextQuiz);
       setQuizAnswers(nextQuiz.map(() => ''));
+      setQuizGrades([]);
       setShowQuizAnswers(false);
       setIsQuizSubmitted(false);
+      setQuizError('');
       setPage('quiz');
       return;
     }
@@ -1172,24 +1243,25 @@ ${trimmedMaterial}`;
                             const nextAnswers = [...quizAnswers];
                             nextAnswers[index] = event.target.value;
                             setQuizAnswers(nextAnswers);
+                            setQuizGrades([]);
                             setIsQuizSubmitted(false);
                             setShowQuizAnswers(false);
+                            setQuizError('');
                           }}
                           placeholder="Type your answer..."
                         />
                       </label>
-                      {showQuizAnswers && (
-                        <p className={quizAnswers[index]?.trim().toLowerCase() === item.answer.toLowerCase() ? 'answer correct-answer' : 'answer wrong-answer'}>
-                          {quizAnswers[index]?.trim().toLowerCase() === item.answer.toLowerCase()
-                            ? 'Correct'
-                            : `Not quite. Correct answer: ${item.answer}`}
+                      {showQuizAnswers && quizGrades[index] && (
+                        <p className={quizGrades[index].correct ? 'answer correct-answer' : 'answer wrong-answer'}>
+                          {quizGrades[index].correct ? 'Correct' : 'Not quite'}: {quizGrades[index].feedback}
                         </p>
                       )}
                     </article>
                   ))}
                 </div>
-                <button className="generate-button quiz-submit-button" type="button" onClick={submitQuiz}>
-                  Submit answers
+                {quizError && <p className="message">{quizError}</p>}
+                <button className="generate-button quiz-submit-button" type="button" onClick={submitQuiz} disabled={isQuizChecking}>
+                  {isQuizChecking ? 'Checking...' : 'Submit answers'}
                 </button>
               </div>
             )}
