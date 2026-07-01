@@ -262,6 +262,7 @@ const fullTranslations = {
     petHatched: 'Your egg hatched into',
     petOwl: 'Study Owl',
     petReady: 'Keep your streak alive to keep your pet happy.',
+    petSignIn: 'Sign in to warm your egg and grow your pet.',
     petSubtitle: 'Study once each day to warm the egg.',
     petTitle: 'Streak pet',
     petWarmDays: 'warm days',
@@ -347,6 +348,7 @@ const fullTranslations = {
     petHatched: 'Ваше яйцо вылупилось в',
     petOwl: 'Учебная сова',
     petReady: 'Продолжайте серию, чтобы питомец был счастлив.',
+    petSignIn: 'Войдите, чтобы согревать яйцо и растить питомца.',
     petSubtitle: 'Учитесь один раз в день, чтобы согревать яйцо.',
     petTitle: 'Питомец серии',
     petWarmDays: 'теплых дней',
@@ -432,6 +434,7 @@ const fullTranslations = {
     petHatched: 'Жұмыртқаңыз мынаған айналды',
     petOwl: 'Оқу үкісі',
     petReady: 'Үй жануарыңыз қуанышты болу үшін серияны жалғастырыңыз.',
+    petSignIn: 'Жұмыртқаны жылытып, үй жануарын өсіру үшін кіріңіз.',
     petSubtitle: 'Жұмыртқаны жылыту үшін күн сайын бір рет оқыңыз.',
     petTitle: 'Серия үй жануары',
     petWarmDays: 'жылы күн',
@@ -702,6 +705,8 @@ export default function App() {
   }
 
   function markStudyActivity() {
+    if (!session) return;
+
     const today = getTodayKey();
     const yesterday = getYesterdayKey();
 
@@ -1618,7 +1623,9 @@ ${trimmedMaterial}`;
                   {copy.streak}: {studyPet.streak} {copy.petWarmDays}
                 </p>
                 <p>
-                  {isPetHatched
+                  {!session
+                    ? copy.petSignIn
+                    : isPetHatched
                     ? `${copy.petHatched} ${petName}. ${copy.petReady}`
                     : warmDaysLeft > 0
                       ? `${copy.petWarmToday} ${warmDaysShown}/${eggWarmDays} ${copy.petWarmDays}, ${warmDaysLeft} ${copy.petWarmLeft}.`
