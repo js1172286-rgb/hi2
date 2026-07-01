@@ -24,6 +24,10 @@ type FlashcardResponse = {
   flashcards?: Flashcard[];
 };
 
+type QuizResponse = {
+  quiz?: QuizQuestion[];
+};
+
 type SavedLesson = {
   id: string;
   title: string;
@@ -55,29 +59,6 @@ const modes: { id: StudyMode; label: string }[] = [
   { id: 'summary', label: 'Summary' },
   { id: 'flashcards', label: 'Flashcards' },
   { id: 'quiz', label: 'Quiz me' },
-];
-
-const demoQuiz: QuizQuestion[] = [
-  {
-    question: 'What is the purpose of taking notes while studying?',
-    answer: 'hi',
-  },
-  {
-    question: 'What does a summary do?',
-    answer: 'hi',
-  },
-  {
-    question: 'Why are flashcards useful?',
-    answer: 'hi',
-  },
-  {
-    question: 'What should you do after getting a quiz question wrong?',
-    answer: 'hi',
-  },
-  {
-    question: 'What is active recall?',
-    answer: 'hi',
-  },
 ];
 
 function getButtonLabel(mode: StudyMode, isLoading: boolean) {
@@ -687,21 +668,6 @@ ${trimmedMaterial}`;
   async function generateStudyHelp() {
     const trimmedMaterial = material.trim();
 
-    if (mode === 'quiz') {
-      setError('');
-      setNotice('Showing a demo quiz until AI is connected.');
-      setSummary('');
-      setFlashcards([]);
-      setCurrentFlashcardIndex(0);
-      setIsFlashcardFlipped(false);
-      setQuiz(demoQuiz);
-      setQuizAnswers(demoQuiz.map(() => ''));
-      setShowQuizAnswers(false);
-      setIsQuizSubmitted(false);
-      setPage('quiz');
-      return;
-    }
-
     if (!trimmedMaterial) {
       setError('Paste your study material first.');
       setNotice('');
@@ -753,6 +719,21 @@ ${trimmedMaterial}`;
       setCurrentFlashcardIndex(0);
       setIsFlashcardFlipped(false);
       setPage('flashcards');
+      return;
+    }
+
+    if (mode === 'quiz') {
+      const parsed = parseAiJson<QuizResponse>(text);
+      const nextQuiz = parsed?.quiz ?? [];
+      if (nextQuiz.length === 0) {
+        setError('The AI did not return quiz questions. Try again with more detailed notes.');
+        return;
+      }
+      setQuiz(nextQuiz);
+      setQuizAnswers(nextQuiz.map(() => ''));
+      setShowQuizAnswers(false);
+      setIsQuizSubmitted(false);
+      setPage('quiz');
       return;
     }
 
