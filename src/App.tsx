@@ -988,7 +988,18 @@ ${trimmedMaterial}`;
                   +
                 </button>
               )
-            ) : page !== 'account' && page !== 'lessons' ? (
+            ) : page === 'account' ? (
+              <label className="language-field compact-language-field">
+                <span>{copy.language}</span>
+                <select value={language} onChange={(event) => updateLanguage(event.target.value as Language)}>
+                  {Object.entries(languageLabels).map(([id, label]) => (
+                    <option key={id} value={id}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : page !== 'lessons' ? (
               <button className="nav-button" type="button" onClick={() => setPage('lessons')}>
                 {copy.lessons}
               </button>
@@ -1108,16 +1119,6 @@ ${trimmedMaterial}`;
               <div>
                 <h2>{copy.yourAccount}</h2>
                 <p>{session ? `Signed in as ${currentAccountName}.` : 'Sign in or create an account so you can upload materials.'}</p>
-                <label className="field language-field">
-                  <span>{copy.language}</span>
-                  <select value={language} onChange={(event) => updateLanguage(event.target.value as Language)}>
-                    {Object.entries(languageLabels).map(([id, label]) => (
-                      <option key={id} value={id}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
                 {session ? (
                   <div className="account-form">
                     {accountNotice && <p className="notice">{accountNotice}</p>}

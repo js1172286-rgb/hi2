@@ -586,6 +586,25 @@ select:focus {
   margin-top: 16px;
 }
 
+.compact-language-field {
+  width: 190px;
+  display: grid;
+  gap: 6px;
+  margin-top: 0;
+}
+
+.compact-language-field span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.compact-language-field select {
+  min-height: 38px;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
 .auth-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1043,6 +1062,10 @@ select:focus {
   .header-actions {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .compact-language-field {
+    width: 100%;
   }
 
   .result-heading {
