@@ -233,6 +233,7 @@ const fullTranslations = {
     correct: 'Correct',
     delete: 'Delete',
     deleteOwnOnly: 'You can only delete materials you uploaded.',
+    confirmEggColor: 'Confirm egg color',
     enterAccountToUpload: 'Sign in or create an account first, then you can upload material.',
     exampleLesson: 'Example: Biology chapter 4',
     findMaterials: 'Find materials',
@@ -273,6 +274,7 @@ const fullTranslations = {
     petHatched: 'Your egg hatched into',
     petOwl: 'Study Owl',
     petReady: 'Keep your streak alive to keep your pet happy.',
+    petChooseColor: 'Choose and confirm an egg color to begin your streak.',
     petSignIn: 'Sign in to warm your egg and grow your pet.',
     petSubtitle: 'Study once each day to warm the egg.',
     petTitle: 'Streak pet',
@@ -319,6 +321,7 @@ const fullTranslations = {
     correct: 'Верно',
     delete: 'Удалить',
     deleteOwnOnly: 'Вы можете удалять только материалы, которые загрузили сами.',
+    confirmEggColor: 'Подтвердить цвет яйца',
     enterAccountToUpload: 'Сначала войдите или создайте аккаунт, потом можно загружать материалы.',
     exampleLesson: 'Например: Биология, глава 4',
     findMaterials: 'Найти материалы',
@@ -359,6 +362,7 @@ const fullTranslations = {
     petHatched: 'Ваше яйцо вылупилось в',
     petOwl: 'Учебная сова',
     petReady: 'Продолжайте серию, чтобы питомец был счастлив.',
+    petChooseColor: 'Выберите и подтвердите цвет яйца, чтобы начать серию.',
     petSignIn: 'Войдите, чтобы согревать яйцо и растить питомца.',
     petSubtitle: 'Учитесь один раз в день, чтобы согревать яйцо.',
     petTitle: 'Питомец серии',
@@ -405,6 +409,7 @@ const fullTranslations = {
     correct: 'Дұрыс',
     delete: 'Жою',
     deleteOwnOnly: 'Сіз тек өзіңіз жүктеген материалдарды жоя аласыз.',
+    confirmEggColor: 'Жұмыртқа түсін растау',
     enterAccountToUpload: 'Алдымен кіріңіз немесе аккаунт ашыңыз, содан кейін материал жүктей аласыз.',
     exampleLesson: 'Мысалы: Биология, 4-тарау',
     findMaterials: 'Материал іздеу',
@@ -445,6 +450,7 @@ const fullTranslations = {
     petHatched: 'Жұмыртқаңыз мынаған айналды',
     petOwl: 'Оқу үкісі',
     petReady: 'Үй жануарыңыз қуанышты болу үшін серияны жалғастырыңыз.',
+    petChooseColor: 'Серияны бастау үшін жұмыртқа түсін таңдап, растаңыз.',
     petSignIn: 'Жұмыртқаны жылытып, үй жануарын өсіру үшін кіріңіз.',
     petSubtitle: 'Жұмыртқаны жылыту үшін күн сайын бір рет оқыңыз.',
     petTitle: 'Серия үй жануары',
@@ -589,6 +595,7 @@ export default function App() {
     eggColor: 'green',
     hasChosenEggColor: false,
   });
+  const [pendingEggColor, setPendingEggColor] = useState<EggColor>('green');
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [currentFlashcardIndex, setCurrentFlashcardIndex] = useState(0);
   const [isFlashcardFlipped, setIsFlashcardFlipped] = useState(false);
@@ -642,6 +649,7 @@ export default function App() {
   const currentAccountName = session?.user.user_metadata.display_name || session?.user.email || '';
   const isPetHatched = Boolean(studyPet.petType);
   const petName = getPetName(studyPet.petType, copy);
+  const displayedEggColor = studyPet.hasChosenEggColor ? studyPet.eggColor : pendingEggColor;
   const warmDaysShown = Math.min(studyPet.streak, eggWarmDays);
   const warmDaysLeft = Math.max(0, eggWarmDays - studyPet.streak);
   const passwordErrors = [
@@ -652,8 +660,10 @@ export default function App() {
   const currentFlashcard = flashcards[currentFlashcardIndex];
 
   useEffect(() => {
+    const savedPet = readStudyPet();
     setSavedLessons(readSavedLessons());
-    setStudyPet(readStudyPet());
+    setStudyPet(savedPet);
+    setPendingEggColor(savedPet.eggColor);
     setLanguage(readLanguage());
   }, []);
 
@@ -724,7 +734,7 @@ export default function App() {
   }
 
   function markStudyActivity() {
-    if (!session) return;
+    if (!session || !studyPet.hasChosenEggColor) return;
 
     const today = getTodayKey();
     const yesterday = getYesterdayKey();
@@ -755,9 +765,20 @@ export default function App() {
 
   function chooseEggColor(eggColor: EggColor) {
     if (!session || studyPet.petType || studyPet.hasChosenEggColor) return;
+    setPendingEggColor(eggColor);
+  }
+
+  function confirmEggColor() {
+    if (!session || studyPet.petType || studyPet.hasChosenEggColor) return;
 
     setStudyPet((currentPet) => {
-      const nextPet = { ...currentPet, eggColor, hasChosenEggColor: true };
+      const nextPet = {
+        ...currentPet,
+        streak: 0,
+        lastStudyDate: '',
+        eggColor: pendingEggColor,
+        hasChosenEggColor: true,
+      };
       window.localStorage.setItem(studyPetKey, JSON.stringify(nextPet));
       return nextPet;
     });
@@ -1644,7 +1665,7 @@ ${trimmedMaterial}`;
               )}
             </div>
             <div className="pet-panel">
-              <div className={isPetHatched ? 'pet-visual hatched' : `pet-visual egg egg-${studyPet.eggColor}`} aria-hidden="true">
+              <div className={isPetHatched ? 'pet-visual hatched' : `pet-visual egg egg-${displayedEggColor}`} aria-hidden="true">
                 {isPetHatched ? (
                   getPetFace(studyPet.petType)
                 ) : (
@@ -1666,6 +1687,8 @@ ${trimmedMaterial}`;
                 <p>
                   {!session
                     ? copy.petSignIn
+                    : !studyPet.hasChosenEggColor
+                      ? copy.petChooseColor
                     : isPetHatched
                     ? `${copy.petHatched} ${petName}. ${copy.petReady}`
                     : warmDaysLeft > 0
@@ -1676,13 +1699,16 @@ ${trimmedMaterial}`;
                   <div className="egg-color-picker" aria-label="Choose egg color">
                     {eggColors.map((eggColor) => (
                       <button
-                        className={studyPet.eggColor === eggColor ? `egg-color-swatch ${eggColor} active` : `egg-color-swatch ${eggColor}`}
+                        className={displayedEggColor === eggColor ? `egg-color-swatch ${eggColor} active` : `egg-color-swatch ${eggColor}`}
                         key={eggColor}
                         type="button"
                         onClick={() => chooseEggColor(eggColor)}
                         aria-label={eggColorLabels[eggColor]}
                       />
                     ))}
+                    <button className="small-button confirm-egg-button" type="button" onClick={confirmEggColor}>
+                      {copy.confirmEggColor}
+                    </button>
                   </div>
                 )}
               </div>

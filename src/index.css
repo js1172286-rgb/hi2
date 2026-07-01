@@ -710,6 +710,11 @@ select:focus {
   margin-top: 12px;
 }
 
+.confirm-egg-button {
+  flex-basis: 100%;
+  margin-top: 4px;
+}
+
 .egg-color-swatch {
   width: 34px;
   height: 34px;
