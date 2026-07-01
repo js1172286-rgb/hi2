@@ -186,7 +186,226 @@ const translations = {
   },
 } satisfies Record<Language, Record<string, string>>;
 
-function getButtonLabel(mode: StudyMode, isLoading: boolean, copy: typeof translations.en) {
+const fullTranslations = {
+  en: {
+    ...translations.en,
+    accountCreated: 'Account created. You can upload materials now.',
+    accountCreatedConfirm: 'Account created. Check your email if Supabase asks you to confirm it.',
+    addAnotherSource: 'Add another source',
+    addSource: 'Add source',
+    addSubjectTitleMaterial: 'Add a subject, title, and material before uploading.',
+    addYourEmailPassword: 'Add your email and password.',
+    addYourNameEmailPassword: 'Add your name, email, and password.',
+    answerPlaceholder: 'Type your answer...',
+    askTutorPlaceholder: 'Ask about your notes, a confusing idea, or what to study next...',
+    back: 'Back',
+    cancel: 'Cancel',
+    cardsReady: 'cards ready to review',
+    correct: 'Correct',
+    delete: 'Delete',
+    deleteOwnOnly: 'You can only delete materials you uploaded.',
+    enterAccountToUpload: 'Sign in or create an account first, then you can upload material.',
+    exampleLesson: 'Example: Biology chapter 4',
+    findMaterials: 'Find materials',
+    front: 'Front',
+    lessonDeleted: 'Lesson deleted.',
+    lessonSaved: 'Lesson saved.',
+    load: 'Load',
+    loaded: 'Loaded',
+    material: 'Material',
+    materialDeleted: 'Material deleted.',
+    materialPlaceholder: 'Paste the material you want to share...',
+    materialUploaded: 'Material uploaded for other students.',
+    nameLessonFirst: 'Name your lesson before saving.',
+    noFlashcardsYet: 'No flashcards yet.',
+    noQuizYet: 'No quiz yet.',
+    noSavedLessonsYet: 'No saved lessons yet.',
+    noSharedMaterialsFound: 'No shared materials found.',
+    noSummaryReturned: 'No summary came back. Try again with a little more text.',
+    notQuite: 'Not quite',
+    notSubmittedYet: 'Not submitted yet',
+    passwordNeeds: 'Password needs',
+    passwordPlaceholder: 'Password',
+    passwordRule8: 'At least 8 characters',
+    passwordRuleCapital: 'Must include at least one capital letter',
+    passwordRuleNumber: 'Must include numbers',
+    pasteMaterialFirst: 'Paste your study material first.',
+    pasteSourceFirst: 'Paste another source before adding it.',
+    pasteSourcePlaceholder: 'Paste another source for this topic...',
+    questionsReady: 'questions ready to answer',
+    quickSummary: 'Quick summary',
+    savedLessonsUsed: 'lesson slots used',
+    searchPlaceholder: 'Search by subject, title, or text...',
+    shareNotes: 'Share notes by subject so other students can find them.',
+    signedInAs: 'Signed in as',
+    signedInUpload: 'Signed in. You can upload materials now.',
+    signedOut: 'Signed out.',
+    signInAccountText: 'Sign in or create an account so you can upload materials.',
+    signInForQuiz: 'Sign in or create an account first to make quizzes.',
+    signInForSave: 'Sign in or create an account first to save lessons.',
+    signInForTutor: 'Sign in or create an account first to use the AI tutor.',
+    signInToUpload: 'Sign in to your account before uploading material.',
+    source: 'source',
+    sources: 'sources',
+    subject: 'Subject',
+    submitted: 'Submitted',
+    title: 'Title',
+    tutor: 'Tutor',
+    typeTutorQuestion: 'Type a question for the tutor first.',
+    typeName: 'Your name',
+    uploadMaterial: 'Upload material',
+    uploading: 'Uploading...',
+    useMaterial: 'Use material',
+    words: 'words',
+    you: 'You',
+  },
+  ru: {
+    ...translations.ru,
+    accountCreated: 'Аккаунт создан. Теперь можно загружать материалы.',
+    accountCreatedConfirm: 'Аккаунт создан. Проверьте почту, если Supabase попросит подтверждение.',
+    addAnotherSource: 'Добавить еще источник',
+    addSource: 'Добавить источник',
+    addSubjectTitleMaterial: 'Добавьте предмет, название и материал перед загрузкой.',
+    addYourEmailPassword: 'Добавьте email и пароль.',
+    addYourNameEmailPassword: 'Добавьте имя, email и пароль.',
+    answerPlaceholder: 'Введите ответ...',
+    askTutorPlaceholder: 'Спросите о конспектах, сложной теме или о том, что учить дальше...',
+    back: 'Обратная сторона',
+    cancel: 'Отмена',
+    cardsReady: 'карточек готово',
+    correct: 'Верно',
+    delete: 'Удалить',
+    deleteOwnOnly: 'Вы можете удалять только материалы, которые загрузили сами.',
+    enterAccountToUpload: 'Сначала войдите или создайте аккаунт, потом можно загружать материалы.',
+    exampleLesson: 'Например: Биология, глава 4',
+    findMaterials: 'Найти материалы',
+    front: 'Лицевая сторона',
+    lessonDeleted: 'Урок удален.',
+    lessonSaved: 'Урок сохранен.',
+    load: 'Загрузить',
+    loaded: 'Загружено',
+    material: 'Материал',
+    materialDeleted: 'Материал удален.',
+    materialPlaceholder: 'Вставьте материал, которым хотите поделиться...',
+    materialUploaded: 'Материал загружен для других учеников.',
+    nameLessonFirst: 'Сначала назовите урок.',
+    noFlashcardsYet: 'Карточек пока нет.',
+    noQuizYet: 'Теста пока нет.',
+    noSavedLessonsYet: 'Сохраненных уроков пока нет.',
+    noSharedMaterialsFound: 'Общие материалы не найдены.',
+    noSummaryReturned: 'Резюме не пришло. Попробуйте добавить немного больше текста.',
+    notQuite: 'Не совсем',
+    notSubmittedYet: 'Пока не отправлено',
+    passwordNeeds: 'Паролю нужно',
+    passwordPlaceholder: 'Пароль',
+    passwordRule8: 'Минимум 8 символов',
+    passwordRuleCapital: 'Хотя бы одна заглавная буква',
+    passwordRuleNumber: 'Должны быть цифры',
+    pasteMaterialFirst: 'Сначала вставьте учебный материал.',
+    pasteSourceFirst: 'Вставьте еще один источник перед добавлением.',
+    pasteSourcePlaceholder: 'Вставьте еще один источник по этой теме...',
+    questionsReady: 'вопросов готово',
+    quickSummary: 'Краткое резюме',
+    savedLessonsUsed: 'ячеек уроков использовано',
+    searchPlaceholder: 'Искать по предмету, названию или тексту...',
+    shareNotes: 'Делитесь конспектами по предметам, чтобы другие ученики могли их найти.',
+    signedInAs: 'Вы вошли как',
+    signedInUpload: 'Вы вошли. Теперь можно загружать материалы.',
+    signedOut: 'Вы вышли.',
+    signInAccountText: 'Войдите или создайте аккаунт, чтобы загружать материалы.',
+    signInForQuiz: 'Сначала войдите или создайте аккаунт, чтобы делать тесты.',
+    signInForSave: 'Сначала войдите или создайте аккаунт, чтобы сохранять уроки.',
+    signInForTutor: 'Сначала войдите или создайте аккаунт, чтобы использовать ИИ-репетитора.',
+    signInToUpload: 'Войдите в аккаунт перед загрузкой материала.',
+    source: 'источник',
+    sources: 'источников',
+    subject: 'Предмет',
+    submitted: 'Отправлено',
+    title: 'Название',
+    tutor: 'Репетитор',
+    typeTutorQuestion: 'Сначала введите вопрос для репетитора.',
+    typeName: 'Ваше имя',
+    uploadMaterial: 'Загрузить материал',
+    uploading: 'Загрузка...',
+    useMaterial: 'Использовать',
+    words: 'слов',
+    you: 'Вы',
+  },
+  kk: {
+    ...translations.kk,
+    accountCreated: 'Аккаунт ашылды. Енді материал жүктей аласыз.',
+    accountCreatedConfirm: 'Аккаунт ашылды. Supabase растауды сұраса, email-ды тексеріңіз.',
+    addAnotherSource: 'Тағы дереккөз қосу',
+    addSource: 'Дереккөз қосу',
+    addSubjectTitleMaterial: 'Жүктеу алдында пән, атау және материал қосыңыз.',
+    addYourEmailPassword: 'Email және құпия сөз қосыңыз.',
+    addYourNameEmailPassword: 'Атыңызды, email және құпия сөз қосыңыз.',
+    answerPlaceholder: 'Жауабыңызды жазыңыз...',
+    askTutorPlaceholder: 'Жазбаларыңыз, түсініксіз тақырып немесе келесі қадам туралы сұраңыз...',
+    back: 'Артқы бет',
+    cancel: 'Болдырмау',
+    cardsReady: 'карточка дайын',
+    correct: 'Дұрыс',
+    delete: 'Жою',
+    deleteOwnOnly: 'Сіз тек өзіңіз жүктеген материалдарды жоя аласыз.',
+    enterAccountToUpload: 'Алдымен кіріңіз немесе аккаунт ашыңыз, содан кейін материал жүктей аласыз.',
+    exampleLesson: 'Мысалы: Биология, 4-тарау',
+    findMaterials: 'Материал іздеу',
+    front: 'Алдыңғы бет',
+    lessonDeleted: 'Сабақ жойылды.',
+    lessonSaved: 'Сабақ сақталды.',
+    load: 'Жүктеу',
+    loaded: 'Жүктелді',
+    material: 'Материал',
+    materialDeleted: 'Материал жойылды.',
+    materialPlaceholder: 'Бөліскіңіз келетін материалды қойыңыз...',
+    materialUploaded: 'Материал басқа оқушыларға жүктелді.',
+    nameLessonFirst: 'Сақтау алдында сабаққа ат қойыңыз.',
+    noFlashcardsYet: 'Әзірге карточка жоқ.',
+    noQuizYet: 'Әзірге тест жоқ.',
+    noSavedLessonsYet: 'Әзірге сақталған сабақ жоқ.',
+    noSharedMaterialsFound: 'Ортақ материалдар табылмады.',
+    noSummaryReturned: 'Қысқаша жауап келмеді. Көбірек мәтін қосып көріңіз.',
+    notQuite: 'Әлі де дәл емес',
+    notSubmittedYet: 'Әлі жіберілмеді',
+    passwordNeeds: 'Құпия сөзге қажет',
+    passwordPlaceholder: 'Құпия сөз',
+    passwordRule8: 'Кемінде 8 таңба',
+    passwordRuleCapital: 'Кемінде бір үлкен әріп',
+    passwordRuleNumber: 'Сан болуы керек',
+    pasteMaterialFirst: 'Алдымен оқу материалын қойыңыз.',
+    pasteSourceFirst: 'Қосу алдында тағы дереккөз қойыңыз.',
+    pasteSourcePlaceholder: 'Осы тақырыпқа тағы дереккөз қойыңыз...',
+    questionsReady: 'сұрақ дайын',
+    quickSummary: 'Қысқаша мазмұн',
+    savedLessonsUsed: 'сабақ орны қолданылды',
+    searchPlaceholder: 'Пән, атау немесе мәтін бойынша іздеу...',
+    shareNotes: 'Басқа оқушылар табуы үшін конспекттерді пән бойынша бөлісіңіз.',
+    signedInAs: 'Кірген аккаунт',
+    signedInUpload: 'Кірдіңіз. Енді материал жүктей аласыз.',
+    signedOut: 'Шықтыңыз.',
+    signInAccountText: 'Материал жүктеу үшін кіріңіз немесе аккаунт ашыңыз.',
+    signInForQuiz: 'Тест жасау үшін алдымен кіріңіз немесе аккаунт ашыңыз.',
+    signInForSave: 'Сабақ сақтау үшін алдымен кіріңіз немесе аккаунт ашыңыз.',
+    signInForTutor: 'AI мұғалімді қолдану үшін алдымен кіріңіз немесе аккаунт ашыңыз.',
+    signInToUpload: 'Материал жүктеу алдында аккаунтқа кіріңіз.',
+    source: 'дереккөз',
+    sources: 'дереккөз',
+    subject: 'Пән',
+    submitted: 'Жіберілді',
+    title: 'Атау',
+    tutor: 'Мұғалім',
+    typeTutorQuestion: 'Алдымен мұғалімге сұрақ жазыңыз.',
+    typeName: 'Атыңыз',
+    uploadMaterial: 'Материал жүктеу',
+    uploading: 'Жүктелуде...',
+    useMaterial: 'Қолдану',
+    words: 'сөз',
+    you: 'Сіз',
+  },
+} satisfies Record<Language, Record<string, string>>;
+
+function getButtonLabel(mode: StudyMode, isLoading: boolean, copy: typeof fullTranslations.en) {
   if (isLoading) return copy.thinking;
   if (mode === 'flashcards') return copy.makeFlashcards;
   if (mode === 'quiz') return copy.makeQuiz;
@@ -226,16 +445,6 @@ function getLessonMaterial(lesson: SavedLesson) {
 
 function getWordCount(text: string) {
   return text.split(/\s+/).filter(Boolean).length;
-}
-
-function getPasswordErrors(password: string) {
-  const errors = [];
-
-  if (password.length < 8) errors.push('At least 8 characters');
-  if (!/\d/.test(password)) errors.push('Must include numbers');
-  if (!/[A-Z]/.test(password)) errors.push('Must include at least one capital letter');
-
-  return errors;
 }
 
 function readSavedLessons() {
@@ -306,9 +515,13 @@ export default function App() {
     if (!query) return true;
     return `${item.subject} ${item.title} ${item.material}`.toLowerCase().includes(query);
   });
-  const copy = translations[language];
+  const copy = fullTranslations[language];
   const currentAccountName = session?.user.user_metadata.display_name || session?.user.email || '';
-  const passwordErrors = getPasswordErrors(accountPassword);
+  const passwordErrors = [
+    accountPassword.length < 8 ? copy.passwordRule8 : '',
+    !/\d/.test(accountPassword) ? copy.passwordRuleNumber : '',
+    !/[A-Z]/.test(accountPassword) ? copy.passwordRuleCapital : '',
+  ].filter(Boolean);
   const currentFlashcard = flashcards[currentFlashcardIndex];
 
   useEffect(() => {
@@ -441,15 +654,15 @@ export default function App() {
     const text = sharedText.trim();
 
     if (!session) {
-      setSharedError('Sign in to your account before uploading material.');
+      setSharedError(copy.signInToUpload);
       setSharedNotice('');
-      setAccountNotice('Sign in or create an account first, then you can upload material.');
+      setAccountNotice(copy.enterAccountToUpload);
       setPage('account');
       return;
     }
 
     if (!subject || !title || !text) {
-      setSharedError('Add a subject, title, and material before uploading.');
+      setSharedError(copy.addSubjectTitleMaterial);
       setSharedNotice('');
       return;
     }
@@ -482,13 +695,13 @@ export default function App() {
     setSharedTitle('');
     setSharedText('');
     setIsUploadingSharedMaterial(false);
-    setSharedNotice('Material uploaded for other students.');
+    setSharedNotice(copy.materialUploaded);
     loadSharedMaterials();
   }
 
   async function deleteSharedMaterial(item: SharedMaterial) {
     if (!session || item.user_id !== session.user.id) {
-      setSharedError('You can only delete materials you uploaded.');
+      setSharedError(copy.deleteOwnOnly);
       setSharedNotice('');
       return;
     }
@@ -511,7 +724,7 @@ export default function App() {
     }
 
     setSharedMaterials(sharedMaterials.filter((materialItem) => materialItem.id !== item.id));
-    setSharedNotice('Material deleted.');
+    setSharedNotice(copy.materialDeleted);
   }
 
   async function submitAccount() {
@@ -525,13 +738,13 @@ export default function App() {
     }
 
     if (!email || !password || (authMode === 'signUp' && !displayName)) {
-      setAccountError(authMode === 'signUp' ? 'Add your name, email, and password.' : 'Add your email and password.');
+      setAccountError(authMode === 'signUp' ? copy.addYourNameEmailPassword : copy.addYourEmailPassword);
       setAccountNotice('');
       return;
     }
 
     if (authMode === 'signUp' && passwordErrors.length > 0) {
-      setAccountError(`Password needs: ${passwordErrors.join(', ')}.`);
+      setAccountError(`${copy.passwordNeeds}: ${passwordErrors.join(', ')}.`);
       setAccountNotice('');
       return;
     }
@@ -556,7 +769,7 @@ export default function App() {
       }
 
       setSession(data.session);
-      setAccountNotice(data.session ? 'Account created. You can upload materials now.' : 'Account created. Check your email if Supabase asks you to confirm it.');
+      setAccountNotice(data.session ? copy.accountCreated : copy.accountCreatedConfirm);
       setAccountPassword('');
       return;
     }
@@ -572,7 +785,7 @@ export default function App() {
     }
 
     setSession(data.session);
-    setAccountNotice('Signed in. You can upload materials now.');
+    setAccountNotice(copy.signedInUpload);
     setAccountPassword('');
   }
 
@@ -585,7 +798,7 @@ export default function App() {
     }
 
     setSession(null);
-    setAccountNotice('Signed out.');
+    setAccountNotice(copy.signedOut);
     setAccountError('');
   }
 
@@ -593,7 +806,7 @@ export default function App() {
     setLessonName(item.title);
     setMaterial(item.material);
     setPage('study');
-    setNotice(`Loaded "${item.title}".`);
+    setNotice(`${copy.loaded} "${item.title}".`);
     setError('');
     clearResults();
   }
@@ -601,12 +814,12 @@ export default function App() {
   async function askTutor() {
     const question = tutorQuestion.trim();
 
-    if (!requireSignedIn('Sign in or create an account first to use the AI tutor.')) {
+    if (!requireSignedIn(copy.signInForTutor)) {
       return;
     }
 
     if (!question) {
-      setTutorError('Type a question for the tutor first.');
+      setTutorError(copy.typeTutorQuestion);
       return;
     }
 
@@ -759,18 +972,18 @@ ${JSON.stringify(quizToGrade, null, 2)}`,
     const trimmedName = lessonName.trim();
     const trimmedMaterial = material.trim();
 
-    if (!requireSignedIn('Sign in or create an account first to save lessons.')) {
+    if (!requireSignedIn(copy.signInForSave)) {
       return;
     }
 
     if (!trimmedName) {
-      setError('Name your lesson before saving.');
+      setError(copy.nameLessonFirst);
       setNotice('');
       return;
     }
 
     if (!trimmedMaterial) {
-      setError('Paste your study material before saving.');
+      setError(copy.pasteMaterialFirst);
       setNotice('');
       return;
     }
@@ -785,21 +998,21 @@ ${JSON.stringify(quizToGrade, null, 2)}`,
 
     updateSavedLessons([nextLesson, ...savedLessons].slice(0, maxSavedLessons));
     setError('');
-    setNotice('Lesson saved.');
+    setNotice(copy.lessonSaved);
   }
 
   function loadLesson(lesson: SavedLesson) {
     setLessonName(lesson.title);
     setMaterial(getLessonMaterial(lesson));
     setError('');
-    setNotice(`Loaded "${lesson.title}".`);
+    setNotice(`${copy.loaded} "${lesson.title}".`);
     setPage('study');
     clearResults();
   }
 
   function deleteLesson(id: string) {
     updateSavedLessons(savedLessons.filter((lesson) => lesson.id !== id));
-    setNotice('Lesson deleted.');
+    setNotice(copy.lessonDeleted);
     setError('');
   }
 
@@ -819,7 +1032,7 @@ ${JSON.stringify(quizToGrade, null, 2)}`,
     const trimmedSource = sourceText.trim();
 
     if (!trimmedSource) {
-      setError('Paste another source before adding it.');
+      setError(copy.pasteSourceFirst);
       setNotice('');
       return;
     }
@@ -838,7 +1051,7 @@ ${JSON.stringify(quizToGrade, null, 2)}`,
     setAddingSourceId(null);
     setSourceText('');
     setError('');
-    setNotice(`Added another source to "${lesson.title}".`);
+    setNotice(`${copy.addAnotherSource}: "${lesson.title}".`);
   }
 
   function buildPrompt(trimmedMaterial: string) {
@@ -884,12 +1097,12 @@ ${trimmedMaterial}`;
   async function generateStudyHelp() {
     const trimmedMaterial = material.trim();
 
-    if (mode === 'quiz' && !requireSignedIn('Sign in or create an account first to make quizzes.')) {
+    if (mode === 'quiz' && !requireSignedIn(copy.signInForQuiz)) {
       return;
     }
 
     if (!trimmedMaterial) {
-      setError('Paste your study material first.');
+      setError(copy.pasteMaterialFirst);
       setNotice('');
       clearResults();
       return;
@@ -959,7 +1172,7 @@ ${trimmedMaterial}`;
       return;
     }
 
-    setSummary(text || 'No summary came back. Try again with a little more text.');
+    setSummary(text || copy.noSummaryReturned);
   }
 
   return (
@@ -997,7 +1210,7 @@ ${trimmedMaterial}`;
                   type="button"
                   onClick={() => {
                     if (!session) {
-                      setAccountNotice('Sign in or create an account first, then you can upload material.');
+                      setAccountNotice(copy.enterAccountToUpload);
                       setPage('account');
                       return;
                     }
@@ -1036,40 +1249,40 @@ ${trimmedMaterial}`;
                 <div className="lessons-page-heading compact-heading">
                   <div>
                     <h2>{copy.otherMaterials}</h2>
-                    <p>Share notes by subject so other students can find them.</p>
+                    <p>{copy.shareNotes}</p>
                   </div>
                   <button className="small-button muted-button" type="button" onClick={() => setIsUploadingSharedMaterial(false)}>
-                    Cancel
+                    {copy.cancel}
                   </button>
                 </div>
 
                 <div className="share-form">
                   <label className="field">
-                    <span>Subject</span>
+                    <span>{copy.subject}</span>
                     <input
                       value={sharedSubject}
                       onChange={(event) => setSharedSubject(event.target.value)}
-                      placeholder="Example: Biology"
+                      placeholder={copy.subject}
                     />
                   </label>
                   <label className="field">
-                    <span>Title</span>
+                    <span>{copy.title}</span>
                     <input
                       value={sharedTitle}
                       onChange={(event) => setSharedTitle(event.target.value)}
-                      placeholder="Example: Cell structure notes"
+                      placeholder={copy.title}
                     />
                   </label>
                   <label className="field">
-                    <span>Material</span>
+                    <span>{copy.material}</span>
                     <textarea
                       value={sharedText}
                       onChange={(event) => setSharedText(event.target.value)}
-                      placeholder="Paste the material you want to share..."
+                      placeholder={copy.materialPlaceholder}
                     />
                   </label>
                 <button className="generate-button" type="button" onClick={uploadSharedMaterial} disabled={isSharedLoading}>
-                  {isSharedLoading ? 'Uploading...' : 'Upload material'}
+                  {isSharedLoading ? copy.uploading : copy.uploadMaterial}
                 </button>
                 {sharedError && <p className="message">{sharedError}</p>}
                 {sharedNotice && <p className="notice">{sharedNotice}</p>}
@@ -1079,11 +1292,11 @@ ${trimmedMaterial}`;
               <div className="browse-panel">
                 <div className="browse-heading">
                   <label className="field">
-                    <span>Find materials</span>
+                    <span>{copy.findMaterials}</span>
                     <input
                       value={searchQuery}
                       onChange={(event) => setSearchQuery(event.target.value)}
-                      placeholder="Search by subject, title, or text..."
+                      placeholder={copy.searchPlaceholder}
                     />
                   </label>
                 </div>
@@ -1093,7 +1306,7 @@ ${trimmedMaterial}`;
 
                 <div className="search-results">
                   {searchedSharedMaterials.length === 0 ? (
-                    <p className="empty-state large">No shared materials found.</p>
+                    <p className="empty-state large">{copy.noSharedMaterialsFound}</p>
                   ) : (
                     searchedSharedMaterials.map((item) => (
                       <article className="lesson-card-large" key={item.id}>
@@ -1103,12 +1316,12 @@ ${trimmedMaterial}`;
                           <p className="lesson-preview">{makeLessonPreview(item.material)}</p>
                           <p className="lesson-meta">
                             <span>{new Date(item.created_at).toLocaleDateString()}</span>
-                            <span>{getWordCount(item.material)} words</span>
+                            <span>{getWordCount(item.material)} {copy.words}</span>
                           </p>
                         </div>
                         <div className={session?.user.id === item.user_id ? 'lesson-actions two-actions' : 'lesson-actions one-action'}>
                           <button className="small-button" type="button" onClick={() => useSharedMaterial(item)}>
-                            Use material
+                            {copy.useMaterial}
                           </button>
                           {session?.user.id === item.user_id && (
                             <button
@@ -1117,7 +1330,7 @@ ${trimmedMaterial}`;
                               onClick={() => deleteSharedMaterial(item)}
                               disabled={isSharedLoading}
                             >
-                              Delete
+                              {copy.delete}
                             </button>
                           )}
                         </div>
@@ -1140,7 +1353,7 @@ ${trimmedMaterial}`;
               </div>
               <div>
                 <h2>{copy.yourAccount}</h2>
-                <p>{session ? `Signed in as ${currentAccountName}.` : 'Sign in or create an account so you can upload materials.'}</p>
+                <p>{session ? `${copy.signedInAs} ${currentAccountName}.` : copy.signInAccountText}</p>
                 {session ? (
                   <div className="account-form">
                     {accountNotice && <p className="notice">{accountNotice}</p>}
@@ -1178,7 +1391,7 @@ ${trimmedMaterial}`;
                         <input
                           value={accountNameInput}
                           onChange={(event) => setAccountNameInput(event.target.value)}
-                          placeholder="Your name"
+                          placeholder={copy.typeName}
                         />
                       </label>
                     )}
@@ -1198,7 +1411,7 @@ ${trimmedMaterial}`;
                           type={showPassword ? 'text' : 'password'}
                           value={accountPassword}
                           onChange={(event) => setAccountPassword(event.target.value)}
-                          placeholder="Password"
+                        placeholder={copy.passwordPlaceholder}
                         />
                         <button
                           className="show-password-button"
@@ -1212,9 +1425,9 @@ ${trimmedMaterial}`;
                     </label>
                     {authMode === 'signUp' && (
                       <ul className="password-rules" aria-label="Password rules">
-                        <li className={accountPassword.length >= 8 ? 'met' : ''}>At least 8 characters</li>
-                        <li className={/\d/.test(accountPassword) ? 'met' : ''}>Must include numbers</li>
-                        <li className={/[A-Z]/.test(accountPassword) ? 'met' : ''}>Must include at least one capital letter</li>
+                        <li className={accountPassword.length >= 8 ? 'met' : ''}>{copy.passwordRule8}</li>
+                        <li className={/\d/.test(accountPassword) ? 'met' : ''}>{copy.passwordRuleNumber}</li>
+                        <li className={/[A-Z]/.test(accountPassword) ? 'met' : ''}>{copy.passwordRuleCapital}</li>
                       </ul>
                     )}
                     <button className="generate-button" type="button" onClick={submitAccount}>
@@ -1237,12 +1450,12 @@ ${trimmedMaterial}`;
             <div className="lessons-page-heading">
               <div>
                 <h2>{copy.lessons}</h2>
-                <p>{savedLessons.length} of {maxSavedLessons} lesson slots used</p>
+                <p>{savedLessons.length} / {maxSavedLessons} {copy.savedLessonsUsed}</p>
               </div>
             </div>
 
             {savedLessons.length === 0 ? (
-              <p className="empty-state large">No saved lessons yet.</p>
+              <p className="empty-state large">{copy.noSavedLessonsYet}</p>
             ) : (
               <div className="lessons-page-grid">
                 {savedLessons.map((lesson) => {
@@ -1256,8 +1469,8 @@ ${trimmedMaterial}`;
                         <p className="lesson-preview">{makeLessonPreview(lessonMaterial)}</p>
                         <p className="lesson-meta">
                           <span>{new Date(lesson.savedAt).toLocaleDateString()}</span>
-                          <span>{getWordCount(lessonMaterial)} words</span>
-                          <span>{sourceCount} {sourceCount === 1 ? 'source' : 'sources'}</span>
+                          <span>{getWordCount(lessonMaterial)} {copy.words}</span>
+                          <span>{sourceCount} {sourceCount === 1 ? copy.source : copy.sources}</span>
                         </p>
                       </div>
 
@@ -1266,14 +1479,14 @@ ${trimmedMaterial}`;
                           <textarea
                             value={sourceText}
                             onChange={(event) => setSourceText(event.target.value)}
-                            placeholder="Paste another source for this topic..."
+                            placeholder={copy.pasteSourcePlaceholder}
                           />
                           <div className="source-actions">
                             <button className="small-button" type="button" onClick={() => addSourceToLesson(lesson)}>
-                              Add source
+                              {copy.addSource}
                             </button>
                             <button className="small-button muted-button" type="button" onClick={cancelAddingSource}>
-                              Cancel
+                              {copy.cancel}
                             </button>
                           </div>
                         </div>
@@ -1281,13 +1494,13 @@ ${trimmedMaterial}`;
 
                       <div className="lesson-actions">
                         <button className="small-button" type="button" onClick={() => loadLesson(lesson)}>
-                          Load
+                          {copy.load}
                         </button>
                         <button className="small-button" type="button" onClick={() => startAddingSource(lesson.id)}>
-                          Add another source
+                          {copy.addAnotherSource}
                         </button>
                         <button className="small-button danger-button" type="button" onClick={() => deleteLesson(lesson.id)}>
-                          Delete
+                          {copy.delete}
                         </button>
                       </div>
                     </article>
@@ -1301,14 +1514,14 @@ ${trimmedMaterial}`;
             <div className="tutor-chat">
               {tutorMessages.map((message, index) => (
                 <article className={`tutor-message ${message.role}`} key={`${message.role}-${index}`}>
-                  <p className="card-label">{message.role === 'user' ? 'You' : 'Tutor'}</p>
+                  <p className="card-label">{message.role === 'user' ? copy.you : copy.tutor}</p>
                   <p>{message.text}</p>
                 </article>
               ))}
               {isTutorLoading && (
                 <article className="tutor-message tutor">
-                  <p className="card-label">Tutor</p>
-                  <p>Thinking...</p>
+                  <p className="card-label">{copy.tutor}</p>
+                  <p>{copy.thinking}</p>
                 </article>
               )}
             </div>
@@ -1319,11 +1532,11 @@ ${trimmedMaterial}`;
                 <textarea
                   value={tutorQuestion}
                   onChange={(event) => setTutorQuestion(event.target.value)}
-                  placeholder="Ask about your notes, a confusing idea, or what to study next..."
+                  placeholder={copy.askTutorPlaceholder}
                 />
               </label>
               <button className="generate-button" type="button" onClick={askTutor} disabled={isTutorLoading}>
-                {isTutorLoading ? 'Asking...' : copy.askTutor}
+                {isTutorLoading ? copy.thinking : copy.askTutor}
               </button>
               {tutorError && <p className="message">{tutorError}</p>}
             </div>
@@ -1333,7 +1546,7 @@ ${trimmedMaterial}`;
             <div className="lessons-page-heading">
               <div>
                 <h2>{copy.flashcards}</h2>
-                <p>{flashcards.length} cards ready to review</p>
+                <p>{flashcards.length} {copy.cardsReady}</p>
               </div>
               <button className="small-button" type="button" onClick={() => setPage('study')}>
                 {copy.backToStudy}
@@ -1343,7 +1556,7 @@ ${trimmedMaterial}`;
             {notice && <p className="notice page-notice">{notice}</p>}
 
             {flashcards.length === 0 ? (
-              <p className="empty-state large">No flashcards yet.</p>
+              <p className="empty-state large">{copy.noFlashcardsYet}</p>
             ) : (
               <div className="flashcard-reviewer">
                 <p className="flashcard-count">
@@ -1355,7 +1568,7 @@ ${trimmedMaterial}`;
                   onClick={() => setIsFlashcardFlipped(!isFlashcardFlipped)}
                   aria-label={isFlashcardFlipped ? 'Show flashcard front' : 'Show flashcard back'}
                 >
-                  <span className="card-label">{isFlashcardFlipped ? 'Back' : 'Front'}</span>
+                  <span className="card-label">{isFlashcardFlipped ? copy.back : copy.front}</span>
                   <span className="review-flashcard-text">
                     {isFlashcardFlipped ? currentFlashcard.back : currentFlashcard.front}
                   </span>
@@ -1376,7 +1589,7 @@ ${trimmedMaterial}`;
             <div className="lessons-page-heading">
               <div>
                 <h2>{copy.quiz}</h2>
-                <p>{quiz.length} questions ready to answer</p>
+                <p>{quiz.length} {copy.questionsReady}</p>
               </div>
               <button className="small-button" type="button" onClick={() => setPage('study')}>
                 {copy.backToStudy}
@@ -1386,12 +1599,12 @@ ${trimmedMaterial}`;
             {notice && <p className="notice page-notice">{notice}</p>}
 
             {quiz.length === 0 ? (
-              <p className="empty-state large">No quiz yet.</p>
+              <p className="empty-state large">{copy.noQuizYet}</p>
             ) : (
               <div className="quiz-page-body">
                 <div className="result-heading">
                   <h2>{copy.quiz}</h2>
-                  <p className="quiz-status">{isQuizSubmitted ? 'Submitted' : 'Not submitted yet'}</p>
+                  <p className="quiz-status">{isQuizSubmitted ? copy.submitted : copy.notSubmittedYet}</p>
                 </div>
 
                 <div className="quiz-list">
@@ -1410,12 +1623,12 @@ ${trimmedMaterial}`;
                             setShowQuizAnswers(false);
                             setQuizError('');
                           }}
-                          placeholder="Type your answer..."
+                          placeholder={copy.answerPlaceholder}
                         />
                       </label>
                       {showQuizAnswers && quizGrades[index] && (
                         <p className={quizGrades[index].correct ? 'answer correct-answer' : 'answer wrong-answer'}>
-                          {quizGrades[index].correct ? 'Correct' : 'Not quite'}: {quizGrades[index].feedback}
+                          {quizGrades[index].correct ? copy.correct : copy.notQuite}: {quizGrades[index].feedback}
                         </p>
                       )}
                     </article>
@@ -1452,7 +1665,7 @@ ${trimmedMaterial}`;
                       className="mode-card"
                       type="button"
                       onClick={() => {
-                        if (requireSignedIn('Sign in or create an account first to use the AI tutor.')) {
+                        if (requireSignedIn(copy.signInForTutor)) {
                           setPage('tutor');
                         }
                       }}
@@ -1469,7 +1682,7 @@ ${trimmedMaterial}`;
                   <input
                     value={lessonName}
                     onChange={(event) => setLessonName(event.target.value)}
-                    placeholder="Example: Biology chapter 4"
+                    placeholder={copy.exampleLesson}
                   />
                 </label>
 
@@ -1479,7 +1692,7 @@ ${trimmedMaterial}`;
                     ref={materialTextareaRef}
                     value={material}
                     onChange={(event) => setMaterial(event.target.value)}
-                    placeholder="Paste notes, textbook paragraphs, or class material here..."
+                    placeholder={copy.pasteMaterialFirst}
                   />
                 </label>
 
@@ -1499,7 +1712,7 @@ ${trimmedMaterial}`;
 
             {summary && (
               <section className="result" aria-label="Generated summary">
-                <h2>Quick summary</h2>
+                <h2>{copy.quickSummary}</h2>
                 <pre>{summary}</pre>
               </section>
             )}
