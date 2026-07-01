@@ -95,6 +95,25 @@ const petFaces: Record<PetType, string> = {
   owl: 'o,o',
 };
 
+const demoFlashcards: Flashcard[] = [
+  {
+    front: 'What is a study streak?',
+    back: 'A row of days where you study and keep your progress going.',
+  },
+  {
+    front: 'What happens when the egg stays warm for 3 days?',
+    back: 'It hatches into a random pet from the egg color you chose.',
+  },
+  {
+    front: 'What is the best way to use flashcards?',
+    back: 'Try to answer before flipping the card, then review the answer.',
+  },
+  {
+    front: 'What does the AI tutor help with?',
+    back: 'It explains saved lessons and answers questions about your study material.',
+  },
+];
+
 const eggColorLabels: Record<EggColor, string> = {
   green: 'Green',
   gold: 'Gold',
@@ -1331,8 +1350,19 @@ ${trimmedMaterial}`;
 
   async function generateStudyHelp() {
     const trimmedMaterial = material.trim();
+    const selectedMode = mode;
 
-    if (mode === 'quiz' && !requireSignedIn(copy.signInForQuiz)) {
+    if (selectedMode === 'quiz' && !requireSignedIn(copy.signInForQuiz)) {
+      return;
+    }
+
+    if (selectedMode === 'flashcards') {
+      setFlashcards(demoFlashcards);
+      setCurrentFlashcardIndex(0);
+      setIsFlashcardFlipped(false);
+      setError('');
+      setNotice('Demo flashcards are showing for preview. AI flashcards can be turned back on later.');
+      setPage('flashcards');
       return;
     }
 
