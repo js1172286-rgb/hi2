@@ -589,8 +589,8 @@ select:focus {
 }
 
 .pet-visual {
-  width: 92px;
-  height: 104px;
+  width: 108px;
+  height: 116px;
   display: grid;
   place-items: center;
   border: 1px solid rgba(47, 111, 115, 0.34);
@@ -601,10 +601,90 @@ select:focus {
 }
 
 .pet-visual.egg {
+  --egg-shell: #cfffaa;
+  --egg-spot: #77b54b;
+  --egg-ring: #366820;
+  position: relative;
+  overflow: hidden;
+  border: 0;
   border-radius: 50% 50% 46% 46%;
-  background:
-    radial-gradient(circle at 36% 30%, rgba(255, 255, 255, 0.95) 0 14%, transparent 15%),
-    linear-gradient(160deg, rgba(231, 242, 242, 0.95), rgba(47, 111, 115, 0.22));
+  background: var(--egg-ring);
+}
+
+.pet-visual.egg-gold {
+  --egg-shell: #ffeabb;
+  --egg-spot: #b99b4d;
+  --egg-ring: #6f5408;
+}
+
+.pet-visual.egg-blue {
+  --egg-shell: #b9ccf6;
+  --egg-spot: #1250ff;
+  --egg-ring: #182e58;
+}
+
+.pet-visual.egg-red {
+  --egg-shell: #dbb4ac;
+  --egg-spot: #ff230f;
+  --egg-ring: #75332b;
+}
+
+.egg-core {
+  position: relative;
+  width: 74px;
+  height: 92px;
+  display: block;
+  overflow: hidden;
+  border-radius: 50% 50% 46% 46%;
+  background: var(--egg-shell);
+  box-shadow: inset 0 0 0 2px rgba(20, 33, 38, 0.08);
+}
+
+.egg-spot {
+  position: absolute;
+  display: block;
+  background: var(--egg-spot);
+}
+
+.spot-one {
+  top: -9px;
+  right: -2px;
+  width: 46px;
+  height: 34px;
+  border-radius: 0 70% 0 80%;
+}
+
+.spot-two {
+  left: -15px;
+  top: 30px;
+  width: 34px;
+  height: 32px;
+  border-radius: 45% 55% 60% 40%;
+}
+
+.spot-three {
+  right: 18px;
+  top: 44px;
+  width: 26px;
+  height: 30px;
+  border-radius: 45% 55% 55% 45%;
+}
+
+.spot-four {
+  left: 16px;
+  top: 23px;
+  width: 20px;
+  height: 13px;
+  border-radius: 50%;
+  transform: rotate(23deg);
+}
+
+.spot-five {
+  bottom: -7px;
+  left: 14px;
+  width: 34px;
+  height: 25px;
+  border-radius: 70% 40% 0 0;
 }
 
 .pet-visual.hatched {
@@ -621,6 +701,42 @@ select:focus {
 .pet-copy p {
   color: var(--muted);
   line-height: 1.5;
+}
+
+.egg-color-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.egg-color-swatch {
+  width: 34px;
+  height: 34px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: var(--accent-soft);
+}
+
+.egg-color-swatch.green {
+  background: #77b54b;
+}
+
+.egg-color-swatch.gold {
+  background: #b99b4d;
+}
+
+.egg-color-swatch.blue {
+  background: #1250ff;
+}
+
+.egg-color-swatch.red {
+  background: #ff230f;
+}
+
+.egg-color-swatch.active {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px rgba(47, 111, 115, 0.14);
 }
 
 .account-form {

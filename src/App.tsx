@@ -62,11 +62,13 @@ type TutorMessage = {
 
 type AuthMode = 'signIn' | 'signUp';
 type PetType = 'cat' | 'dragon' | 'fox' | 'owl';
+type EggColor = 'green' | 'gold' | 'blue' | 'red';
 
 type StudyPet = {
   streak: number;
   lastStudyDate: string;
   petType: PetType | null;
+  eggColor: EggColor;
 };
 
 const savedLessonsKey = 'study-helper-lessons';
@@ -76,12 +78,20 @@ const maxSavedLessons = 6;
 const eggWarmDays = 3;
 
 const petTypes: PetType[] = ['cat', 'dragon', 'fox', 'owl'];
+const eggColors: EggColor[] = ['green', 'gold', 'blue', 'red'];
 
 const petFaces: Record<PetType, string> = {
   cat: '=^.^=',
   dragon: '^.=.^',
   fox: '^w^',
   owl: 'o,o',
+};
+
+const eggColorLabels: Record<EggColor, string> = {
+  green: 'Green',
+  gold: 'Gold',
+  blue: 'Blue',
+  red: 'Red',
 };
 
 const modes: { id: StudyMode; labelKey: 'summaryMode' | 'flashcards' | 'quizMe' }[] = [
@@ -490,15 +500,16 @@ function getYesterdayKey() {
 function readStudyPet(): StudyPet {
   try {
     const rawPet = window.localStorage.getItem(studyPetKey);
-    if (!rawPet) return { streak: 0, lastStudyDate: '', petType: null };
+    if (!rawPet) return { streak: 0, lastStudyDate: '', petType: null, eggColor: 'green' };
     const parsed = JSON.parse(rawPet) as StudyPet;
     return {
       streak: Number.isFinite(parsed.streak) ? parsed.streak : 0,
       lastStudyDate: parsed.lastStudyDate || '',
       petType: petTypes.includes(parsed.petType as PetType) ? parsed.petType : null,
+      eggColor: eggColors.includes(parsed.eggColor as EggColor) ? parsed.eggColor : 'green',
     };
   } catch {
-    return { streak: 0, lastStudyDate: '', petType: null };
+    return { streak: 0, lastStudyDate: '', petType: null, eggColor: 'green' };
   }
 }
 
@@ -569,7 +580,7 @@ export default function App() {
   const [material, setMaterial] = useState('');
   const [savedLessons, setSavedLessons] = useState<SavedLesson[]>([]);
   const [summary, setSummary] = useState('');
-  const [studyPet, setStudyPet] = useState<StudyPet>({ streak: 0, lastStudyDate: '', petType: null });
+  const [studyPet, setStudyPet] = useState<StudyPet>({ streak: 0, lastStudyDate: '', petType: null, eggColor: 'green' });
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [currentFlashcardIndex, setCurrentFlashcardIndex] = useState(0);
   const [isFlashcardFlipped, setIsFlashcardFlipped] = useState(false);
@@ -725,8 +736,19 @@ export default function App() {
         streak: nextStreak,
         lastStudyDate: today,
         petType: nextPetType,
+        eggColor: currentPet.eggColor,
       };
 
+      window.localStorage.setItem(studyPetKey, JSON.stringify(nextPet));
+      return nextPet;
+    });
+  }
+
+  function chooseEggColor(eggColor: EggColor) {
+    if (!session || studyPet.petType) return;
+
+    setStudyPet((currentPet) => {
+      const nextPet = { ...currentPet, eggColor };
       window.localStorage.setItem(studyPetKey, JSON.stringify(nextPet));
       return nextPet;
     });
@@ -1613,8 +1635,18 @@ ${trimmedMaterial}`;
               )}
             </div>
             <div className="pet-panel">
-              <div className={isPetHatched ? 'pet-visual hatched' : 'pet-visual egg'} aria-hidden="true">
-                {isPetHatched ? getPetFace(studyPet.petType) : ''}
+              <div className={isPetHatched ? 'pet-visual hatched' : `pet-visual egg egg-${studyPet.eggColor}`} aria-hidden="true">
+                {isPetHatched ? (
+                  getPetFace(studyPet.petType)
+                ) : (
+                  <span className="egg-core">
+                    <span className="egg-spot spot-one" />
+                    <span className="egg-spot spot-two" />
+                    <span className="egg-spot spot-three" />
+                    <span className="egg-spot spot-four" />
+                    <span className="egg-spot spot-five" />
+                  </span>
+                )}
               </div>
               <div className="pet-copy">
                 <p className="card-label">{copy.petTitle}</p>
@@ -1631,6 +1663,19 @@ ${trimmedMaterial}`;
                       ? `${copy.petWarmToday} ${warmDaysShown}/${eggWarmDays} ${copy.petWarmDays}, ${warmDaysLeft} ${copy.petWarmLeft}.`
                       : copy.petSubtitle}
                 </p>
+                {session && !isPetHatched && (
+                  <div className="egg-color-picker" aria-label="Choose egg color">
+                    {eggColors.map((eggColor) => (
+                      <button
+                        className={studyPet.eggColor === eggColor ? `egg-color-swatch ${eggColor} active` : `egg-color-swatch ${eggColor}`}
+                        key={eggColor}
+                        type="button"
+                        onClick={() => chooseEggColor(eggColor)}
+                        aria-label={eggColorLabels[eggColor]}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </section>
