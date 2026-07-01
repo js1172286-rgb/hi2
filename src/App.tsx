@@ -61,10 +61,28 @@ type TutorMessage = {
 };
 
 type AuthMode = 'signIn' | 'signUp';
+type PetType = 'cat' | 'dragon' | 'fox' | 'owl';
+
+type StudyPet = {
+  streak: number;
+  lastStudyDate: string;
+  petType: PetType | null;
+};
 
 const savedLessonsKey = 'study-helper-lessons';
 const languageKey = 'study-helper-language';
+const studyPetKey = 'study-helper-pet';
 const maxSavedLessons = 6;
+const eggWarmDays = 3;
+
+const petTypes: PetType[] = ['cat', 'dragon', 'fox', 'owl'];
+
+const petFaces: Record<PetType, string> = {
+  cat: '=^.^=',
+  dragon: '^.=.^',
+  fox: '^w^',
+  owl: 'o,o',
+};
 
 const modes: { id: StudyMode; labelKey: 'summaryMode' | 'flashcards' | 'quizMe' }[] = [
   { id: 'summary', labelKey: 'summaryMode' },
@@ -237,6 +255,19 @@ const fullTranslations = {
     savedLessonsUsed: 'lesson slots used',
     searchPlaceholder: 'Search by subject, title, or text...',
     shareNotes: 'Share notes by subject so other students can find them.',
+    petCat: 'Study Cat',
+    petDragon: 'Study Dragon',
+    petEgg: 'Warm Egg',
+    petFox: 'Study Fox',
+    petHatched: 'Your egg hatched into',
+    petOwl: 'Study Owl',
+    petReady: 'Keep your streak alive to keep your pet happy.',
+    petSubtitle: 'Study once each day to warm the egg.',
+    petTitle: 'Streak pet',
+    petWarmDays: 'warm days',
+    petWarmLeft: 'more warm days to hatch',
+    petWarmToday: 'Study today to warm your egg.',
+    streak: 'Streak',
     signedInAs: 'Signed in as',
     signedInUpload: 'Signed in. You can upload materials now.',
     signedOut: 'Signed out.',
@@ -309,6 +340,19 @@ const fullTranslations = {
     savedLessonsUsed: 'ячеек уроков использовано',
     searchPlaceholder: 'Искать по предмету, названию или тексту...',
     shareNotes: 'Делитесь конспектами по предметам, чтобы другие ученики могли их найти.',
+    petCat: 'Учебный кот',
+    petDragon: 'Учебный дракон',
+    petEgg: 'Теплое яйцо',
+    petFox: 'Учебная лиса',
+    petHatched: 'Ваше яйцо вылупилось в',
+    petOwl: 'Учебная сова',
+    petReady: 'Продолжайте серию, чтобы питомец был счастлив.',
+    petSubtitle: 'Учитесь один раз в день, чтобы согревать яйцо.',
+    petTitle: 'Питомец серии',
+    petWarmDays: 'теплых дней',
+    petWarmLeft: 'теплых дней до вылупления',
+    petWarmToday: 'Учитесь сегодня, чтобы согреть яйцо.',
+    streak: 'Серия',
     signedInAs: 'Вы вошли как',
     signedInUpload: 'Вы вошли. Теперь можно загружать материалы.',
     signedOut: 'Вы вышли.',
@@ -381,6 +425,19 @@ const fullTranslations = {
     savedLessonsUsed: 'сабақ орны қолданылды',
     searchPlaceholder: 'Пән, атау немесе мәтін бойынша іздеу...',
     shareNotes: 'Басқа оқушылар табуы үшін конспекттерді пән бойынша бөлісіңіз.',
+    petCat: 'Оқу мысығы',
+    petDragon: 'Оқу айдаһары',
+    petEgg: 'Жылы жұмыртқа',
+    petFox: 'Оқу түлкісі',
+    petHatched: 'Жұмыртқаңыз мынаған айналды',
+    petOwl: 'Оқу үкісі',
+    petReady: 'Үй жануарыңыз қуанышты болу үшін серияны жалғастырыңыз.',
+    petSubtitle: 'Жұмыртқаны жылыту үшін күн сайын бір рет оқыңыз.',
+    petTitle: 'Серия үй жануары',
+    petWarmDays: 'жылы күн',
+    petWarmLeft: 'жылы күннен кейін шығады',
+    petWarmToday: 'Жұмыртқаны жылыту үшін бүгін оқыңыз.',
+    streak: 'Серия',
     signedInAs: 'Кірген аккаунт',
     signedInUpload: 'Кірдіңіз. Енді материал жүктей аласыз.',
     signedOut: 'Шықтыңыз.',
@@ -415,6 +472,43 @@ function getButtonLabel(mode: StudyMode, isLoading: boolean, copy: typeof fullTr
 function readLanguage(): Language {
   const savedLanguage = window.localStorage.getItem(languageKey);
   return savedLanguage === 'ru' || savedLanguage === 'kk' ? savedLanguage : 'en';
+}
+
+function getTodayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getYesterdayKey() {
+  const date = new Date();
+  date.setDate(date.getDate() - 1);
+  return date.toISOString().slice(0, 10);
+}
+
+function readStudyPet(): StudyPet {
+  try {
+    const rawPet = window.localStorage.getItem(studyPetKey);
+    if (!rawPet) return { streak: 0, lastStudyDate: '', petType: null };
+    const parsed = JSON.parse(rawPet) as StudyPet;
+    return {
+      streak: Number.isFinite(parsed.streak) ? parsed.streak : 0,
+      lastStudyDate: parsed.lastStudyDate || '',
+      petType: petTypes.includes(parsed.petType as PetType) ? parsed.petType : null,
+    };
+  } catch {
+    return { streak: 0, lastStudyDate: '', petType: null };
+  }
+}
+
+function getPetName(petType: PetType | null, copy: typeof fullTranslations.en) {
+  if (petType === 'cat') return copy.petCat;
+  if (petType === 'dragon') return copy.petDragon;
+  if (petType === 'fox') return copy.petFox;
+  if (petType === 'owl') return copy.petOwl;
+  return copy.petEgg;
+}
+
+function getPetFace(petType: PetType | null) {
+  return petType ? petFaces[petType] : '()';
 }
 
 function parseAiJson<T>(text: string): T | null {
@@ -466,6 +560,7 @@ export default function App() {
   const [material, setMaterial] = useState('');
   const [savedLessons, setSavedLessons] = useState<SavedLesson[]>([]);
   const [summary, setSummary] = useState('');
+  const [studyPet, setStudyPet] = useState<StudyPet>({ streak: 0, lastStudyDate: '', petType: null });
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [currentFlashcardIndex, setCurrentFlashcardIndex] = useState(0);
   const [isFlashcardFlipped, setIsFlashcardFlipped] = useState(false);
@@ -517,6 +612,10 @@ export default function App() {
   });
   const copy = fullTranslations[language];
   const currentAccountName = session?.user.user_metadata.display_name || session?.user.email || '';
+  const isPetHatched = Boolean(studyPet.petType);
+  const petName = getPetName(studyPet.petType, copy);
+  const warmDaysShown = Math.min(studyPet.streak, eggWarmDays);
+  const warmDaysLeft = Math.max(0, eggWarmDays - studyPet.streak);
   const passwordErrors = [
     accountPassword.length < 8 ? copy.passwordRule8 : '',
     !/\d/.test(accountPassword) ? copy.passwordRuleNumber : '',
@@ -526,6 +625,7 @@ export default function App() {
 
   useEffect(() => {
     setSavedLessons(readSavedLessons());
+    setStudyPet(readStudyPet());
     setLanguage(readLanguage());
   }, []);
 
@@ -593,6 +693,32 @@ export default function App() {
   function updateLanguage(nextLanguage: Language) {
     setLanguage(nextLanguage);
     window.localStorage.setItem(languageKey, nextLanguage);
+  }
+
+  function markStudyActivity() {
+    const today = getTodayKey();
+    const yesterday = getYesterdayKey();
+
+    setStudyPet((currentPet) => {
+      if (currentPet.lastStudyDate === today) return currentPet;
+
+      const continuedStreak = currentPet.lastStudyDate === yesterday;
+      const nextStreak = continuedStreak ? currentPet.streak + 1 : 1;
+      const nextPetType =
+        continuedStreak && currentPet.petType
+          ? currentPet.petType
+          : nextStreak > eggWarmDays
+            ? petTypes[Math.floor(Math.random() * petTypes.length)]
+            : null;
+      const nextPet = {
+        streak: nextStreak,
+        lastStudyDate: today,
+        petType: nextPetType,
+      };
+
+      window.localStorage.setItem(studyPetKey, JSON.stringify(nextPet));
+      return nextPet;
+    });
   }
 
   function clearResults() {
@@ -890,6 +1016,7 @@ ${question}`,
         text: data?.text?.trim() || 'I did not get an answer back. Try asking again.',
       },
     ]);
+    markStudyActivity();
   }
 
   function chooseMode(nextMode: StudyMode) {
@@ -966,6 +1093,7 @@ ${JSON.stringify(quizToGrade, null, 2)}`,
     setQuizGrades(nextGrades);
     setIsQuizSubmitted(true);
     setShowQuizAnswers(true);
+    markStudyActivity();
   }
 
   function saveLesson() {
@@ -999,6 +1127,7 @@ ${JSON.stringify(quizToGrade, null, 2)}`,
     updateSavedLessons([nextLesson, ...savedLessons].slice(0, maxSavedLessons));
     setError('');
     setNotice(copy.lessonSaved);
+    markStudyActivity();
   }
 
   function loadLesson(lesson: SavedLesson) {
@@ -1152,6 +1281,7 @@ ${trimmedMaterial}`;
       setCurrentFlashcardIndex(0);
       setIsFlashcardFlipped(false);
       setPage('flashcards');
+      markStudyActivity();
       return;
     }
 
@@ -1169,10 +1299,12 @@ ${trimmedMaterial}`;
       setIsQuizSubmitted(false);
       setQuizError('');
       setPage('quiz');
+      markStudyActivity();
       return;
     }
 
     setSummary(text || copy.noSummaryReturned);
+    markStudyActivity();
   }
 
   return (
@@ -1443,6 +1575,25 @@ ${trimmedMaterial}`;
                   {copy.signOut}
                 </button>
               )}
+            </div>
+            <div className="pet-panel">
+              <div className={isPetHatched ? 'pet-visual hatched' : 'pet-visual egg'} aria-hidden="true">
+                {isPetHatched ? getPetFace(studyPet.petType) : ''}
+              </div>
+              <div className="pet-copy">
+                <p className="card-label">{copy.petTitle}</p>
+                <h2>{petName}</h2>
+                <p>
+                  {copy.streak}: {studyPet.streak} {copy.petWarmDays}
+                </p>
+                <p>
+                  {isPetHatched
+                    ? `${copy.petHatched} ${petName}. ${copy.petReady}`
+                    : warmDaysLeft > 0
+                      ? `${copy.petWarmToday} ${warmDaysShown}/${eggWarmDays} ${copy.petWarmDays}, ${warmDaysLeft} ${copy.petWarmLeft}.`
+                      : copy.petSubtitle}
+                </p>
+              </div>
             </div>
           </section>
         ) : page === 'lessons' ? (

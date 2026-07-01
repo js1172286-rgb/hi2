@@ -576,6 +576,53 @@ select:focus {
   line-height: 1.5;
 }
 
+.pet-panel {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.pet-visual {
+  width: 92px;
+  height: 104px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(47, 111, 115, 0.34);
+  color: var(--accent);
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.pet-visual.egg {
+  border-radius: 50% 50% 46% 46%;
+  background:
+    radial-gradient(circle at 36% 30%, rgba(255, 255, 255, 0.95) 0 14%, transparent 15%),
+    linear-gradient(160deg, rgba(231, 242, 242, 0.95), rgba(47, 111, 115, 0.22));
+}
+
+.pet-visual.hatched {
+  height: 92px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+}
+
+.pet-copy h2 {
+  margin-bottom: 6px;
+  font-size: 22px;
+}
+
+.pet-copy p {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .account-form {
   display: grid;
   gap: 12px;
@@ -1041,6 +1088,7 @@ select:focus {
   .action-row,
   .browse-heading,
   .account-panel,
+  .pet-panel,
   .lessons-page-grid,
   .other-materials-page,
   .tutor-page,
