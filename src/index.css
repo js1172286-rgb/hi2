@@ -291,9 +291,9 @@ input:focus {
   height: 48px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(47, 111, 115, 0.55);
+  border: 1px solid rgba(47, 111, 115, 0.28);
   border-radius: 8px;
-  background: rgba(47, 111, 115, 0.5);
+  background: rgba(231, 242, 242, 0.88);
   box-shadow: 0 12px 30px rgba(20, 33, 38, 0.14);
 }
 
@@ -314,7 +314,7 @@ input:focus {
 
 .home-button:hover,
 .bottom-icon-button:hover {
-  background: rgba(47, 111, 115, 0.72);
+  background: rgba(218, 237, 237, 0.96);
   transform: translateX(-50%) translateY(-1px);
 }
 
@@ -323,7 +323,7 @@ input:focus {
   width: 30px;
   height: 30px;
   fill: none;
-  stroke: #fff;
+  stroke: var(--accent);
   stroke-width: 6;
   stroke-linecap: round;
   stroke-linejoin: round;
