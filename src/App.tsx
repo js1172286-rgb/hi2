@@ -69,6 +69,7 @@ type StudyPet = {
   lastStudyDate: string;
   petType: PetType | null;
   eggColor: EggColor;
+  hasChosenEggColor: boolean;
 };
 
 const savedLessonsKey = 'study-helper-lessons';
@@ -500,16 +501,17 @@ function getYesterdayKey() {
 function readStudyPet(): StudyPet {
   try {
     const rawPet = window.localStorage.getItem(studyPetKey);
-    if (!rawPet) return { streak: 0, lastStudyDate: '', petType: null, eggColor: 'green' };
+    if (!rawPet) return { streak: 0, lastStudyDate: '', petType: null, eggColor: 'green', hasChosenEggColor: false };
     const parsed = JSON.parse(rawPet) as StudyPet;
     return {
       streak: Number.isFinite(parsed.streak) ? parsed.streak : 0,
       lastStudyDate: parsed.lastStudyDate || '',
       petType: petTypes.includes(parsed.petType as PetType) ? parsed.petType : null,
       eggColor: eggColors.includes(parsed.eggColor as EggColor) ? parsed.eggColor : 'green',
+      hasChosenEggColor: Boolean(parsed.hasChosenEggColor),
     };
   } catch {
-    return { streak: 0, lastStudyDate: '', petType: null, eggColor: 'green' };
+    return { streak: 0, lastStudyDate: '', petType: null, eggColor: 'green', hasChosenEggColor: false };
   }
 }
 
@@ -580,7 +582,13 @@ export default function App() {
   const [material, setMaterial] = useState('');
   const [savedLessons, setSavedLessons] = useState<SavedLesson[]>([]);
   const [summary, setSummary] = useState('');
-  const [studyPet, setStudyPet] = useState<StudyPet>({ streak: 0, lastStudyDate: '', petType: null, eggColor: 'green' });
+  const [studyPet, setStudyPet] = useState<StudyPet>({
+    streak: 0,
+    lastStudyDate: '',
+    petType: null,
+    eggColor: 'green',
+    hasChosenEggColor: false,
+  });
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [currentFlashcardIndex, setCurrentFlashcardIndex] = useState(0);
   const [isFlashcardFlipped, setIsFlashcardFlipped] = useState(false);
@@ -737,6 +745,7 @@ export default function App() {
         lastStudyDate: today,
         petType: nextPetType,
         eggColor: currentPet.eggColor,
+        hasChosenEggColor: currentPet.hasChosenEggColor,
       };
 
       window.localStorage.setItem(studyPetKey, JSON.stringify(nextPet));
@@ -745,10 +754,10 @@ export default function App() {
   }
 
   function chooseEggColor(eggColor: EggColor) {
-    if (!session || studyPet.petType) return;
+    if (!session || studyPet.petType || studyPet.hasChosenEggColor) return;
 
     setStudyPet((currentPet) => {
-      const nextPet = { ...currentPet, eggColor };
+      const nextPet = { ...currentPet, eggColor, hasChosenEggColor: true };
       window.localStorage.setItem(studyPetKey, JSON.stringify(nextPet));
       return nextPet;
     });
@@ -1663,7 +1672,7 @@ ${trimmedMaterial}`;
                       ? `${copy.petWarmToday} ${warmDaysShown}/${eggWarmDays} ${copy.petWarmDays}, ${warmDaysLeft} ${copy.petWarmLeft}.`
                       : copy.petSubtitle}
                 </p>
-                {session && !isPetHatched && (
+                {session && !isPetHatched && !studyPet.hasChosenEggColor && (
                   <div className="egg-color-picker" aria-label="Choose egg color">
                     {eggColors.map((eggColor) => (
                       <button
