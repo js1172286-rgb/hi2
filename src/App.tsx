@@ -81,12 +81,20 @@ const eggWarmDays = 3;
 
 const petTypes: PetType[] = ['cat', 'dragon', 'fox', 'owl'];
 const eggColors: EggColor[] = ['green', 'gold', 'blue', 'red'];
-const goldPetImages = [
-  '/pets/gold/bear.png',
-  '/pets/gold/bunny.png',
-  '/pets/gold/cat.png',
-  '/pets/gold/dog.png',
-];
+const eggPetImages: Partial<Record<EggColor, string[]>> = {
+  green: [
+    '/pets/green/pet-1.png',
+    '/pets/green/pet-2.png',
+    '/pets/green/pet-3.png',
+    '/pets/green/pet-4.png',
+  ],
+  gold: [
+    '/pets/gold/bear.png',
+    '/pets/gold/bunny.png',
+    '/pets/gold/cat.png',
+    '/pets/gold/dog.png',
+  ],
+};
 
 const petFaces: Record<PetType, string> = {
   cat: '=^.^=',
@@ -771,11 +779,12 @@ export default function App() {
       const nextStreak = continuedStreak ? currentPet.streak + 1 : 1;
       const shouldKeepCurrentPet = continuedStreak && (currentPet.petType || currentPet.petImage);
       const shouldHatch = nextStreak > eggWarmDays && !shouldKeepCurrentPet;
+      const petImagesForEgg = eggPetImages[currentPet.eggColor] ?? [];
       const nextPetImage =
         shouldKeepCurrentPet && currentPet.petImage
           ? currentPet.petImage
-          : shouldHatch && currentPet.eggColor === 'gold'
-            ? goldPetImages[Math.floor(Math.random() * goldPetImages.length)]
+          : shouldHatch && petImagesForEgg.length > 0
+            ? petImagesForEgg[Math.floor(Math.random() * petImagesForEgg.length)]
             : null;
       const nextPetType =
         shouldKeepCurrentPet && currentPet.petType
