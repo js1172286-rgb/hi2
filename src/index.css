@@ -629,6 +629,34 @@ select:focus {
   margin-top: 16px;
 }
 
+.google-auth-button {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.google-auth-button span {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 900;
+}
+
+.google-auth-button:hover {
+  border-color: rgba(47, 111, 115, 0.45);
+  background: var(--accent-soft);
+}
+
 .language-field {
   margin-top: 16px;
 }

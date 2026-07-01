@@ -511,6 +511,12 @@ function getPetFace(petType: PetType | null) {
   return petType ? petFaces[petType] : '()';
 }
 
+function getGoogleSignInLabel(language: Language) {
+  if (language === 'ru') return 'Войти через Google';
+  if (language === 'kk') return 'Google арқылы кіру';
+  return 'Sign in with Google';
+}
+
 function parseAiJson<T>(text: string): T | null {
   const start = text.indexOf('{');
   const end = text.lastIndexOf('}');
@@ -913,6 +919,27 @@ export default function App() {
     setSession(data.session);
     setAccountNotice(copy.signedInUpload);
     setAccountPassword('');
+  }
+
+  async function signInWithGoogle() {
+    if (!isSupabaseConfigured) {
+      setAccountError('Connect Supabase first so accounts can work.');
+      return;
+    }
+
+    setAccountError('');
+    setAccountNotice('');
+
+    const { error: googleError } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+
+    if (googleError) {
+      setAccountError(googleError.message);
+    }
   }
 
   async function signOut() {
@@ -1517,6 +1544,10 @@ ${trimmedMaterial}`;
                         {copy.createAccount}
                       </button>
                     </div>
+                    <button className="google-auth-button" type="button" onClick={signInWithGoogle}>
+                      <span aria-hidden="true">G</span>
+                      {getGoogleSignInLabel(language)}
+                    </button>
                     {authMode === 'signUp' && (
                       <label className="field">
                         <span>{copy.name}</span>
