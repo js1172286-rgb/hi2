@@ -402,6 +402,16 @@ export default function App() {
     setNotice('');
   }
 
+  function requireSignedIn(message: string) {
+    if (session) return true;
+    setAccountNotice(message);
+    setError('');
+    setNotice('');
+    setTutorError('');
+    setPage('account');
+    return false;
+  }
+
   async function loadSharedMaterials() {
     setSharedError('');
 
@@ -591,6 +601,10 @@ export default function App() {
   async function askTutor() {
     const question = tutorQuestion.trim();
 
+    if (!requireSignedIn('Sign in or create an account first to use the AI tutor.')) {
+      return;
+    }
+
     if (!question) {
       setTutorError('Type a question for the tutor first.');
       return;
@@ -745,6 +759,10 @@ ${JSON.stringify(quizToGrade, null, 2)}`,
     const trimmedName = lessonName.trim();
     const trimmedMaterial = material.trim();
 
+    if (!requireSignedIn('Sign in or create an account first to save lessons.')) {
+      return;
+    }
+
     if (!trimmedName) {
       setError('Name your lesson before saving.');
       setNotice('');
@@ -865,6 +883,10 @@ ${trimmedMaterial}`;
 
   async function generateStudyHelp() {
     const trimmedMaterial = material.trim();
+
+    if (mode === 'quiz' && !requireSignedIn('Sign in or create an account first to make quizzes.')) {
+      return;
+    }
 
     if (!trimmedMaterial) {
       setError('Paste your study material first.');
@@ -1426,7 +1448,15 @@ ${trimmedMaterial}`;
                         {copy[item.labelKey]}
                       </button>
                     ))}
-                    <button className="mode-card" type="button" onClick={() => setPage('tutor')}>
+                    <button
+                      className="mode-card"
+                      type="button"
+                      onClick={() => {
+                        if (requireSignedIn('Sign in or create an account first to use the AI tutor.')) {
+                          setPage('tutor');
+                        }
+                      }}
+                    >
                       {copy.aiTutor}
                     </button>
                   </div>
