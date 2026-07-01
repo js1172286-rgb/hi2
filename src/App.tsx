@@ -68,6 +68,7 @@ type StudyPet = {
   streak: number;
   lastStudyDate: string;
   petType: PetType | null;
+  petImage: string | null;
   eggColor: EggColor;
   hasChosenEggColor: boolean;
 };
@@ -80,6 +81,12 @@ const eggWarmDays = 3;
 
 const petTypes: PetType[] = ['cat', 'dragon', 'fox', 'owl'];
 const eggColors: EggColor[] = ['green', 'gold', 'blue', 'red'];
+const goldPetImages = [
+  '/pets/gold/bear.png',
+  '/pets/gold/bunny.png',
+  '/pets/gold/cat.png',
+  '/pets/gold/dog.png',
+];
 
 const petFaces: Record<PetType, string> = {
   cat: '=^.^=',
@@ -270,6 +277,7 @@ const fullTranslations = {
     petCat: 'Study Cat',
     petDragon: 'Study Dragon',
     petEgg: 'Warm Egg',
+    petFriend: 'Study Pet',
     petFox: 'Study Fox',
     petHatched: 'Your egg hatched into',
     petOwl: 'Study Owl',
@@ -358,6 +366,7 @@ const fullTranslations = {
     petCat: 'Учебный кот',
     petDragon: 'Учебный дракон',
     petEgg: 'Теплое яйцо',
+    petFriend: 'Учебный питомец',
     petFox: 'Учебная лиса',
     petHatched: 'Ваше яйцо вылупилось в',
     petOwl: 'Учебная сова',
@@ -446,6 +455,7 @@ const fullTranslations = {
     petCat: 'Оқу мысығы',
     petDragon: 'Оқу айдаһары',
     petEgg: 'Жылы жұмыртқа',
+    petFriend: 'Оқу жануары',
     petFox: 'Оқу түлкісі',
     petHatched: 'Жұмыртқаңыз мынаған айналды',
     petOwl: 'Оқу үкісі',
@@ -507,21 +517,23 @@ function getYesterdayKey() {
 function readStudyPet(): StudyPet {
   try {
     const rawPet = window.localStorage.getItem(studyPetKey);
-    if (!rawPet) return { streak: 0, lastStudyDate: '', petType: null, eggColor: 'green', hasChosenEggColor: false };
+    if (!rawPet) return { streak: 0, lastStudyDate: '', petType: null, petImage: null, eggColor: 'green', hasChosenEggColor: false };
     const parsed = JSON.parse(rawPet) as StudyPet;
     return {
       streak: Number.isFinite(parsed.streak) ? parsed.streak : 0,
       lastStudyDate: parsed.lastStudyDate || '',
       petType: petTypes.includes(parsed.petType as PetType) ? parsed.petType : null,
+      petImage: typeof parsed.petImage === 'string' && parsed.petImage ? parsed.petImage : null,
       eggColor: eggColors.includes(parsed.eggColor as EggColor) ? parsed.eggColor : 'green',
       hasChosenEggColor: Boolean(parsed.hasChosenEggColor),
     };
   } catch {
-    return { streak: 0, lastStudyDate: '', petType: null, eggColor: 'green', hasChosenEggColor: false };
+    return { streak: 0, lastStudyDate: '', petType: null, petImage: null, eggColor: 'green', hasChosenEggColor: false };
   }
 }
 
-function getPetName(petType: PetType | null, copy: typeof fullTranslations.en) {
+function getPetName(petType: PetType | null, petImage: string | null, copy: typeof fullTranslations.en) {
+  if (petImage) return copy.petFriend;
   if (petType === 'cat') return copy.petCat;
   if (petType === 'dragon') return copy.petDragon;
   if (petType === 'fox') return copy.petFox;
@@ -592,6 +604,7 @@ export default function App() {
     streak: 0,
     lastStudyDate: '',
     petType: null,
+    petImage: null,
     eggColor: 'green',
     hasChosenEggColor: false,
   });
@@ -647,8 +660,8 @@ export default function App() {
   });
   const copy = fullTranslations[language];
   const currentAccountName = session?.user.user_metadata.display_name || session?.user.email || '';
-  const isPetHatched = Boolean(studyPet.petType);
-  const petName = getPetName(studyPet.petType, copy);
+  const isPetHatched = Boolean(studyPet.petType || studyPet.petImage);
+  const petName = getPetName(studyPet.petType, studyPet.petImage, copy);
   const displayedEggColor = studyPet.hasChosenEggColor ? studyPet.eggColor : pendingEggColor;
   const warmDaysShown = Math.min(studyPet.streak, eggWarmDays);
   const warmDaysLeft = Math.max(0, eggWarmDays - studyPet.streak);
@@ -744,16 +757,25 @@ export default function App() {
 
       const continuedStreak = currentPet.lastStudyDate === yesterday;
       const nextStreak = continuedStreak ? currentPet.streak + 1 : 1;
+      const shouldKeepCurrentPet = continuedStreak && (currentPet.petType || currentPet.petImage);
+      const shouldHatch = nextStreak > eggWarmDays && !shouldKeepCurrentPet;
+      const nextPetImage =
+        shouldKeepCurrentPet && currentPet.petImage
+          ? currentPet.petImage
+          : shouldHatch && currentPet.eggColor === 'gold'
+            ? goldPetImages[Math.floor(Math.random() * goldPetImages.length)]
+            : null;
       const nextPetType =
-        continuedStreak && currentPet.petType
+        shouldKeepCurrentPet && currentPet.petType
           ? currentPet.petType
-          : nextStreak > eggWarmDays
+          : shouldHatch && !nextPetImage
             ? petTypes[Math.floor(Math.random() * petTypes.length)]
             : null;
       const nextPet = {
         streak: nextStreak,
         lastStudyDate: today,
         petType: nextPetType,
+        petImage: nextPetImage,
         eggColor: currentPet.eggColor,
         hasChosenEggColor: currentPet.hasChosenEggColor,
       };
@@ -764,12 +786,12 @@ export default function App() {
   }
 
   function chooseEggColor(eggColor: EggColor) {
-    if (!session || studyPet.petType || studyPet.hasChosenEggColor) return;
+    if (!session || isPetHatched || studyPet.hasChosenEggColor) return;
     setPendingEggColor(eggColor);
   }
 
   function confirmEggColor() {
-    if (!session || studyPet.petType || studyPet.hasChosenEggColor) return;
+    if (!session || isPetHatched || studyPet.hasChosenEggColor) return;
 
     setStudyPet((currentPet) => {
       const nextPet = {
@@ -1666,7 +1688,9 @@ ${trimmedMaterial}`;
             </div>
             <div className="pet-panel">
               <div className={isPetHatched ? 'pet-visual hatched' : `pet-visual egg egg-${displayedEggColor}`} aria-hidden="true">
-                {isPetHatched ? (
+                {studyPet.petImage ? (
+                  <img className="pet-image" src={studyPet.petImage} alt="" />
+                ) : isPetHatched ? (
                   getPetFace(studyPet.petType)
                 ) : (
                   <span className="egg-core">
