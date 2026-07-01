@@ -31,6 +31,7 @@ body {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -202,7 +203,8 @@ h1 {
 }
 
 textarea,
-input {
+input,
+select {
   width: 100%;
   padding: 15px;
   border: 1px solid var(--line);
@@ -220,7 +222,8 @@ textarea {
 }
 
 textarea:focus,
-input:focus {
+input:focus,
+select:focus {
   outline: 3px solid rgba(47, 111, 115, 0.18);
   border-color: var(--accent);
 }
@@ -576,6 +579,10 @@ input:focus {
 .account-form {
   display: grid;
   gap: 12px;
+  margin-top: 16px;
+}
+
+.language-field {
   margin-top: 16px;
 }
 

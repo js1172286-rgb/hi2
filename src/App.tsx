@@ -9,6 +9,7 @@ type AiResponse = {
 
 type StudyMode = 'summary' | 'flashcards' | 'quiz';
 type Page = 'study' | 'lessons' | 'otherMaterials' | 'tutor' | 'account' | 'flashcards' | 'quiz';
+type Language = 'en' | 'ru' | 'kk';
 
 type Flashcard = {
   front: string;
@@ -62,19 +63,139 @@ type TutorMessage = {
 type AuthMode = 'signIn' | 'signUp';
 
 const savedLessonsKey = 'study-helper-lessons';
+const languageKey = 'study-helper-language';
 const maxSavedLessons = 6;
 
-const modes: { id: StudyMode; label: string }[] = [
-  { id: 'summary', label: 'Summary' },
-  { id: 'flashcards', label: 'Flashcards' },
-  { id: 'quiz', label: 'Quiz me' },
+const modes: { id: StudyMode; labelKey: 'summaryMode' | 'flashcards' | 'quizMe' }[] = [
+  { id: 'summary', labelKey: 'summaryMode' },
+  { id: 'flashcards', labelKey: 'flashcards' },
+  { id: 'quiz', labelKey: 'quizMe' },
 ];
 
-function getButtonLabel(mode: StudyMode, isLoading: boolean) {
-  if (isLoading) return 'Thinking...';
-  if (mode === 'flashcards') return 'Make flashcards';
-  if (mode === 'quiz') return 'Make quiz';
-  return 'Summarize';
+const languageLabels: Record<Language, string> = {
+  en: 'English',
+  ru: 'Русский',
+  kk: 'Қазақша',
+};
+
+const translations = {
+  en: {
+    account: 'Account',
+    aiTutor: 'AI Tutor',
+    askTutor: 'Ask tutor',
+    backToStudy: 'Back to study',
+    checking: 'Checking...',
+    createAccount: 'Create account',
+    email: 'Email',
+    flashcards: 'Flashcards',
+    hide: 'Hide',
+    language: 'Language',
+    lessonName: 'Lesson name',
+    lessons: 'Lessons',
+    makeFlashcards: 'Make flashcards',
+    makeQuiz: 'Make quiz',
+    name: 'Name',
+    options: 'Options',
+    otherMaterials: 'Other Materials',
+    password: 'Password',
+    quiz: 'Quiz',
+    quizMe: 'Quiz me',
+    saveLesson: 'Save lesson',
+    show: 'Show',
+    signIn: 'Sign in',
+    signOut: 'Sign out',
+    studyHelper: 'Study helper',
+    studyHelperTitle: 'Study Helper',
+    studyMaterial: 'Study material',
+    studyOptions: 'Study options',
+    submitAnswers: 'Submit answers',
+    summarize: 'Summarize',
+    summaryMode: 'Summary',
+    thinking: 'Thinking...',
+    yourAccount: 'Your account',
+  },
+  ru: {
+    account: 'Аккаунт',
+    aiTutor: 'ИИ-репетитор',
+    askTutor: 'Спросить репетитора',
+    backToStudy: 'Назад к учебе',
+    checking: 'Проверяю...',
+    createAccount: 'Создать аккаунт',
+    email: 'Эл. почта',
+    flashcards: 'Карточки',
+    hide: 'Скрыть',
+    language: 'Язык',
+    lessonName: 'Название урока',
+    lessons: 'Уроки',
+    makeFlashcards: 'Сделать карточки',
+    makeQuiz: 'Сделать тест',
+    name: 'Имя',
+    options: 'Опции',
+    otherMaterials: 'Другие материалы',
+    password: 'Пароль',
+    quiz: 'Тест',
+    quizMe: 'Проверь меня',
+    saveLesson: 'Сохранить урок',
+    show: 'Показать',
+    signIn: 'Войти',
+    signOut: 'Выйти',
+    studyHelper: 'Помощник учебы',
+    studyHelperTitle: 'Помощник учебы',
+    studyMaterial: 'Учебный материал',
+    studyOptions: 'Опции учебы',
+    submitAnswers: 'Отправить ответы',
+    summarize: 'Сделать кратко',
+    summaryMode: 'Кратко',
+    thinking: 'Думаю...',
+    yourAccount: 'Ваш аккаунт',
+  },
+  kk: {
+    account: 'Аккаунт',
+    aiTutor: 'AI мұғалім',
+    askTutor: 'Мұғалімнен сұрау',
+    backToStudy: 'Оқуға қайту',
+    checking: 'Тексерілуде...',
+    createAccount: 'Аккаунт ашу',
+    email: 'Эл. пошта',
+    flashcards: 'Карточкалар',
+    hide: 'Жасыру',
+    language: 'Тіл',
+    lessonName: 'Сабақ атауы',
+    lessons: 'Сабақтар',
+    makeFlashcards: 'Карточка жасау',
+    makeQuiz: 'Тест жасау',
+    name: 'Аты',
+    options: 'Опциялар',
+    otherMaterials: 'Басқа материалдар',
+    password: 'Құпия сөз',
+    quiz: 'Тест',
+    quizMe: 'Мені тексер',
+    saveLesson: 'Сабақты сақтау',
+    show: 'Көрсету',
+    signIn: 'Кіру',
+    signOut: 'Шығу',
+    studyHelper: 'Оқу көмекшісі',
+    studyHelperTitle: 'Оқу көмекшісі',
+    studyMaterial: 'Оқу материалы',
+    studyOptions: 'Оқу опциялары',
+    submitAnswers: 'Жауаптарды жіберу',
+    summarize: 'Қысқаша жасау',
+    summaryMode: 'Қысқаша',
+    thinking: 'Ойланып жатыр...',
+    yourAccount: 'Сіздің аккаунтыңыз',
+  },
+} satisfies Record<Language, Record<string, string>>;
+
+function getButtonLabel(mode: StudyMode, isLoading: boolean, copy: typeof translations.en) {
+  if (isLoading) return copy.thinking;
+  if (mode === 'flashcards') return copy.makeFlashcards;
+  if (mode === 'quiz') return copy.makeQuiz;
+  return copy.summarize;
+}
+
+function readLanguage(): Language {
+  const savedLanguage = window.localStorage.getItem(languageKey);
+  return savedLanguage === 'ru' || savedLanguage === 'kk' ? savedLanguage : 'en';
 }
 
 function parseAiJson<T>(text: string): T | null {
@@ -130,6 +251,7 @@ function readSavedLessons() {
 
 export default function App() {
   const [page, setPage] = useState<Page>('study');
+  const [language, setLanguage] = useState<Language>('en');
   const [mode, setMode] = useState<StudyMode>('summary');
   const [lessonName, setLessonName] = useState('');
   const [material, setMaterial] = useState('');
@@ -184,12 +306,14 @@ export default function App() {
     if (!query) return true;
     return `${item.subject} ${item.title} ${item.material}`.toLowerCase().includes(query);
   });
+  const copy = translations[language];
   const currentAccountName = session?.user.user_metadata.display_name || session?.user.email || '';
   const passwordErrors = getPasswordErrors(accountPassword);
   const currentFlashcard = flashcards[currentFlashcardIndex];
 
   useEffect(() => {
     setSavedLessons(readSavedLessons());
+    setLanguage(readLanguage());
   }, []);
 
   useEffect(() => {
@@ -251,6 +375,11 @@ export default function App() {
   function updateSavedLessons(nextLessons: SavedLesson[]) {
     setSavedLessons(nextLessons);
     window.localStorage.setItem(savedLessonsKey, JSON.stringify(nextLessons));
+  }
+
+  function updateLanguage(nextLanguage: Language) {
+    setLanguage(nextLanguage);
+    window.localStorage.setItem(languageKey, nextLanguage);
   }
 
   function clearResults() {
@@ -816,27 +945,27 @@ ${trimmedMaterial}`;
       <section className="study-tool">
         <div className="intro">
           <div>
-            <p className="eyebrow">Study helper</p>
+            <p className="eyebrow">{copy.studyHelper}</p>
             <h1>
               {page === 'lessons'
-                ? 'Lessons'
+                ? copy.lessons
                 : page === 'otherMaterials'
-                  ? 'Other Materials'
+                  ? copy.otherMaterials
                   : page === 'tutor'
-                    ? 'AI Tutor'
+                    ? copy.aiTutor
                     : page === 'account'
-                      ? 'Account'
+                      ? copy.account
                       : page === 'flashcards'
-                        ? 'Flashcards'
+                        ? copy.flashcards
                         : page === 'quiz'
-                          ? 'Quiz'
-                      : 'Study Helper'}
+                          ? copy.quiz
+                      : copy.studyHelperTitle}
             </h1>
           </div>
           <div className="header-actions">
             {page === 'study' && (
               <button className="nav-button" type="button" onClick={() => setIsOptionsOpen(!isOptionsOpen)}>
-                Study options
+                {copy.studyOptions}
               </button>
             )}
             {page === 'otherMaterials' ? (
@@ -861,7 +990,7 @@ ${trimmedMaterial}`;
               )
             ) : page !== 'account' && page !== 'lessons' ? (
               <button className="nav-button" type="button" onClick={() => setPage('lessons')}>
-                Lessons
+                {copy.lessons}
               </button>
             ) : null}
           </div>
@@ -873,7 +1002,7 @@ ${trimmedMaterial}`;
               <div className="share-panel">
                 <div className="lessons-page-heading compact-heading">
                   <div>
-                    <h2>Upload material</h2>
+                    <h2>{copy.otherMaterials}</h2>
                     <p>Share notes by subject so other students can find them.</p>
                   </div>
                   <button className="small-button muted-button" type="button" onClick={() => setIsUploadingSharedMaterial(false)}>
@@ -977,8 +1106,18 @@ ${trimmedMaterial}`;
                 </svg>
               </div>
               <div>
-                <h2>Your account</h2>
+                <h2>{copy.yourAccount}</h2>
                 <p>{session ? `Signed in as ${currentAccountName}.` : 'Sign in or create an account so you can upload materials.'}</p>
+                <label className="field language-field">
+                  <span>{copy.language}</span>
+                  <select value={language} onChange={(event) => updateLanguage(event.target.value as Language)}>
+                    {Object.entries(languageLabels).map(([id, label]) => (
+                      <option key={id} value={id}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 {session ? (
                   <div className="account-form">
                     {accountNotice && <p className="notice">{accountNotice}</p>}
@@ -996,7 +1135,7 @@ ${trimmedMaterial}`;
                           setAccountNotice('');
                         }}
                       >
-                        Sign in
+                        {copy.signIn}
                       </button>
                       <button
                         className={authMode === 'signUp' ? 'auth-tab active' : 'auth-tab'}
@@ -1007,12 +1146,12 @@ ${trimmedMaterial}`;
                           setAccountNotice('');
                         }}
                       >
-                        Create account
+                        {copy.createAccount}
                       </button>
                     </div>
                     {authMode === 'signUp' && (
                       <label className="field">
-                        <span>Name</span>
+                        <span>{copy.name}</span>
                         <input
                           value={accountNameInput}
                           onChange={(event) => setAccountNameInput(event.target.value)}
@@ -1021,7 +1160,7 @@ ${trimmedMaterial}`;
                       </label>
                     )}
                     <label className="field">
-                      <span>Email</span>
+                      <span>{copy.email}</span>
                       <input
                         type="email"
                         value={accountEmail}
@@ -1030,7 +1169,7 @@ ${trimmedMaterial}`;
                       />
                     </label>
                     <label className="field">
-                      <span>Password</span>
+                      <span>{copy.password}</span>
                       <div className="password-field">
                         <input
                           type={showPassword ? 'text' : 'password'}
@@ -1042,9 +1181,9 @@ ${trimmedMaterial}`;
                           className="show-password-button"
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          aria-label={showPassword ? 'Hide password' : 'Show password'}
+                          aria-label={showPassword ? copy.hide : copy.show}
                         >
-                          {showPassword ? 'Hide' : 'Show'}
+                          {showPassword ? copy.hide : copy.show}
                         </button>
                       </div>
                     </label>
@@ -1056,7 +1195,7 @@ ${trimmedMaterial}`;
                       </ul>
                     )}
                     <button className="generate-button" type="button" onClick={submitAccount}>
-                      {authMode === 'signUp' ? 'Create account' : 'Sign in'}
+                      {authMode === 'signUp' ? copy.createAccount : copy.signIn}
                     </button>
                     {accountNotice && <p className="notice">{accountNotice}</p>}
                     {accountError && <p className="message">{accountError}</p>}
@@ -1065,7 +1204,7 @@ ${trimmedMaterial}`;
               </div>
               {session && (
                 <button className="sign-out-button" type="button" onClick={signOut}>
-                  Sign out
+                  {copy.signOut}
                 </button>
               )}
             </div>
@@ -1074,7 +1213,7 @@ ${trimmedMaterial}`;
           <section className="lessons-page" aria-label="All saved lessons">
             <div className="lessons-page-heading">
               <div>
-                <h2>Saved lessons</h2>
+                <h2>{copy.lessons}</h2>
                 <p>{savedLessons.length} of {maxSavedLessons} lesson slots used</p>
               </div>
             </div>
@@ -1153,7 +1292,7 @@ ${trimmedMaterial}`;
 
             <div className="tutor-input-panel">
               <label className="field">
-                <span>Ask the tutor</span>
+                <span>{copy.askTutor}</span>
                 <textarea
                   value={tutorQuestion}
                   onChange={(event) => setTutorQuestion(event.target.value)}
@@ -1161,7 +1300,7 @@ ${trimmedMaterial}`;
                 />
               </label>
               <button className="generate-button" type="button" onClick={askTutor} disabled={isTutorLoading}>
-                {isTutorLoading ? 'Asking...' : 'Ask tutor'}
+                {isTutorLoading ? 'Asking...' : copy.askTutor}
               </button>
               {tutorError && <p className="message">{tutorError}</p>}
             </div>
@@ -1170,11 +1309,11 @@ ${trimmedMaterial}`;
           <section className="flashcards-page" aria-label="Flashcards page">
             <div className="lessons-page-heading">
               <div>
-                <h2>Flashcards</h2>
+                <h2>{copy.flashcards}</h2>
                 <p>{flashcards.length} cards ready to review</p>
               </div>
               <button className="small-button" type="button" onClick={() => setPage('study')}>
-                Back to study
+                {copy.backToStudy}
               </button>
             </div>
 
@@ -1213,11 +1352,11 @@ ${trimmedMaterial}`;
           <section className="quiz-page" aria-label="Quiz page">
             <div className="lessons-page-heading">
               <div>
-                <h2>Quiz</h2>
+                <h2>{copy.quiz}</h2>
                 <p>{quiz.length} questions ready to answer</p>
               </div>
               <button className="small-button" type="button" onClick={() => setPage('study')}>
-                Back to study
+                {copy.backToStudy}
               </button>
             </div>
 
@@ -1228,7 +1367,7 @@ ${trimmedMaterial}`;
             ) : (
               <div className="quiz-page-body">
                 <div className="result-heading">
-                  <h2>Quiz</h2>
+                  <h2>{copy.quiz}</h2>
                   <p className="quiz-status">{isQuizSubmitted ? 'Submitted' : 'Not submitted yet'}</p>
                 </div>
 
@@ -1261,7 +1400,7 @@ ${trimmedMaterial}`;
                 </div>
                 {quizError && <p className="message">{quizError}</p>}
                 <button className="generate-button quiz-submit-button" type="button" onClick={submitQuiz} disabled={isQuizChecking}>
-                  {isQuizChecking ? 'Checking...' : 'Submit answers'}
+                  {isQuizChecking ? copy.checking : copy.submitAnswers}
                 </button>
               </div>
             )}
@@ -1271,7 +1410,7 @@ ${trimmedMaterial}`;
             <div className={isOptionsOpen ? 'workspace' : 'workspace options-closed'}>
               <aside className={isOptionsOpen ? 'study-options' : 'study-options collapsed'} aria-label="Study options">
                 <div className="options-heading">
-                  <h2>Options</h2>
+                  <h2>{copy.options}</h2>
                 </div>
 
                 {isOptionsOpen && (
@@ -1283,11 +1422,11 @@ ${trimmedMaterial}`;
                         onClick={() => chooseMode(item.id)}
                         type="button"
                       >
-                        {item.label}
+                        {copy[item.labelKey]}
                       </button>
                     ))}
                     <button className="mode-card" type="button" onClick={() => setPage('tutor')}>
-                      AI Tutor
+                      {copy.aiTutor}
                     </button>
                   </div>
                 )}
@@ -1295,7 +1434,7 @@ ${trimmedMaterial}`;
 
               <div className="editor-panel">
                 <label className="field lesson-name-field">
-                  <span>Lesson name</span>
+                  <span>{copy.lessonName}</span>
                   <input
                     value={lessonName}
                     onChange={(event) => setLessonName(event.target.value)}
@@ -1304,7 +1443,7 @@ ${trimmedMaterial}`;
                 </label>
 
                 <label className="field">
-                  <span>Study material</span>
+                  <span>{copy.studyMaterial}</span>
                   <textarea
                     ref={materialTextareaRef}
                     value={material}
@@ -1315,10 +1454,10 @@ ${trimmedMaterial}`;
 
                 <div className="action-row">
                   <button className="generate-button" type="button" onClick={generateStudyHelp} disabled={isLoading}>
-                    {getButtonLabel(mode, isLoading)}
+                    {getButtonLabel(mode, isLoading, copy)}
                   </button>
                   <button className="save-button" type="button" onClick={saveLesson}>
-                    Save lesson
+                    {copy.saveLesson}
                   </button>
                 </div>
 
