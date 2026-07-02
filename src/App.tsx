@@ -2724,7 +2724,8 @@ ${trimmedMaterial}`;
         ) : page === 'studyMethods' ? (
           <section className="study-methods-page" aria-label="Study methods">
             <button className="study-method-tile" type="button" onClick={() => setIsPomodoroInfoOpen(true)}>
-              Pomodoro
+              <span aria-hidden="true">🍅</span>
+              <strong>Pomodoro</strong>
             </button>
           </section>
         ) : (
@@ -2821,7 +2822,7 @@ ${trimmedMaterial}`;
         <div className="summary-modal-backdrop" role="presentation">
           <section className="summary-modal study-method-modal" role="dialog" aria-modal="true" aria-label="Pomodoro method">
             <div className="summary-modal-heading">
-              <h2>Pomodoro</h2>
+              <h2>🍅 Pomodoro</h2>
               <button className="small-button" type="button" onClick={() => setIsPomodoroInfoOpen(false)}>
                 Close
               </button>

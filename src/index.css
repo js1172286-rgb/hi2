@@ -1572,15 +1572,26 @@ select:focus {
 }
 
 .study-method-tile {
-  min-height: 118px;
-  padding: 18px;
+  min-height: 150px;
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  padding: 24px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--card);
   color: var(--ink);
-  font-size: 24px;
-  font-weight: 900;
   text-align: left;
+}
+
+.study-method-tile span {
+  font-size: 34px;
+  line-height: 1;
+}
+
+.study-method-tile strong {
+  font-size: 34px;
+  line-height: 1.05;
 }
 
 .study-method-tile:hover {
