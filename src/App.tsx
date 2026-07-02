@@ -10,6 +10,7 @@ type AiResponse = {
 
 type StudyMode = 'summary' | 'flashcards' | 'quiz';
 type Page =
+  | 'starter'
   | 'study'
   | 'lessons'
   | 'otherMaterials'
@@ -171,7 +172,8 @@ const modes: { id: StudyMode; labelKey: 'summaryMode' | 'flashcards' | 'quizMe' 
 ];
 
 const pagePaths: Record<Page, string> = {
-  study: '/',
+  starter: '/',
+  study: '/study',
   lessons: '/lessons',
   otherMaterials: '/other-materials',
   tutor: '/tutor',
@@ -196,7 +198,8 @@ function getPageFromPath(pathname = window.location.pathname): Page {
   if (normalizedPath === pagePaths.progress) return 'progress';
   if (normalizedPath === pagePaths.calculator) return 'calculator';
   if (normalizedPath === pagePaths.studyMethods) return 'studyMethods';
-  return 'study';
+  if (normalizedPath === pagePaths.study) return 'study';
+  return 'starter';
 }
 
 const languageLabels: Record<Language, string> = {
@@ -2094,7 +2097,7 @@ ${trimmedMaterial}`;
   }
 
   return (
-    <main className={isToolDrawerOpen ? 'app-shell drawer-open' : 'app-shell'}>
+    <main className={isToolDrawerOpen && page !== 'starter' ? 'app-shell drawer-open' : 'app-shell'}>
       <section className="study-tool">
         <div className="intro">
           <div>
@@ -2124,12 +2127,11 @@ ${trimmedMaterial}`;
             </h1>
           </div>
           <div className="header-actions">
-            {page === 'study' && (
+            {page === 'starter' ? null : page === 'study' ? (
               <button className="nav-button" type="button" onClick={() => setIsOptionsOpen(!isOptionsOpen)}>
                 {copy.studyOptions}
               </button>
-            )}
-            {page === 'otherMaterials' ? (
+            ) : page === 'otherMaterials' ? (
               !isUploadingSharedMaterial && (
                 <button
                   className="add-material-button"
@@ -2198,7 +2200,68 @@ ${trimmedMaterial}`;
           </div>
         )}
 
-        {page === 'otherMaterials' ? (
+        {page === 'starter' ? (
+          <section className="starter-page" aria-label="Study Helper introduction">
+            <div className="starter-copy">
+              <p className="starter-kicker">Study smarter with your own materials</p>
+              <h2>Turn lessons into summaries, quizzes, flashcards, and practice chats.</h2>
+              <p>
+                Save your notes, review weak lessons, grow your streak pet, and use focused study tools from one place.
+              </p>
+              <div className="starter-actions">
+                <button className="starter-primary" type="button" onClick={() => goToPage('study')}>
+                  Start studying
+                </button>
+                <button className="starter-secondary" type="button" onClick={() => goToPage('otherMaterials')}>
+                  Find materials
+                </button>
+              </div>
+            </div>
+
+            <div className="starter-visual" aria-hidden="true">
+              <div className="starter-phone">
+                <div className="starter-phone-top" />
+                <img src="/pets/gold/bunny.png" alt="" />
+                <div className="starter-phone-lines">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+              </div>
+              <div className="starter-floating-card card-one">
+                <strong>6</strong>
+                <span>saved lessons</span>
+              </div>
+              <div className="starter-floating-card card-two">
+                <strong>25</strong>
+                <span>focus minutes</span>
+              </div>
+              <div className="starter-floating-card card-three">
+                <strong>AI</strong>
+                <span>tutor chat</span>
+              </div>
+            </div>
+
+            <div className="starter-stats">
+              <div>
+                <strong>Summaries</strong>
+                <span>quick review from notes</span>
+              </div>
+              <div>
+                <strong>Flashcards</strong>
+                <span>practice active recall</span>
+              </div>
+              <div>
+                <strong>Progress</strong>
+                <span>track lesson confidence</span>
+              </div>
+              <div>
+                <strong>Pets</strong>
+                <span>stay motivated daily</span>
+              </div>
+            </div>
+          </section>
+        ) : page === 'otherMaterials' ? (
           <section className="other-materials-page" aria-label="Other materials">
             {isUploadingSharedMaterial ? (
               <div className="share-panel">
@@ -3159,90 +3222,94 @@ ${trimmedMaterial}`;
         </div>
       )}
 
-      <button
-        className={isToolDrawerOpen ? 'tool-drawer-tab open' : 'tool-drawer-tab'}
-        type="button"
-        onClick={() => setIsToolDrawerOpen(!isToolDrawerOpen)}
-        aria-label={isToolDrawerOpen ? 'Close tools menu' : 'Open tools menu'}
-        aria-expanded={isToolDrawerOpen}
-      >
-        {isToolDrawerOpen ? '<' : '>'}
-      </button>
-      <aside className={isToolDrawerOpen ? 'tool-drawer open' : 'tool-drawer'} aria-label="Tool menu">
-        <div className="tool-drawer-heading">
-          <p className="card-label">Tools</p>
-        </div>
-        <button
-          className="drawer-tool-button"
-          type="button"
-          onClick={() => {
-            if (requireSignedIn(copy.signInForTutor)) {
-              goToPage('tutor');
-            }
-          }}
-        >
-          {copy.aiTutor}
-        </button>
-        <button
-          className="drawer-tool-button"
-          type="button"
-          onClick={() => goToPage('focusTimer')}
-        >
-          Focus Timer
-        </button>
-        <button
-          className="drawer-tool-button"
-          type="button"
-          onClick={() => goToPage('progress')}
-        >
-          {copy.progress}
-        </button>
-        <button
-          className="drawer-tool-button"
-          type="button"
-          onClick={() => goToPage('calculator')}
-        >
-          {copy.calculator}
-        </button>
-        <button
-          className="drawer-tool-button"
-          type="button"
-          onClick={() => goToPage('studyMethods')}
-        >
-          {copy.studyMethods}
-        </button>
-      </aside>
+      {page !== 'starter' && (
+        <>
+          <button
+            className={isToolDrawerOpen ? 'tool-drawer-tab open' : 'tool-drawer-tab'}
+            type="button"
+            onClick={() => setIsToolDrawerOpen(!isToolDrawerOpen)}
+            aria-label={isToolDrawerOpen ? 'Close tools menu' : 'Open tools menu'}
+            aria-expanded={isToolDrawerOpen}
+          >
+            {isToolDrawerOpen ? '<' : '>'}
+          </button>
+          <aside className={isToolDrawerOpen ? 'tool-drawer open' : 'tool-drawer'} aria-label="Tool menu">
+            <div className="tool-drawer-heading">
+              <p className="card-label">Tools</p>
+            </div>
+            <button
+              className="drawer-tool-button"
+              type="button"
+              onClick={() => {
+                if (requireSignedIn(copy.signInForTutor)) {
+                  goToPage('tutor');
+                }
+              }}
+            >
+              {copy.aiTutor}
+            </button>
+            <button
+              className="drawer-tool-button"
+              type="button"
+              onClick={() => goToPage('focusTimer')}
+            >
+              Focus Timer
+            </button>
+            <button
+              className="drawer-tool-button"
+              type="button"
+              onClick={() => goToPage('progress')}
+            >
+              {copy.progress}
+            </button>
+            <button
+              className="drawer-tool-button"
+              type="button"
+              onClick={() => goToPage('calculator')}
+            >
+              {copy.calculator}
+            </button>
+            <button
+              className="drawer-tool-button"
+              type="button"
+              onClick={() => goToPage('studyMethods')}
+            >
+              {copy.studyMethods}
+            </button>
+          </aside>
 
-      <button className="home-button" type="button" onClick={goHome} aria-label="Go to study home">
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path d="M8 34L32 12l24 22" />
-          <path d="M16 30v24h16V40h12v14h4V30" />
-          <path d="M22 22v-8h8v2" />
-        </svg>
-      </button>
-      <button
-        className="bottom-icon-button search-button"
-        type="button"
-        onClick={() => goToPage('otherMaterials')}
-        aria-label="Open other materials page"
-      >
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <circle cx="27" cy="27" r="17" />
-          <path d="M40 40l16 16" />
-        </svg>
-      </button>
-      <button
-        className="bottom-icon-button account-button"
-        type="button"
-        onClick={() => goToPage('account')}
-        aria-label="Open account page"
-      >
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <circle cx="32" cy="32" r="26" />
-          <circle cx="32" cy="24" r="9" />
-          <path d="M17 52c2-12 8-18 15-18s13 6 15 18" />
-        </svg>
-      </button>
+          <button className="home-button" type="button" onClick={goHome} aria-label="Go to study home">
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <path d="M8 34L32 12l24 22" />
+              <path d="M16 30v24h16V40h12v14h4V30" />
+              <path d="M22 22v-8h8v2" />
+            </svg>
+          </button>
+          <button
+            className="bottom-icon-button search-button"
+            type="button"
+            onClick={() => goToPage('otherMaterials')}
+            aria-label="Open other materials page"
+          >
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <circle cx="27" cy="27" r="17" />
+              <path d="M40 40l16 16" />
+            </svg>
+          </button>
+          <button
+            className="bottom-icon-button account-button"
+            type="button"
+            onClick={() => goToPage('account')}
+            aria-label="Open account page"
+          >
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <circle cx="32" cy="32" r="26" />
+              <circle cx="32" cy="24" r="9" />
+              <path d="M17 52c2-12 8-18 15-18s13 6 15 18" />
+            </svg>
+          </button>
+        </>
+      )}
     </main>
   );
 }

@@ -173,6 +173,192 @@ h1 {
   gap: 10px;
 }
 
+.starter-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.9fr);
+  gap: 34px;
+  align-items: center;
+}
+
+.starter-copy {
+  display: grid;
+  gap: 18px;
+}
+
+.starter-kicker {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.starter-copy h2 {
+  max-width: 720px;
+  font-size: clamp(38px, 6vw, 70px);
+  line-height: 0.98;
+}
+
+.starter-copy p:not(.starter-kicker) {
+  max-width: 560px;
+  color: var(--muted);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.starter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.starter-primary,
+.starter-secondary {
+  min-height: 52px;
+  padding: 14px 22px;
+  font-size: 16px;
+}
+
+.starter-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.starter-secondary {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.starter-primary:hover {
+  background: var(--accent-dark);
+}
+
+.starter-secondary:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.starter-visual {
+  position: relative;
+  min-height: 390px;
+  display: grid;
+  place-items: center;
+}
+
+.starter-phone {
+  width: min(255px, 78vw);
+  min-height: 350px;
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid rgba(47, 111, 115, 0.22);
+  border-radius: 28px;
+  background: linear-gradient(180deg, #ffffff, #eef7f7);
+  box-shadow: 0 28px 80px rgba(20, 33, 38, 0.2);
+}
+
+.starter-phone-top {
+  width: 54px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(20, 33, 38, 0.18);
+}
+
+.starter-phone img {
+  width: 142px;
+  height: 142px;
+  object-fit: contain;
+}
+
+.starter-phone-lines {
+  width: 100%;
+  display: grid;
+  gap: 9px;
+}
+
+.starter-phone-lines span {
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(47, 111, 115, 0.12);
+}
+
+.starter-phone-lines span:nth-child(2) {
+  width: 78%;
+}
+
+.starter-phone-lines span:nth-child(3) {
+  width: 58%;
+}
+
+.starter-floating-card {
+  position: absolute;
+  display: grid;
+  gap: 2px;
+  min-width: 128px;
+  padding: 12px 14px;
+  border: 1px solid rgba(47, 111, 115, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 16px 45px rgba(20, 33, 38, 0.14);
+}
+
+.starter-floating-card strong {
+  color: var(--accent);
+  font-size: 25px;
+  line-height: 1;
+}
+
+.starter-floating-card span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.card-one {
+  top: 72px;
+  left: 4px;
+}
+
+.card-two {
+  right: 4px;
+  bottom: 70px;
+}
+
+.card-three {
+  left: 28px;
+  bottom: 28px;
+}
+
+.starter-stats {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.starter-stats div {
+  display: grid;
+  gap: 4px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.starter-stats strong {
+  font-size: 18px;
+}
+
+.starter-stats span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
 .workspace {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
@@ -1274,6 +1460,18 @@ select:focus {
   background: #516062;
 }
 
+:root[data-theme='dark'] .starter-phone,
+:root[data-theme='dark'] .starter-floating-card {
+  background: #141516;
+  border-color: var(--line);
+  box-shadow: none;
+}
+
+:root[data-theme='dark'] .starter-phone-lines span,
+:root[data-theme='dark'] .starter-phone-top {
+  background: #23252a;
+}
+
 :root[data-theme='dark'] .progress-card-track {
   background: #191c1f;
 }
@@ -2345,6 +2543,18 @@ select:focus {
 }
 
 @media (max-width: 900px) {
+  .starter-page {
+    grid-template-columns: 1fr;
+  }
+
+  .starter-visual {
+    min-height: 330px;
+  }
+
+  .starter-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .workspace,
   .workspace.options-closed {
     grid-template-columns: 1fr;
@@ -2400,6 +2610,29 @@ select:focus {
 
   .study-tool {
     padding: 18px;
+  }
+
+  .starter-copy h2 {
+    font-size: 40px;
+  }
+
+  .starter-actions,
+  .starter-primary,
+  .starter-secondary {
+    width: 100%;
+  }
+
+  .starter-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .starter-floating-card {
+    position: static;
+    width: 100%;
+  }
+
+  .starter-visual {
+    gap: 10px;
   }
 
   .lesson-ring-grid {
