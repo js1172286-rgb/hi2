@@ -1660,6 +1660,68 @@ select:focus {
   text-transform: uppercase;
 }
 
+.teach-pet-modal {
+  width: min(680px, 100%);
+}
+
+.teach-pet-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 360px;
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.teach-message {
+  max-width: 82%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+}
+
+.teach-message.user {
+  align-self: flex-end;
+  border-bottom-right-radius: 6px;
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.teach-message.pet {
+  align-self: flex-start;
+  border-bottom-left-radius: 6px;
+}
+
+.teach-message.user .card-label {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.teach-message p:last-child {
+  white-space: pre-wrap;
+  line-height: 1.45;
+}
+
+.teach-pet-composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.teach-pet-composer textarea {
+  min-height: 82px;
+  resize: vertical;
+}
+
+.teach-pet-composer .generate-button {
+  min-height: 48px;
+}
+
 .progress-page {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2336,6 +2398,14 @@ select:focus {
 
   .pomodoro-plan {
     grid-template-columns: 1fr;
+  }
+
+  .teach-pet-composer {
+    grid-template-columns: 1fr;
+  }
+
+  .teach-message {
+    max-width: 94%;
   }
 
   .compact-language-field {

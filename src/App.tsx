@@ -75,6 +75,11 @@ type TutorMessage = {
   text: string;
 };
 
+type TeachMessage = {
+  role: 'user' | 'pet';
+  text: string;
+};
+
 type AuthMode = 'signIn' | 'signUp';
 type PetType = 'cat' | 'dragon' | 'fox' | 'owl';
 type EggColor = 'green' | 'gold' | 'blue' | 'red';
@@ -762,6 +767,10 @@ export default function App() {
   const [isPomodoroInfoOpen, setIsPomodoroInfoOpen] = useState(false);
   const [isPomodoroSetupOpen, setIsPomodoroSetupOpen] = useState(false);
   const [pomodoroStudyMinutes, setPomodoroStudyMinutes] = useState('120');
+  const [isTeachInfoOpen, setIsTeachInfoOpen] = useState(false);
+  const [isTeachChatOpen, setIsTeachChatOpen] = useState(false);
+  const [teachMessages, setTeachMessages] = useState<TeachMessage[]>([]);
+  const [teachAnswer, setTeachAnswer] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -1105,6 +1114,37 @@ export default function App() {
     setIsPomodoroInfoOpen(false);
     setIsPomodoroSetupOpen(false);
     goToPage('focusTimer');
+  }
+
+  function startTeachPetChat() {
+    setIsTeachInfoOpen(false);
+    setIsTeachChatOpen(true);
+    setTeachAnswer('');
+    setTeachMessages([
+      {
+        role: 'pet',
+        text: `Hi, I am ${petName}. Please teach me something, but explain it like I am totally new to it.`,
+      },
+    ]);
+  }
+
+  function sendTeachAnswer() {
+    const answer = teachAnswer.trim();
+    if (!answer) return;
+
+    const petQuestions = [
+      'Wait, what does that mean in simpler words?',
+      'Can you give me a tiny example?',
+      'Why does that part matter?',
+      'I think I am confused. Can you explain the steps one by one?',
+      'How would I know when to use this?',
+      'Can you compare it to something easy?',
+    ];
+    const userAnswerCount = teachMessages.filter((message) => message.role === 'user').length;
+    const nextQuestion = petQuestions[userAnswerCount % petQuestions.length];
+
+    setTeachMessages([...teachMessages, { role: 'user', text: answer }, { role: 'pet', text: nextQuestion }]);
+    setTeachAnswer('');
   }
 
   function formatCalculatorValue(value: number) {
@@ -2746,6 +2786,9 @@ ${trimmedMaterial}`;
                 Pomodoro <span aria-hidden="true">🍅</span>
               </strong>
             </button>
+            <button className="study-method-tile" type="button" onClick={() => setIsTeachInfoOpen(true)}>
+              <strong>Teach Somebody</strong>
+            </button>
           </section>
         ) : (
           <>
@@ -2906,6 +2949,65 @@ ${trimmedMaterial}`;
                 </>
               )}
             </div>
+          </section>
+        </div>
+      )}
+
+      {isTeachInfoOpen && (
+        <div className="summary-modal-backdrop" role="presentation">
+          <section className="summary-modal study-method-modal" role="dialog" aria-modal="true" aria-label="Teach Somebody method">
+            <div className="summary-modal-heading">
+              <h2>Teach Somebody</h2>
+              <button className="small-button" type="button" onClick={() => setIsTeachInfoOpen(false)}>
+                Close
+              </button>
+            </div>
+            <div className="study-method-modal-copy">
+              <p>
+                This method helps you understand a topic better by explaining it out loud. If you can teach it clearly,
+                you probably understand it.
+              </p>
+              <ol>
+                <li>Pick the topic you want to practice.</li>
+                <li>Explain it to your pet in simple words.</li>
+                <li>Your pet will ask basic questions.</li>
+                <li>Answer in detail until the idea feels clear.</li>
+              </ol>
+              <button className="generate-button pomodoro-use-button" type="button" onClick={startTeachPetChat}>
+                Use it
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {isTeachChatOpen && (
+        <div className="summary-modal-backdrop" role="presentation">
+          <section className="summary-modal teach-pet-modal" role="dialog" aria-modal="true" aria-label="Teach your pet">
+            <div className="summary-modal-heading">
+              <h2>Teach {petName}</h2>
+              <button className="small-button" type="button" onClick={() => setIsTeachChatOpen(false)}>
+                Close
+              </button>
+            </div>
+            <div className="teach-pet-chat">
+              {teachMessages.map((message, index) => (
+                <article className={`teach-message ${message.role}`} key={`${message.role}-${index}`}>
+                  <p className="card-label">{message.role === 'user' ? copy.you : petName}</p>
+                  <p>{message.text}</p>
+                </article>
+              ))}
+            </div>
+            <label className="teach-pet-composer">
+              <textarea
+                value={teachAnswer}
+                onChange={(event) => setTeachAnswer(event.target.value)}
+                placeholder="Explain the topic to your pet..."
+              />
+              <button className="generate-button" type="button" onClick={sendTeachAnswer}>
+                Send
+              </button>
+            </label>
           </section>
         </div>
       )}
