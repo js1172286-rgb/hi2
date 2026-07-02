@@ -926,6 +926,7 @@ export default function App() {
   const [showQuizAnswers, setShowQuizAnswers] = useState(false);
   const [isQuizSubmitted, setIsQuizSubmitted] = useState(false);
   const [isQuizChecking, setIsQuizChecking] = useState(false);
+  const [quizQuestionCount, setQuizQuestionCount] = useState(5);
   const [quizError, setQuizError] = useState('');
   const [quizKeyboardCheck, setQuizKeyboardCheck] = useState<QuizKeyboardCheck | null>(null);
   const [timerMode, setTimerMode] = useState<TimerMode>('focus');
@@ -2424,6 +2425,7 @@ ${trimmedMaterial}`;
     }
 
     if (mode === 'quiz') {
+      const requestedQuestionCount = Math.min(20, Math.max(1, Math.round(quizQuestionCount)));
       const keyboardInstruction =
         quizKeyboardPreference === 'englishAnswers'
           ? `\n\nKeyboard adjustment: The notes seem to include ${quizKeyboardLanguage || 'another language'}, but the student said they do not have that keyboard. Write every quiz question in English, make every correct answer possible to type in English, and do not require typing non-English characters. Test the same ideas from the notes, just make the student's typed answers English-friendly.`
@@ -2439,7 +2441,7 @@ Return only valid JSON in this exact shape:
   ]
 }
 
-Make 5 questions. Study material:
+Make exactly ${requestedQuestionCount} questions. Study material:
 ${trimmedMaterial}`;
     }
 
@@ -3562,6 +3564,19 @@ ${trimmedMaterial}`;
                     placeholder={copy.exampleLesson}
                   />
                 </label>
+
+                {mode === 'quiz' && (
+                  <label className="field quiz-count-field">
+                    <span>How many questions?</span>
+                    <input
+                      min="1"
+                      max="20"
+                      type="number"
+                      value={quizQuestionCount}
+                      onChange={(event) => setQuizQuestionCount(Math.min(20, Math.max(1, Number(event.target.value) || 1)))}
+                    />
+                  </label>
+                )}
 
                 <label className="field">
                   <span>{copy.studyMaterial}</span>

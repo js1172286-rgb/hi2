@@ -440,6 +440,11 @@ h1 {
   margin-bottom: 14px;
 }
 
+.quiz-count-field {
+  max-width: 220px;
+  margin-bottom: 14px;
+}
+
 .field span,
 .result h2,
 .saved-heading h2 {
