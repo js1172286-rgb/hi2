@@ -2724,8 +2724,9 @@ ${trimmedMaterial}`;
         ) : page === 'studyMethods' ? (
           <section className="study-methods-page" aria-label="Study methods">
             <button className="study-method-tile" type="button" onClick={() => setIsPomodoroInfoOpen(true)}>
-              <span aria-hidden="true">🍅</span>
-              <strong>Pomodoro</strong>
+              <strong>
+                Pomodoro <span aria-hidden="true">🍅</span>
+              </strong>
             </button>
           </section>
         ) : (

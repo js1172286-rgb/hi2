@@ -1572,10 +1572,9 @@ select:focus {
 }
 
 .study-method-tile {
-  min-height: 150px;
+  min-height: 118px;
   display: grid;
   align-content: center;
-  gap: 10px;
   padding: 24px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -1584,14 +1583,19 @@ select:focus {
   text-align: left;
 }
 
-.study-method-tile span {
-  font-size: 34px;
-  line-height: 1;
+.study-method-tile strong {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  font-size: 38px;
+  font-weight: 900;
+  line-height: 0.95;
 }
 
-.study-method-tile strong {
-  font-size: 34px;
-  line-height: 1.05;
+.study-method-tile span {
+  font-size: 28px;
+  line-height: 1;
 }
 
 .study-method-tile:hover {
