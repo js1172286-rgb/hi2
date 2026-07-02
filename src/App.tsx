@@ -3873,31 +3873,32 @@ ${trimmedMaterial}`;
             <div className="summary-modal-heading">
               <div>
                 <p className="card-label">Blurting</p>
-                <h2>Write from memory</h2>
+                <h2>{blurtingReview ? 'Checked paper' : 'Write from memory'}</h2>
               </div>
               <button className="small-button" type="button" onClick={() => setIsBlurtingPracticeOpen(false)}>
                 Close
               </button>
             </div>
             <div className="blurting-practice-copy">
-              <label className="field">
-                <span>What do you remember?</span>
-                <textarea
-                  value={blurtingNotes}
-                  onChange={(event) => {
-                    setBlurtingNotes(event.target.value);
-                    setBlurtingError('');
-                  }}
-                  placeholder="Hide your notes, then type everything you remember about the topic..."
-                />
-              </label>
-              <button className="generate-button pomodoro-use-button" type="button" onClick={submitBlurtingPractice} disabled={isBlurtingChecking}>
-                {isBlurtingChecking ? 'Checking...' : 'Submit'}
-              </button>
-
-              {blurtingError && <p className="message">{blurtingError}</p>}
-
-              {blurtingReview && (
+              {!blurtingReview ? (
+                <>
+                  <label className="field">
+                    <span>What do you remember?</span>
+                    <textarea
+                      value={blurtingNotes}
+                      onChange={(event) => {
+                        setBlurtingNotes(event.target.value);
+                        setBlurtingError('');
+                      }}
+                      placeholder="Hide your notes, then type everything you remember about the topic..."
+                    />
+                  </label>
+                  <button className="generate-button pomodoro-use-button" type="button" onClick={submitBlurtingPractice} disabled={isBlurtingChecking}>
+                    {isBlurtingChecking ? 'Checking...' : 'Submit'}
+                  </button>
+                  {blurtingError && <p className="message">{blurtingError}</p>}
+                </>
+              ) : (
                 <div className="blurting-paper-review" aria-label="Blurting feedback">
                   <div className="blurting-highlight-legend" aria-label="Highlight colors">
                     <span className="good">Good</span>
@@ -3936,6 +3937,16 @@ ${trimmedMaterial}`;
                     <h3>Review</h3>
                     <p>{blurtingReview.review || 'Review the missing details, then try blurting again later.'}</p>
                   </article>
+                  <button
+                    className="small-button muted-button blurting-edit-button"
+                    type="button"
+                    onClick={() => {
+                      setBlurtingReview(null);
+                      setBlurtingError('');
+                    }}
+                  >
+                    Edit answer
+                  </button>
                 </div>
               )}
             </div>
