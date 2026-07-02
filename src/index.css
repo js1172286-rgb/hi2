@@ -19,9 +19,9 @@
   --card: #172427;
   --ink: #eef6f6;
   --muted: #a6b7bb;
-  --accent: #78d8d3;
-  --accent-dark: #52bbb6;
-  --accent-soft: #203c40;
+  --accent: #3f8586;
+  --accent-dark: #326c6d;
+  --accent-soft: #1d3437;
   --line: #2b4448;
   --danger: #ff8f8f;
   --danger-dark: #d96c6c;
@@ -1137,6 +1137,32 @@ select:focus {
 :root[data-theme='dark'] .muted-button {
   background: #223135;
   color: var(--muted);
+}
+
+:root[data-theme='dark'] .nav-button,
+:root[data-theme='dark'] .generate-button,
+:root[data-theme='dark'] .save-button,
+:root[data-theme='dark'] .secondary-button,
+:root[data-theme='dark'] .small-button,
+:root[data-theme='dark'] .add-material-button,
+:root[data-theme='dark'] .mode-card.active {
+  background: #315f62;
+  color: #edf7f7;
+}
+
+:root[data-theme='dark'] .nav-button:hover,
+:root[data-theme='dark'] .generate-button:hover,
+:root[data-theme='dark'] .save-button:hover,
+:root[data-theme='dark'] .secondary-button:hover,
+:root[data-theme='dark'] .small-button:hover,
+:root[data-theme='dark'] .add-material-button:hover {
+  background: #3f7476;
+}
+
+:root[data-theme='dark'] .home-button,
+:root[data-theme='dark'] .bottom-icon-button {
+  background: rgba(31, 54, 58, 0.9);
+  border-color: rgba(132, 178, 180, 0.34);
 }
 
 .auth-tabs {
