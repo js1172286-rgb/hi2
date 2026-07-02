@@ -15,17 +15,17 @@
 }
 
 :root[data-theme='dark'] {
-  --bg: #11191b;
-  --card: #172427;
-  --ink: #eef6f6;
-  --muted: #a6b7bb;
-  --accent: #3f8586;
-  --accent-dark: #326c6d;
-  --accent-soft: #1d3437;
-  --line: #2b4448;
+  --bg: #010102;
+  --card: #0f1011;
+  --ink: #f7f8f8;
+  --muted: #8a8f98;
+  --accent: #5e6ad2;
+  --accent-dark: #5e69d1;
+  --accent-soft: #141516;
+  --line: #23252a;
   --danger: #ff8f8f;
   --danger-dark: #d96c6c;
-  --panel: #132023;
+  --panel: #141516;
   color-scheme: dark;
 }
 
@@ -45,10 +45,7 @@ body {
 }
 
 :root[data-theme='dark'] body {
-  background:
-    linear-gradient(135deg, rgba(120, 216, 211, 0.1), transparent 34%),
-    linear-gradient(315deg, rgba(190, 96, 70, 0.09), transparent 32%),
-    var(--bg);
+  background: var(--bg);
 }
 
 button,
@@ -98,8 +95,8 @@ button:disabled {
 }
 
 :root[data-theme='dark'] .study-tool {
-  background: rgba(23, 36, 39, 0.94);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.26);
+  background: #010102;
+  box-shadow: none;
 }
 
 .intro {
@@ -1104,7 +1101,7 @@ select:focus {
 :root[data-theme='dark'] input,
 :root[data-theme='dark'] textarea,
 :root[data-theme='dark'] select {
-  background: #101b1e;
+  background: #0f1011;
   color: var(--ink);
   border-color: var(--line);
 }
@@ -1126,6 +1123,7 @@ select:focus {
 :root[data-theme='dark'] .google-auth-button {
   background: var(--card);
   color: var(--ink);
+  border-color: var(--line);
 }
 
 :root[data-theme='dark'] .study-options,
@@ -1135,7 +1133,7 @@ select:focus {
 }
 
 :root[data-theme='dark'] .muted-button {
-  background: #223135;
+  background: #141516;
   color: var(--muted);
 }
 
@@ -1146,8 +1144,10 @@ select:focus {
 :root[data-theme='dark'] .small-button,
 :root[data-theme='dark'] .add-material-button,
 :root[data-theme='dark'] .mode-card.active {
-  background: #315f62;
-  color: #edf7f7;
+  background: #5e6ad2;
+  border-color: #5e69d1;
+  color: #ffffff;
+  box-shadow: none;
 }
 
 :root[data-theme='dark'] .nav-button:hover,
@@ -1156,13 +1156,18 @@ select:focus {
 :root[data-theme='dark'] .secondary-button:hover,
 :root[data-theme='dark'] .small-button:hover,
 :root[data-theme='dark'] .add-material-button:hover {
-  background: #3f7476;
+  background: #5e69d1;
 }
 
 :root[data-theme='dark'] .home-button,
 :root[data-theme='dark'] .bottom-icon-button {
-  background: rgba(31, 54, 58, 0.9);
-  border-color: rgba(132, 178, 180, 0.34);
+  background: rgba(15, 16, 17, 0.92);
+  border-color: #34343a;
+}
+
+:root[data-theme='dark'] .bottom-icon-button svg,
+:root[data-theme='dark'] .home-button svg {
+  stroke: #d0d6e0;
 }
 
 .auth-tabs {
