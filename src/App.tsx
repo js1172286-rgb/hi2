@@ -2291,28 +2291,30 @@ ${trimmedMaterial}`;
               </div>
             </article>
 
-            <article className="progress-card lesson-rings-card">
-              <div>
-                <p className="card-label">{copy.lessons}</p>
-                <h3>{savedLessons.length} / {maxSavedLessons}</h3>
-                <p>Knowledge rings for your saved lesson slots</p>
-              </div>
-              <div className="lesson-ring-grid" aria-label="Saved lesson knowledge progress">
-                {lessonRingSlots.map((lesson, index) => {
-                  const percent = lesson ? getLessonKnowledgePercent(lesson) : 0;
-                  const ringStyle: LessonRingStyle = { '--lesson-progress': `${percent}%` };
+            {savedLessons.length > 0 && (
+              <article className="progress-card lesson-rings-card">
+                <div>
+                  <p className="card-label">{copy.lessons}</p>
+                  <h3>{savedLessons.length} / {maxSavedLessons}</h3>
+                  <p>Knowledge rings for your saved lesson slots</p>
+                </div>
+                <div className="lesson-ring-grid" aria-label="Saved lesson knowledge progress">
+                  {lessonRingSlots.map((lesson, index) => {
+                    const percent = lesson ? getLessonKnowledgePercent(lesson) : 0;
+                    const ringStyle: LessonRingStyle = { '--lesson-progress': `${percent}%` };
 
-                  return (
-                    <div className={lesson ? 'lesson-ring-slot filled' : 'lesson-ring-slot'} key={lesson?.id ?? `empty-${index}`}>
-                      <div className="lesson-ring" style={ringStyle}>
-                        <span>{percent}%</span>
+                    return (
+                      <div className={lesson ? 'lesson-ring-slot filled' : 'lesson-ring-slot'} key={lesson?.id ?? `empty-${index}`}>
+                        <div className="lesson-ring" style={ringStyle}>
+                          <span>{percent}%</span>
+                        </div>
+                        <p>{lesson ? lesson.title : `Lesson ${index + 1}`}</p>
                       </div>
-                      <p>{lesson ? lesson.title : `Lesson ${index + 1}`}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </article>
+                    );
+                  })}
+                </div>
+              </article>
+            )}
 
             <article className="progress-card">
               <p className="card-label">{copy.flashcards}</p>
