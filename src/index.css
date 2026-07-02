@@ -1638,7 +1638,10 @@ select:focus {
 
 .summary-copy-button {
   justify-self: end;
-  min-height: 42px;
+  min-width: 112px;
+  min-height: 40px;
+  margin: 4px 4px 2px 0;
+  padding: 10px 16px;
 }
 
 .summary-copy-button.copied {
