@@ -1357,6 +1357,31 @@ select:focus {
   line-height: 1.5;
 }
 
+.timer-settings {
+  width: min(360px, 100%);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.timer-settings label {
+  display: grid;
+  gap: 7px;
+  text-align: left;
+}
+
+.timer-settings span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.timer-settings input {
+  min-height: 42px;
+  padding: 9px 10px;
+  text-align: center;
+}
+
 .timer-mode-row,
 .timer-actions {
   display: flex;

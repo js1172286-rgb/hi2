@@ -88,8 +88,8 @@ const themeKey = 'study-helper-theme';
 const studyPetKey = 'study-helper-pet';
 const maxSavedLessons = 6;
 const eggWarmDays = 3;
-const focusTimerSeconds = 25 * 60;
-const breakTimerSeconds = 5 * 60;
+const defaultFocusMinutes = 25;
+const defaultBreakMinutes = 5;
 const emptyStudyPet: StudyPet = {
   streak: 0,
   lastStudyDate: '',
@@ -671,6 +671,11 @@ function formatTimerTime(totalSeconds: number) {
   return `${minutes}:${seconds}`;
 }
 
+function clampTimerMinutes(value: number) {
+  if (!Number.isFinite(value)) return 1;
+  return Math.min(180, Math.max(1, Math.round(value)));
+}
+
 function readSavedLessons() {
   try {
     const rawLessons = window.localStorage.getItem(savedLessonsKey);
@@ -705,7 +710,9 @@ export default function App() {
   const [isQuizChecking, setIsQuizChecking] = useState(false);
   const [quizError, setQuizError] = useState('');
   const [timerMode, setTimerMode] = useState<TimerMode>('focus');
-  const [timerSecondsLeft, setTimerSecondsLeft] = useState(focusTimerSeconds);
+  const [focusMinutes, setFocusMinutes] = useState(defaultFocusMinutes);
+  const [breakMinutes, setBreakMinutes] = useState(defaultBreakMinutes);
+  const [timerSecondsLeft, setTimerSecondsLeft] = useState(defaultFocusMinutes * 60);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -884,13 +891,28 @@ export default function App() {
 
   function chooseTimerMode(nextMode: TimerMode) {
     setTimerMode(nextMode);
-    setTimerSecondsLeft(nextMode === 'focus' ? focusTimerSeconds : breakTimerSeconds);
+    setTimerSecondsLeft((nextMode === 'focus' ? focusMinutes : breakMinutes) * 60);
     setIsTimerRunning(false);
   }
 
   function resetTimer() {
-    setTimerSecondsLeft(timerMode === 'focus' ? focusTimerSeconds : breakTimerSeconds);
+    setTimerSecondsLeft((timerMode === 'focus' ? focusMinutes : breakMinutes) * 60);
     setIsTimerRunning(false);
+  }
+
+  function updateTimerMinutes(nextMode: TimerMode, value: number) {
+    const nextMinutes = clampTimerMinutes(value);
+
+    if (nextMode === 'focus') {
+      setFocusMinutes(nextMinutes);
+    } else {
+      setBreakMinutes(nextMinutes);
+    }
+
+    if (timerMode === nextMode) {
+      setTimerSecondsLeft(nextMinutes * 60);
+      setIsTimerRunning(false);
+    }
   }
 
   function updateSavedLessons(nextLessons: SavedLesson[]) {
@@ -2173,6 +2195,29 @@ ${trimmedMaterial}`;
                 {formatTimerTime(timerSecondsLeft)}
               </div>
               <p className="timer-hint">Use a quiet timer to stay on one task.</p>
+
+              <div className="timer-settings" aria-label="Timer lengths">
+                <label>
+                  <span>Focus minutes</span>
+                  <input
+                    min="1"
+                    max="180"
+                    type="number"
+                    value={focusMinutes}
+                    onChange={(event) => updateTimerMinutes('focus', Number(event.target.value))}
+                  />
+                </label>
+                <label>
+                  <span>Break minutes</span>
+                  <input
+                    min="1"
+                    max="180"
+                    type="number"
+                    value={breakMinutes}
+                    onChange={(event) => updateTimerMinutes('break', Number(event.target.value))}
+                  />
+                </label>
+              </div>
 
               <div className="timer-mode-row" aria-label="Timer mode">
                 <button
