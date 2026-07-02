@@ -1472,7 +1472,7 @@ select:focus {
 }
 
 .calculator-panel {
-  width: min(380px, 100%);
+  width: min(460px, 100%);
   display: grid;
   gap: 14px;
   padding: 18px;
@@ -1517,6 +1517,12 @@ select:focus {
   gap: 10px;
 }
 
+.calculator-science-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
 .calculator-key {
   min-height: 58px;
   padding: 0;
@@ -1546,6 +1552,12 @@ select:focus {
 
 .calculator-key.muted {
   color: var(--muted);
+}
+
+.calculator-key.scientific {
+  min-height: 42px;
+  color: var(--accent);
+  font-size: 14px;
 }
 
 .calculator-key.zero {

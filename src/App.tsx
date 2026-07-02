@@ -13,7 +13,7 @@ type Page = 'study' | 'lessons' | 'otherMaterials' | 'tutor' | 'account' | 'flas
 type Language = 'en' | 'ru' | 'kk';
 type Theme = 'light' | 'dark';
 type TimerMode = 'focus' | 'break';
-type CalculatorOperator = '+' | '-' | '*' | '/';
+type CalculatorOperator = '+' | '-' | '*' | '/' | '^';
 
 type Flashcard = {
   front: string;
@@ -993,6 +993,7 @@ export default function App() {
     if (operator === '+') return firstValue + secondValue;
     if (operator === '-') return firstValue - secondValue;
     if (operator === '*') return firstValue * secondValue;
+    if (operator === '^') return firstValue ** secondValue;
     return secondValue === 0 ? Number.NaN : firstValue / secondValue;
   }
 
@@ -1063,6 +1064,28 @@ export default function App() {
     setCalculatorDisplay(formatCalculatorValue(result));
     setCalculatorStoredValue(null);
     setCalculatorOperator(null);
+    setIsCalculatorWaiting(true);
+  }
+
+  function applyCalculatorFunction(name: 'sqrt' | 'square' | 'sin' | 'cos' | 'tan' | 'log' | 'ln' | 'percent') {
+    const value = Number(calculatorDisplay);
+    let result = value;
+
+    if (name === 'sqrt') result = value < 0 ? Number.NaN : Math.sqrt(value);
+    if (name === 'square') result = value ** 2;
+    if (name === 'sin') result = Math.sin((value * Math.PI) / 180);
+    if (name === 'cos') result = Math.cos((value * Math.PI) / 180);
+    if (name === 'tan') result = Math.tan((value * Math.PI) / 180);
+    if (name === 'log') result = value <= 0 ? Number.NaN : Math.log10(value);
+    if (name === 'ln') result = value <= 0 ? Number.NaN : Math.log(value);
+    if (name === 'percent') result = value / 100;
+
+    setCalculatorDisplay(formatCalculatorValue(result));
+    setIsCalculatorWaiting(true);
+  }
+
+  function inputCalculatorConstant(value: number) {
+    setCalculatorDisplay(formatCalculatorValue(value));
     setIsCalculatorWaiting(true);
   }
 
@@ -2506,6 +2529,41 @@ ${trimmedMaterial}`;
               <div className="calculator-display" aria-live="polite">
                 <span>{calculatorOperator ?? ''}</span>
                 <strong>{calculatorDisplay}</strong>
+              </div>
+              <div className="calculator-science-grid" aria-label="Scientific calculator functions">
+                <button className="calculator-key scientific" type="button" onClick={() => applyCalculatorFunction('square')}>
+                  x²
+                </button>
+                <button className="calculator-key scientific" type="button" onClick={() => applyCalculatorFunction('sqrt')}>
+                  √x
+                </button>
+                <button className="calculator-key scientific" type="button" onClick={() => chooseCalculatorOperator('^')}>
+                  xʸ
+                </button>
+                <button className="calculator-key scientific" type="button" onClick={() => inputCalculatorConstant(Math.PI)}>
+                  π
+                </button>
+                <button className="calculator-key scientific" type="button" onClick={() => inputCalculatorConstant(Math.E)}>
+                  e
+                </button>
+                <button className="calculator-key scientific" type="button" onClick={() => applyCalculatorFunction('sin')}>
+                  sin
+                </button>
+                <button className="calculator-key scientific" type="button" onClick={() => applyCalculatorFunction('cos')}>
+                  cos
+                </button>
+                <button className="calculator-key scientific" type="button" onClick={() => applyCalculatorFunction('tan')}>
+                  tan
+                </button>
+                <button className="calculator-key scientific" type="button" onClick={() => applyCalculatorFunction('log')}>
+                  log
+                </button>
+                <button className="calculator-key scientific" type="button" onClick={() => applyCalculatorFunction('ln')}>
+                  ln
+                </button>
+                <button className="calculator-key scientific" type="button" onClick={() => applyCalculatorFunction('percent')}>
+                  %
+                </button>
               </div>
               <div className="calculator-grid">
                 <button className="calculator-key muted" type="button" onClick={clearCalculator}>
