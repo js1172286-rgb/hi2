@@ -760,6 +760,8 @@ export default function App() {
   const [calculatorOperator, setCalculatorOperator] = useState<CalculatorOperator | null>(null);
   const [isCalculatorWaiting, setIsCalculatorWaiting] = useState(false);
   const [isPomodoroInfoOpen, setIsPomodoroInfoOpen] = useState(false);
+  const [isPomodoroSetupOpen, setIsPomodoroSetupOpen] = useState(false);
+  const [pomodoroStudyMinutes, setPomodoroStudyMinutes] = useState('120');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -819,6 +821,11 @@ export default function App() {
   const answeredQuizCount = quizAnswers.filter((answer) => answer.trim()).length;
   const timerTotalSeconds = (timerMode === 'focus' ? focusMinutes : breakMinutes) * 60;
   const timerPercent = timerTotalSeconds > 0 ? ((timerTotalSeconds - timerSecondsLeft) / timerTotalSeconds) * 100 : 0;
+  const pomodoroTotalMinutes = Math.max(25, Math.min(480, Number(pomodoroStudyMinutes) || 25));
+  const pomodoroFocusSessions = Math.ceil(pomodoroTotalMinutes / 25);
+  const pomodoroLongBreaks = Math.floor(Math.max(0, pomodoroFocusSessions - 1) / 4);
+  const pomodoroShortBreaks = Math.max(0, pomodoroFocusSessions - 1 - pomodoroLongBreaks);
+  const pomodoroBreakMinutes = pomodoroShortBreaks * 5 + pomodoroLongBreaks * 15;
   const tutorQuestionCount = tutorMessages.filter((message) => message.role === 'user').length;
   const lessonRingSlots = Array.from({ length: maxSavedLessons }, (_, index) => savedLessons[index] ?? null);
   const flashcardPercent = flashcards.length > 0 ? ((currentFlashcardIndex + 1) / flashcards.length) * 100 : 0;
@@ -1087,6 +1094,17 @@ export default function App() {
       setTimerSecondsLeft(nextMinutes * 60);
       setIsTimerRunning(false);
     }
+  }
+
+  function startPomodoroPlan() {
+    setFocusMinutes(25);
+    setBreakMinutes(5);
+    setTimerMode('focus');
+    setTimerSecondsLeft(25 * 60);
+    setIsTimerRunning(false);
+    setIsPomodoroInfoOpen(false);
+    setIsPomodoroSetupOpen(false);
+    goToPage('focusTimer');
   }
 
   function formatCalculatorValue(value: number) {
@@ -2824,21 +2842,69 @@ ${trimmedMaterial}`;
           <section className="summary-modal study-method-modal" role="dialog" aria-modal="true" aria-label="Pomodoro method">
             <div className="summary-modal-heading">
               <h2>🍅 Pomodoro</h2>
-              <button className="small-button" type="button" onClick={() => setIsPomodoroInfoOpen(false)}>
+              <button
+                className="small-button"
+                type="button"
+                onClick={() => {
+                  setIsPomodoroInfoOpen(false);
+                  setIsPomodoroSetupOpen(false);
+                }}
+              >
                 Close
               </button>
             </div>
             <div className="study-method-modal-copy">
-              <p>
-                Pomodoro helps you focus by studying in short timed sessions, then resting before your brain gets too tired.
-              </p>
-              <ol>
-                <li>Choose one task to study.</li>
-                <li>Set a 25 minute focus timer.</li>
-                <li>Work only on that task until the timer ends.</li>
-                <li>Take a 5 minute break.</li>
-                <li>After 4 rounds, take a longer break.</li>
-              </ol>
+              {!isPomodoroSetupOpen ? (
+                <>
+                  <p>
+                    Pomodoro helps you focus by studying in short timed sessions, then resting before your brain gets too tired.
+                  </p>
+                  <ol>
+                    <li>Choose one task to study.</li>
+                    <li>Set a 25 minute focus timer.</li>
+                    <li>Work only on that task until the timer ends.</li>
+                    <li>Take a 5 minute break.</li>
+                    <li>After 4 rounds, take a longer break.</li>
+                  </ol>
+                  <button className="generate-button pomodoro-use-button" type="button" onClick={() => setIsPomodoroSetupOpen(true)}>
+                    Use it
+                  </button>
+                </>
+              ) : (
+                <>
+                  <label className="field pomodoro-field">
+                    <span>How long do you want to study?</span>
+                    <input
+                      min="25"
+                      max="480"
+                      type="number"
+                      value={pomodoroStudyMinutes}
+                      onChange={(event) => setPomodoroStudyMinutes(event.target.value)}
+                    />
+                  </label>
+                  <div className="pomodoro-plan">
+                    <div>
+                      <strong>{pomodoroFocusSessions}</strong>
+                      <span>focus rounds</span>
+                    </div>
+                    <div>
+                      <strong>{pomodoroShortBreaks}</strong>
+                      <span>short breaks</span>
+                    </div>
+                    <div>
+                      <strong>{pomodoroLongBreaks}</strong>
+                      <span>long breaks</span>
+                    </div>
+                  </div>
+                  <p>
+                    Plan: {pomodoroFocusSessions} rounds of 25 minutes, {pomodoroShortBreaks} short breaks of 5 minutes,
+                    and {pomodoroLongBreaks} long breaks of 15 minutes. Total break time: {pomodoroBreakMinutes} minutes.
+                  </p>
+                  <button className="generate-button pomodoro-use-button" type="button" onClick={startPomodoroPlan}>
+                    Start with Focus Timer
+                  </button>
+                </>
+              )}
             </div>
           </section>
         </div>

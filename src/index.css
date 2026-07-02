@@ -1622,6 +1622,44 @@ select:focus {
   font-weight: 900;
 }
 
+.pomodoro-use-button {
+  justify-self: start;
+  min-width: 140px;
+}
+
+.pomodoro-field input {
+  max-width: 180px;
+}
+
+.pomodoro-plan {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pomodoro-plan div {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  text-align: center;
+}
+
+.pomodoro-plan strong {
+  color: var(--accent);
+  font-size: 26px;
+  line-height: 1;
+}
+
+.pomodoro-plan span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
 .progress-page {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2293,6 +2331,10 @@ select:focus {
 
   .header-actions {
     display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .pomodoro-plan {
     grid-template-columns: 1fr;
   }
 
