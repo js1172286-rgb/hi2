@@ -55,6 +55,13 @@ type QuizGradeResponse = {
   grades?: QuizGrade[];
 };
 
+type BlurtingReview = {
+  good?: string[];
+  needsWork?: string[];
+  wrong?: string[];
+  review?: string;
+};
+
 type QuizKeyboardPreference = 'hasKeyboard' | 'englishAnswers';
 
 type QuizKeyboardCheck = {
@@ -881,6 +888,11 @@ export default function App() {
   const [pomodoroStudyMinutes, setPomodoroStudyMinutes] = useState('120');
   const [isTeachInfoOpen, setIsTeachInfoOpen] = useState(false);
   const [isBlurtingInfoOpen, setIsBlurtingInfoOpen] = useState(false);
+  const [isBlurtingPracticeOpen, setIsBlurtingPracticeOpen] = useState(false);
+  const [blurtingNotes, setBlurtingNotes] = useState('');
+  const [blurtingReview, setBlurtingReview] = useState<BlurtingReview | null>(null);
+  const [blurtingError, setBlurtingError] = useState('');
+  const [isBlurtingChecking, setIsBlurtingChecking] = useState(false);
   const [isTeachChatOpen, setIsTeachChatOpen] = useState(false);
   const [teachMessages, setTeachMessages] = useState<TeachMessage[]>([]);
   const [teachAnswer, setTeachAnswer] = useState('');
@@ -1265,6 +1277,97 @@ export default function App() {
           : `Hi, I am ${petName}. Save a lesson first and I can ask about the one you know the least. For now, teach me any topic like I am totally new.`,
       },
     ]);
+  }
+
+  function startBlurtingPractice() {
+    setIsBlurtingInfoOpen(false);
+    setIsBlurtingPracticeOpen(true);
+    setBlurtingNotes('');
+    setBlurtingReview(null);
+    setBlurtingError('');
+  }
+
+  async function submitBlurtingPractice() {
+    const studentNotes = blurtingNotes.trim();
+    const currentMaterial = material.trim();
+    const savedLessonsContext = savedLessons
+      .map((lesson, index) => `Saved lesson ${index + 1}: ${lesson.title}\n${getLessonMaterial(lesson)}`)
+      .join('\n\n---\n\n');
+    const comparisonNotes = [
+      currentMaterial ? `Current study material: ${lessonName || 'Untitled lesson'}\n${currentMaterial}` : '',
+      savedLessonsContext ? `Saved lessons:\n${savedLessonsContext}` : '',
+    ].filter(Boolean).join('\n\n---\n\n');
+
+    if (!studentNotes) {
+      setBlurtingError('Write what you remember first.');
+      return;
+    }
+
+    if (!comparisonNotes) {
+      setBlurtingError('Load or save lesson notes first so AI has something to compare with.');
+      return;
+    }
+
+    if (!isSupabaseConfigured) {
+      setBlurtingError('Connect Supabase and the AI function first so blurting can be checked.');
+      return;
+    }
+
+    setIsBlurtingChecking(true);
+    setBlurtingError('');
+    setBlurtingReview(null);
+
+    const { data, error: invokeError } = await supabase.functions.invoke<AiResponse>('ai', {
+      body: {
+        prompt: `Compare the student's blurting notes with the real study notes.
+
+Return only valid JSON in this exact shape:
+{
+  "good": ["accurate point the student remembered"],
+  "needsWork": ["partly correct point or missing detail to improve"],
+  "wrong": ["incorrect point and the correction"],
+  "review": "short review paragraph telling the student what to study next"
+}
+
+Use these categories:
+- good: correct ideas from the student's notes
+- needsWork: ideas that are close but incomplete, vague, or missing an important detail
+- wrong: ideas that are factually incorrect compared with the real notes
+
+Real study notes:
+${comparisonNotes}
+
+Student blurting notes:
+${studentNotes}`,
+        system: 'You are a careful study coach checking blurting practice. Be fair, specific, and supportive. Do not invent facts outside the provided notes.',
+      },
+    });
+
+    setIsBlurtingChecking(false);
+
+    if (invokeError) {
+      setBlurtingError(invokeError.message);
+      return;
+    }
+
+    if (data?.error) {
+      setBlurtingError(data.error);
+      return;
+    }
+
+    const parsed = parseAiJson<BlurtingReview>(data?.text?.trim() ?? '');
+    if (!parsed) {
+      setBlurtingError('The AI did not return a blurting review. Try submitting again.');
+      return;
+    }
+
+    setBlurtingReview({
+      good: parsed.good ?? [],
+      needsWork: parsed.needsWork ?? [],
+      wrong: parsed.wrong ?? [],
+      review: parsed.review ?? '',
+    });
+    markStudyActivity();
   }
 
   async function sendTeachAnswer() {
@@ -3677,15 +3780,89 @@ ${trimmedMaterial}`;
               <button
                 className="generate-button pomodoro-use-button"
                 type="button"
-                onClick={() => {
-                  setIsBlurtingInfoOpen(false);
-                  startNewNote();
-                  setNoteTitle('Blurting practice');
-                  goToPage('notes');
-                }}
+                onClick={startBlurtingPractice}
               >
                 Use it
               </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {isBlurtingPracticeOpen && (
+        <div className="summary-modal-backdrop" role="presentation">
+          <section className="summary-modal blurting-practice-modal" role="dialog" aria-modal="true" aria-label="Blurting practice">
+            <div className="summary-modal-heading">
+              <div>
+                <p className="card-label">Blurting</p>
+                <h2>Write from memory</h2>
+              </div>
+              <button className="small-button" type="button" onClick={() => setIsBlurtingPracticeOpen(false)}>
+                Close
+              </button>
+            </div>
+            <div className="blurting-practice-copy">
+              <label className="field">
+                <span>What do you remember?</span>
+                <textarea
+                  value={blurtingNotes}
+                  onChange={(event) => {
+                    setBlurtingNotes(event.target.value);
+                    setBlurtingError('');
+                  }}
+                  placeholder="Hide your notes, then type everything you remember about the topic..."
+                />
+              </label>
+              <button className="generate-button pomodoro-use-button" type="button" onClick={submitBlurtingPractice} disabled={isBlurtingChecking}>
+                {isBlurtingChecking ? 'Checking...' : 'Submit'}
+              </button>
+
+              {blurtingError && <p className="message">{blurtingError}</p>}
+
+              {blurtingReview && (
+                <div className="blurting-feedback-grid" aria-label="Blurting feedback">
+                  <article className="blurting-feedback-card good">
+                    <h3>Good points</h3>
+                    {blurtingReview.good?.length ? (
+                      <ul>
+                        {blurtingReview.good.map((point, index) => (
+                          <li key={`good-${index}`}>{point}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>No fully correct points found yet.</p>
+                    )}
+                  </article>
+                  <article className="blurting-feedback-card needs-work">
+                    <h3>Needs work</h3>
+                    {blurtingReview.needsWork?.length ? (
+                      <ul>
+                        {blurtingReview.needsWork.map((point, index) => (
+                          <li key={`needs-work-${index}`}>{point}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>No almost-correct points found.</p>
+                    )}
+                  </article>
+                  <article className="blurting-feedback-card wrong">
+                    <h3>Wrong</h3>
+                    {blurtingReview.wrong?.length ? (
+                      <ul>
+                        {blurtingReview.wrong.map((point, index) => (
+                          <li key={`wrong-${index}`}>{point}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>No incorrect points found.</p>
+                    )}
+                  </article>
+                  <article className="blurting-review-card">
+                    <h3>Review</h3>
+                    <p>{blurtingReview.review || 'Review the missing details, then try blurting again later.'}</p>
+                  </article>
+                </div>
+              )}
             </div>
           </section>
         </div>
