@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 
@@ -80,6 +81,10 @@ type StudyPet = {
   petImage: string | null;
   eggColor: EggColor;
   hasChosenEggColor: boolean;
+};
+
+type LessonRingStyle = CSSProperties & {
+  '--lesson-progress': string;
 };
 
 const savedLessonsKey = 'study-helper-lessons';
@@ -670,6 +675,14 @@ function getWordCount(text: string) {
   return text.split(/\s+/).filter(Boolean).length;
 }
 
+function getLessonKnowledgePercent(lesson: SavedLesson) {
+  const sourceCount = getLessonSources(lesson).length;
+  const wordCount = getWordCount(getLessonMaterial(lesson));
+  const sourceProgress = Math.min(sourceCount * 18, 54);
+  const wordProgress = Math.min(Math.floor(wordCount / 70) * 6, 36);
+  return Math.min(10 + sourceProgress + wordProgress, 100);
+}
+
 function formatTimerTime(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
   const seconds = (totalSeconds % 60).toString().padStart(2, '0');
@@ -779,7 +792,7 @@ export default function App() {
   const timerTotalSeconds = (timerMode === 'focus' ? focusMinutes : breakMinutes) * 60;
   const timerPercent = timerTotalSeconds > 0 ? ((timerTotalSeconds - timerSecondsLeft) / timerTotalSeconds) * 100 : 0;
   const tutorQuestionCount = tutorMessages.filter((message) => message.role === 'user').length;
-  const savedLessonsPercent = (savedLessons.length / maxSavedLessons) * 100;
+  const lessonRingSlots = Array.from({ length: maxSavedLessons }, (_, index) => savedLessons[index] ?? null);
   const flashcardPercent = flashcards.length > 0 ? ((currentFlashcardIndex + 1) / flashcards.length) * 100 : 0;
   const quizPercent = quiz.length > 0 ? (answeredQuizCount / quiz.length) * 100 : 0;
   const streakPercent = Math.min((studyPet.streak / eggWarmDays) * 100, 100);
@@ -2278,12 +2291,26 @@ ${trimmedMaterial}`;
               </div>
             </article>
 
-            <article className="progress-card">
-              <p className="card-label">{copy.lessons}</p>
-              <h3>{savedLessons.length} / {maxSavedLessons}</h3>
-              <p>Saved lessons</p>
-              <div className="progress-card-track" aria-hidden="true">
-                <span style={{ width: `${Math.min(Math.max(savedLessonsPercent, 0), 100)}%` }} />
+            <article className="progress-card lesson-rings-card">
+              <div>
+                <p className="card-label">{copy.lessons}</p>
+                <h3>{savedLessons.length} / {maxSavedLessons}</h3>
+                <p>Knowledge rings for your saved lesson slots</p>
+              </div>
+              <div className="lesson-ring-grid" aria-label="Saved lesson knowledge progress">
+                {lessonRingSlots.map((lesson, index) => {
+                  const percent = lesson ? getLessonKnowledgePercent(lesson) : 0;
+                  const ringStyle: LessonRingStyle = { '--lesson-progress': `${percent}%` };
+
+                  return (
+                    <div className={lesson ? 'lesson-ring-slot filled' : 'lesson-ring-slot'} key={lesson?.id ?? `empty-${index}`}>
+                      <div className="lesson-ring" style={ringStyle}>
+                        <span>{percent}%</span>
+                      </div>
+                      <p>{lesson ? lesson.title : `Lesson ${index + 1}`}</p>
+                    </div>
+                  );
+                })}
               </div>
             </article>
 

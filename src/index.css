@@ -1254,6 +1254,14 @@ select:focus {
   background: #516062;
 }
 
+:root[data-theme='dark'] .lesson-ring {
+  background: conic-gradient(#516062 var(--lesson-progress), #191c1f 0);
+}
+
+:root[data-theme='dark'] .lesson-ring::after {
+  background: var(--card);
+}
+
 :root[data-theme='dark'] .muted-button {
   background: #141516;
   color: var(--muted);
@@ -1447,6 +1455,69 @@ select:focus {
 
 .main-progress-card {
   grid-column: 1 / -1;
+}
+
+.lesson-rings-card {
+  grid-column: 1 / -1;
+}
+
+.lesson-ring-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.lesson-ring-slot {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.lesson-ring-slot:not(.filled) {
+  opacity: 0.62;
+}
+
+.lesson-ring {
+  width: 82px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(var(--accent) var(--lesson-progress), rgba(47, 111, 115, 0.14) 0);
+  position: relative;
+}
+
+.lesson-ring::after {
+  content: '';
+  position: absolute;
+  inset: 9px;
+  border-radius: inherit;
+  background: var(--card);
+}
+
+.lesson-ring span {
+  position: relative;
+  z-index: 1;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.lesson-ring-slot p {
+  width: 100%;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .progress-card h2,
@@ -1932,6 +2003,10 @@ select:focus {
     grid-template-columns: 1fr;
   }
 
+  .lesson-ring-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   textarea {
     min-height: 140px;
   }
@@ -1962,6 +2037,10 @@ select:focus {
 
   .study-tool {
     padding: 18px;
+  }
+
+  .lesson-ring-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .intro {
