@@ -1429,6 +1429,9 @@ select:focus {
 :root[data-theme='dark'] .share-panel,
 :root[data-theme='dark'] .source-form,
 :root[data-theme='dark'] .lesson-item,
+:root[data-theme='dark'] .notes-editor-panel,
+:root[data-theme='dark'] .notes-list-panel,
+:root[data-theme='dark'] .note-card,
 :root[data-theme='dark'] .calculator-panel,
 :root[data-theme='dark'] .study-method-tile,
 :root[data-theme='dark'] .search-card,
@@ -2091,6 +2094,103 @@ select:focus {
   transition: width 220ms ease;
 }
 
+.notes-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.notes-editor-panel,
+.notes-list-panel {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+}
+
+.notes-panel-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.notes-panel-heading h2 {
+  margin: 2px 0 0;
+  color: var(--ink);
+  font-size: 24px;
+  line-height: 1.15;
+}
+
+.notes-body-field textarea {
+  min-height: 300px;
+  resize: vertical;
+}
+
+.notes-meta-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.notes-list {
+  display: grid;
+  gap: 10px;
+}
+
+.note-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.note-card.active {
+  border-color: var(--accent);
+}
+
+.note-card-main {
+  display: grid;
+  gap: 6px;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.note-card-main strong {
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.note-card-main span,
+.note-card-main time {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.note-card-main p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.note-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
 .timer-panel {
   width: min(520px, 100%);
   display: grid;
@@ -2657,6 +2757,10 @@ select:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .notes-page {
+    grid-template-columns: 1fr;
+  }
+
   .intro {
     display: grid;
     gap: 14px;
@@ -2676,6 +2780,7 @@ select:focus {
   .search-results,
   .lesson-actions,
   .keyboard-choice-actions,
+  .note-card-actions,
   .flashcard-grid {
     grid-template-columns: 1fr;
   }

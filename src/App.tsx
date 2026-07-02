@@ -20,6 +20,7 @@ type Page =
   | 'quiz'
   | 'focusTimer'
   | 'progress'
+  | 'notes'
   | 'calculator'
   | 'studyMethods';
 type Language = 'en' | 'ru' | 'kk';
@@ -69,6 +70,13 @@ type SavedLesson = {
   savedAt: string;
 };
 
+type StudyNote = {
+  id: string;
+  title: string;
+  body: string;
+  updatedAt: string;
+};
+
 type SharedMaterial = {
   id: string;
   subject: string;
@@ -113,10 +121,12 @@ type LessonRingStyle = CSSProperties & {
 };
 
 const savedLessonsKey = 'study-helper-lessons';
+const savedNotesKey = 'study-helper-notes';
 const languageKey = 'study-helper-language';
 const themeKey = 'study-helper-theme';
 const studyPetKey = 'study-helper-pet';
 const maxSavedLessons = 6;
+const maxSavedNotes = 20;
 const eggWarmDays = 3;
 const defaultFocusMinutes = 25;
 const defaultBreakMinutes = 5;
@@ -189,6 +199,7 @@ const pagePaths: Record<Page, string> = {
   quiz: '/quiz',
   focusTimer: '/focus-timer',
   progress: '/progress',
+  notes: '/notes',
   calculator: '/calculator',
   studyMethods: '/study-methods',
 };
@@ -203,6 +214,7 @@ function getPageFromPath(pathname = window.location.pathname): Page {
   if (normalizedPath === pagePaths.quiz) return 'quiz';
   if (normalizedPath === pagePaths.focusTimer) return 'focusTimer';
   if (normalizedPath === pagePaths.progress) return 'progress';
+  if (normalizedPath === pagePaths.notes) return 'notes';
   if (normalizedPath === pagePaths.calculator) return 'calculator';
   if (normalizedPath === pagePaths.studyMethods) return 'studyMethods';
   if (normalizedPath === pagePaths.study) return 'study';
@@ -238,6 +250,7 @@ const translations = {
     makeFlashcards: 'Make flashcards',
     makeQuiz: 'Make quiz',
     name: 'Name',
+    notes: 'Notes',
     options: 'Options',
     otherMaterials: 'Other Materials',
     password: 'Password',
@@ -276,6 +289,7 @@ const translations = {
     makeFlashcards: 'Сделать карточки',
     makeQuiz: 'Сделать тест',
     name: 'Имя',
+    notes: 'Заметки',
     options: 'Опции',
     otherMaterials: 'Другие материалы',
     password: 'Пароль',
@@ -314,6 +328,7 @@ const translations = {
     makeFlashcards: 'Карточка жасау',
     makeQuiz: 'Тест жасау',
     name: 'Аты',
+    notes: 'Жазбалар',
     options: 'Опциялар',
     otherMaterials: 'Басқа материалдар',
     password: 'Құпия сөз',
@@ -803,6 +818,17 @@ function readSavedLessons() {
   }
 }
 
+function readSavedNotes() {
+  try {
+    const rawNotes = window.localStorage.getItem(savedNotesKey);
+    if (!rawNotes) return [];
+    const parsed = JSON.parse(rawNotes) as StudyNote[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function App() {
   const [page, setPage] = useState<Page>(() => getPageFromPath());
   const [language, setLanguage] = useState<Language>('en');
@@ -811,6 +837,12 @@ export default function App() {
   const [lessonName, setLessonName] = useState('');
   const [material, setMaterial] = useState('');
   const [savedLessons, setSavedLessons] = useState<SavedLesson[]>([]);
+  const [savedNotes, setSavedNotes] = useState<StudyNote[]>([]);
+  const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
+  const [noteTitle, setNoteTitle] = useState('');
+  const [noteBody, setNoteBody] = useState('');
+  const [notesNotice, setNotesNotice] = useState('');
+  const [notesError, setNotesError] = useState('');
   const [summary, setSummary] = useState('');
   const [isSummaryCopied, setIsSummaryCopied] = useState(false);
   const [studyPet, setStudyPet] = useState<StudyPet>(emptyStudyPet);
@@ -913,6 +945,7 @@ export default function App() {
   const lessonRingSlots = Array.from({ length: maxSavedLessons }, (_, index) => savedLessons[index] ?? null);
   const flashcardPercent = flashcards.length > 0 ? ((currentFlashcardIndex + 1) / flashcards.length) * 100 : 0;
   const quizPercent = quiz.length > 0 ? (answeredQuizCount / quiz.length) * 100 : 0;
+  const noteWordCount = getWordCount(noteBody);
   const streakPercent = Math.min((studyPet.streak / eggWarmDays) * 100, 100);
   const toolProgress =
     page === 'flashcards'
@@ -939,6 +972,12 @@ export default function App() {
                 detail: `${Math.round(timerPercent)}%`,
                 percent: timerPercent,
               }
+            : page === 'notes'
+              ? {
+                  label: copy.notes,
+                  detail: `${noteWordCount} ${copy.words}`,
+                  percent: Math.min((noteWordCount / 250) * 100, 100),
+                }
             : null;
 
   function goToPage(nextPage: Page, replace = false) {
@@ -957,6 +996,7 @@ export default function App() {
 
   useEffect(() => {
     setSavedLessons(readSavedLessons());
+    setSavedNotes(readSavedNotes());
     setLanguage(readLanguage());
   }, []);
 
@@ -1382,6 +1422,83 @@ Write exactly one short follow-up question from the pet. The question must be ba
   function updateSavedLessons(nextLessons: SavedLesson[]) {
     setSavedLessons(nextLessons);
     window.localStorage.setItem(savedLessonsKey, JSON.stringify(nextLessons));
+  }
+
+  function updateSavedNotes(nextNotes: StudyNote[]) {
+    setSavedNotes(nextNotes);
+    window.localStorage.setItem(savedNotesKey, JSON.stringify(nextNotes));
+  }
+
+  function startNewNote() {
+    setActiveNoteId(null);
+    setNoteTitle('');
+    setNoteBody('');
+    setNotesError('');
+    setNotesNotice('');
+  }
+
+  function saveStudyNote() {
+    const trimmedBody = noteBody.trim();
+    const trimmedTitle = noteTitle.trim() || `Note ${savedNotes.length + 1}`;
+
+    if (!trimmedBody) {
+      setNotesError('Write something in the note first.');
+      setNotesNotice('');
+      return;
+    }
+
+    const nextNote: StudyNote = {
+      id: activeNoteId ?? crypto.randomUUID(),
+      title: trimmedTitle.slice(0, 70),
+      body: trimmedBody,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const withoutCurrent = savedNotes.filter((note) => note.id !== nextNote.id);
+    updateSavedNotes([nextNote, ...withoutCurrent].slice(0, maxSavedNotes));
+    setActiveNoteId(nextNote.id);
+    setNoteTitle(nextNote.title);
+    setNoteBody(nextNote.body);
+    setNotesError('');
+    setNotesNotice('Note saved.');
+  }
+
+  function openStudyNote(note: StudyNote) {
+    setActiveNoteId(note.id);
+    setNoteTitle(note.title);
+    setNoteBody(note.body);
+    setNotesError('');
+    setNotesNotice(`Opened "${note.title}".`);
+  }
+
+  function deleteStudyNote(id: string) {
+    const nextNotes = savedNotes.filter((note) => note.id !== id);
+    updateSavedNotes(nextNotes);
+
+    if (activeNoteId === id) {
+      startNewNote();
+    } else {
+      setNotesError('');
+      setNotesNotice('Note deleted.');
+    }
+  }
+
+  function useCurrentNoteForStudy(note?: StudyNote) {
+    const title = (note?.title ?? noteTitle).trim();
+    const body = (note?.body ?? noteBody).trim();
+
+    if (!body) {
+      setNotesError('Write or open a note first.');
+      setNotesNotice('');
+      return;
+    }
+
+    setLessonName(title || 'Untitled note');
+    setMaterial(body);
+    setError('');
+    setNotice(`Loaded "${title || 'Untitled note'}" into study material.`);
+    clearResults();
+    goToPage('study');
   }
 
   function updateLanguage(nextLanguage: Language) {
@@ -2185,10 +2302,12 @@ ${trimmedMaterial}`;
                             ? 'Focus Timer'
                             : page === 'progress'
                               ? copy.progress
-                              : page === 'calculator'
-                                ? copy.calculator
-                                : page === 'studyMethods'
-                                  ? copy.studyMethods
+                              : page === 'notes'
+                                ? copy.notes
+                                : page === 'calculator'
+                                  ? copy.calculator
+                                  : page === 'studyMethods'
+                                    ? copy.studyMethods
                       : copy.studyHelperTitle}
             </h1>
           </div>
@@ -2857,6 +2976,93 @@ ${trimmedMaterial}`;
               </div>
             </article>
           </section>
+        ) : page === 'notes' ? (
+          <section className="notes-page" aria-label="Notes page">
+            <div className="notes-editor-panel">
+              <div className="notes-panel-heading">
+                <div>
+                  <p className="card-label">{copy.notes}</p>
+                  <h2>{activeNoteId ? 'Edit note' : 'New note'}</h2>
+                </div>
+                <button className="small-button muted-button" type="button" onClick={startNewNote}>
+                  New
+                </button>
+              </div>
+
+              <label className="field">
+                <span>Title</span>
+                <input
+                  value={noteTitle}
+                  onChange={(event) => setNoteTitle(event.target.value)}
+                  placeholder="Example: Chemistry review"
+                />
+              </label>
+
+              <label className="field notes-body-field">
+                <span>Note</span>
+                <textarea
+                  value={noteBody}
+                  onChange={(event) => {
+                    setNoteBody(event.target.value);
+                    setNotesError('');
+                    setNotesNotice('');
+                  }}
+                  placeholder="Write class notes, definitions, formulas, or things you want to remember..."
+                />
+              </label>
+
+              <div className="notes-meta-row">
+                <span>{noteWordCount} {copy.words}</span>
+                <span>{savedNotes.length} / {maxSavedNotes} saved</span>
+              </div>
+
+              <div className="action-row notes-action-row">
+                <button className="generate-button" type="button" onClick={saveStudyNote}>
+                  Save note
+                </button>
+                <button className="save-button" type="button" onClick={() => useCurrentNoteForStudy()}>
+                  Use in study
+                </button>
+              </div>
+
+              {notesError && <p className="message">{notesError}</p>}
+              {notesNotice && <p className="notice">{notesNotice}</p>}
+            </div>
+
+            <aside className="notes-list-panel" aria-label="Saved notes">
+              <div className="notes-panel-heading">
+                <div>
+                  <p className="card-label">Saved</p>
+                  <h2>Your notes</h2>
+                </div>
+              </div>
+
+              {savedNotes.length === 0 ? (
+                <p className="empty-state large">No notes saved yet.</p>
+              ) : (
+                <div className="notes-list">
+                  {savedNotes.map((note) => (
+                    <article className={note.id === activeNoteId ? 'note-card active' : 'note-card'} key={note.id}>
+                      <button className="note-card-main" type="button" onClick={() => openStudyNote(note)}>
+                        <strong>{note.title}</strong>
+                        <span>{getWordCount(note.body)} {copy.words}</span>
+                        <p>{note.body.slice(0, 120)}{note.body.length > 120 ? '...' : ''}</p>
+                        <time dateTime={note.updatedAt}>{new Date(note.updatedAt).toLocaleDateString()}</time>
+                      </button>
+                      <div className="note-card-actions">
+                        <button className="small-button" type="button" onClick={() => useCurrentNoteForStudy(note)}>
+                          Study
+                        </button>
+                        <button className="small-button muted-button" type="button" onClick={() => deleteStudyNote(note.id)}>
+                          Delete
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </aside>
+          </section>
         ) : page === 'focusTimer' ? (
           <section className="focus-timer-page" aria-label="Focus timer">
             <div className="timer-panel">
@@ -3357,6 +3563,13 @@ ${trimmedMaterial}`;
               onClick={() => goToPage('progress')}
             >
               {copy.progress}
+            </button>
+            <button
+              className="drawer-tool-button"
+              type="button"
+              onClick={() => goToPage('notes')}
+            >
+              {copy.notes}
             </button>
             <button
               className="drawer-tool-button"
