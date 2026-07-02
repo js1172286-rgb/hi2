@@ -565,6 +565,12 @@ function getPetFace(petType: PetType | null) {
   return petType ? petFaces[petType] : '()';
 }
 
+function getRandomEggPetImage(eggColor: EggColor) {
+  const petImagesForEgg = eggPetImages[eggColor] ?? [];
+  if (petImagesForEgg.length === 0) return null;
+  return petImagesForEgg[Math.floor(Math.random() * petImagesForEgg.length)];
+}
+
 function getGoogleSignInLabel(language: Language) {
   if (language === 'ru') return 'Войти через Google';
   if (language === 'kk') return 'Google арқылы кіру';
@@ -721,6 +727,23 @@ export default function App() {
   }, [page]);
 
   useEffect(() => {
+    if (!session || studyPet.eggColor !== 'green' || !studyPet.hasChosenEggColor || isPetHatched) return;
+
+    setStudyPet((currentPet) => {
+      if (currentPet.eggColor !== 'green' || !currentPet.hasChosenEggColor || currentPet.petType || currentPet.petImage) {
+        return currentPet;
+      }
+
+      const nextPet = {
+        ...currentPet,
+        petImage: getRandomEggPetImage('green'),
+      };
+      window.localStorage.setItem(studyPetKey, JSON.stringify(nextPet));
+      return nextPet;
+    });
+  }, [isPetHatched, session, studyPet.eggColor, studyPet.hasChosenEggColor]);
+
+  useEffect(() => {
     const textarea = materialTextareaRef.current;
     if (!textarea) return;
     textarea.style.height = 'auto';
@@ -779,12 +802,11 @@ export default function App() {
       const nextStreak = continuedStreak ? currentPet.streak + 1 : 1;
       const shouldKeepCurrentPet = continuedStreak && (currentPet.petType || currentPet.petImage);
       const shouldHatch = nextStreak > eggWarmDays && !shouldKeepCurrentPet;
-      const petImagesForEgg = eggPetImages[currentPet.eggColor] ?? [];
       const nextPetImage =
         shouldKeepCurrentPet && currentPet.petImage
           ? currentPet.petImage
-          : shouldHatch && petImagesForEgg.length > 0
-            ? petImagesForEgg[Math.floor(Math.random() * petImagesForEgg.length)]
+          : shouldHatch
+            ? getRandomEggPetImage(currentPet.eggColor)
             : null;
       const nextPetType =
         shouldKeepCurrentPet && currentPet.petType
@@ -815,10 +837,12 @@ export default function App() {
     if (!session || isPetHatched || studyPet.hasChosenEggColor) return;
 
     setStudyPet((currentPet) => {
+      const nextPetImage = pendingEggColor === 'green' ? getRandomEggPetImage('green') : null;
       const nextPet = {
         ...currentPet,
         streak: 0,
         lastStudyDate: '',
+        petImage: nextPetImage,
         eggColor: pendingEggColor,
         hasChosenEggColor: true,
       };
