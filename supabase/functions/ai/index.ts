@@ -39,7 +39,22 @@ Deno.serve(async (req) => {
     );
 
     const data = await res.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    if (!res.ok) {
+      const message = data?.error?.message || `Gemini request failed with status ${res.status}`;
+      throw new Error(message);
+    }
+
+    const text =
+      data?.candidates?.[0]?.content?.parts
+        ?.map((part: { text?: string }) => part.text ?? '')
+        .join('')
+        .trim() ?? '';
+
+    if (!text) {
+      const reason = data?.candidates?.[0]?.finishReason;
+      throw new Error(reason ? `Gemini returned no text. Finish reason: ${reason}` : 'Gemini returned no text.');
+    }
+
     return new Response(JSON.stringify({ text }), {
       headers: { ...cors, 'Content-Type': 'application/json' },
     });
