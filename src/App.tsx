@@ -747,14 +747,6 @@ export default function App() {
   }, [page]);
 
   useEffect(() => {
-    if (!session || studyPet.eggColor !== 'green' || !studyPet.hasChosenEggColor || isPetHatched || hatchPopup) return;
-
-    const petImage = getRandomEggPetImage('green');
-    if (!petImage) return;
-    setHatchPopup({ eggColor: 'green', petImage, stage: 'ready' });
-  }, [hatchPopup, isPetHatched, session, studyPet.eggColor, studyPet.hasChosenEggColor]);
-
-  useEffect(() => {
     return () => {
       if (hatchTimerRef.current) {
         window.clearTimeout(hatchTimerRef.current);
@@ -820,17 +812,13 @@ export default function App() {
       const continuedStreak = currentPet.lastStudyDate === yesterday;
       const nextStreak = continuedStreak ? currentPet.streak + 1 : 1;
       const shouldKeepCurrentPet = continuedStreak && (currentPet.petType || currentPet.petImage);
-      const shouldHatch = nextStreak > eggWarmDays && !shouldKeepCurrentPet;
-      const nextPetImage =
-        shouldKeepCurrentPet && currentPet.petImage
-          ? currentPet.petImage
-          : shouldHatch
-            ? getRandomEggPetImage(currentPet.eggColor)
-            : null;
+      const shouldHatch = nextStreak >= eggWarmDays && !shouldKeepCurrentPet;
+      const hatchPetImage = shouldHatch ? getRandomEggPetImage(currentPet.eggColor) : null;
+      const nextPetImage = shouldKeepCurrentPet && currentPet.petImage ? currentPet.petImage : null;
       const nextPetType =
         shouldKeepCurrentPet && currentPet.petType
           ? currentPet.petType
-          : shouldHatch && !nextPetImage
+          : shouldHatch && !hatchPetImage
             ? petTypes[Math.floor(Math.random() * petTypes.length)]
             : null;
       const nextPet = {
@@ -843,6 +831,9 @@ export default function App() {
       };
 
       window.localStorage.setItem(getStudyPetKey(session.user.id), JSON.stringify(nextPet));
+      if (hatchPetImage) {
+        setHatchPopup({ eggColor: currentPet.eggColor, petImage: hatchPetImage, stage: 'ready' });
+      }
       return nextPet;
     });
   }
@@ -867,13 +858,6 @@ export default function App() {
       window.localStorage.setItem(getStudyPetKey(session.user.id), JSON.stringify(nextPet));
       return nextPet;
     });
-
-    if (pendingEggColor === 'green') {
-      const petImage = getRandomEggPetImage('green');
-      if (petImage) {
-        setHatchPopup({ eggColor: 'green', petImage, stage: 'ready' });
-      }
-    }
   }
 
   function hatchEgg() {
