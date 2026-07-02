@@ -737,10 +737,10 @@ select:focus {
 .pet-visual.frozen::before {
   content: '';
   position: absolute;
-  inset: -48px;
+  inset: -68px;
   z-index: 3;
   background: url('/pets/ice-cube.png') center / contain no-repeat;
-  opacity: 0.86;
+  opacity: 0.76;
   pointer-events: none;
 }
 
@@ -749,6 +749,8 @@ select:focus {
   --egg-spot: #77b54b;
   --egg-ring: #366820;
   position: relative;
+  width: 94px;
+  height: 108px;
   overflow: hidden;
   border: 0;
   border-radius: 50% 50% 46% 46%;
@@ -780,8 +782,8 @@ select:focus {
 
 .egg-core {
   position: relative;
-  width: 92px;
-  height: 108px;
+  width: 82px;
+  height: 98px;
   display: block;
   overflow: hidden;
   border-radius: 50% 50% 46% 46%;
