@@ -1429,6 +1429,7 @@ select:focus {
 :root[data-theme='dark'] .share-panel,
 :root[data-theme='dark'] .source-form,
 :root[data-theme='dark'] .lesson-item,
+:root[data-theme='dark'] .flashcards-page,
 :root[data-theme='dark'] .notes-editor-panel,
 :root[data-theme='dark'] .note-card,
 :root[data-theme='dark'] .calculator-panel,
