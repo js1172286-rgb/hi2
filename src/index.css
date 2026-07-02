@@ -1446,6 +1446,15 @@ select:focus {
   border-color: var(--line);
 }
 
+:root[data-theme='dark'] .review-flashcard:hover {
+  background: #141516;
+}
+
+:root[data-theme='dark'] .review-flashcard.flipped {
+  background: #191c1f;
+  border-color: #516062;
+}
+
 :root[data-theme='dark'] .study-options,
 :root[data-theme='dark'] .lessons-page-heading,
 :root[data-theme='dark'] .quiz-page-body,
