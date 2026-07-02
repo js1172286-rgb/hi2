@@ -8,7 +8,7 @@ type AiResponse = {
 };
 
 type StudyMode = 'summary' | 'flashcards' | 'quiz';
-type Page = 'study' | 'lessons' | 'otherMaterials' | 'tutor' | 'account' | 'flashcards' | 'quiz' | 'focusTimer';
+type Page = 'study' | 'lessons' | 'otherMaterials' | 'tutor' | 'account' | 'flashcards' | 'quiz' | 'focusTimer' | 'progress';
 type Language = 'en' | 'ru' | 'kk';
 type Theme = 'light' | 'dark';
 type TimerMode = 'focus' | 'break';
@@ -157,6 +157,7 @@ const pagePaths: Record<Page, string> = {
   flashcards: '/flashcards',
   quiz: '/quiz',
   focusTimer: '/focus-timer',
+  progress: '/progress',
 };
 
 function getPageFromPath(pathname = window.location.pathname): Page {
@@ -168,6 +169,7 @@ function getPageFromPath(pathname = window.location.pathname): Page {
   if (normalizedPath === pagePaths.flashcards) return 'flashcards';
   if (normalizedPath === pagePaths.quiz) return 'quiz';
   if (normalizedPath === pagePaths.focusTimer) return 'focusTimer';
+  if (normalizedPath === pagePaths.progress) return 'progress';
   return 'study';
 }
 
@@ -202,6 +204,7 @@ const translations = {
     options: 'Options',
     otherMaterials: 'Other Materials',
     password: 'Password',
+    progress: 'Progress',
     quiz: 'Quiz',
     quizMe: 'Quiz me',
     saveLesson: 'Save lesson',
@@ -237,6 +240,7 @@ const translations = {
     options: 'Опции',
     otherMaterials: 'Другие материалы',
     password: 'Пароль',
+    progress: 'Прогресс',
     quiz: 'Тест',
     quizMe: 'Проверь меня',
     saveLesson: 'Сохранить урок',
@@ -272,6 +276,7 @@ const translations = {
     options: 'Опциялар',
     otherMaterials: 'Басқа материалдар',
     password: 'Құпия сөз',
+    progress: 'Прогресс',
     quiz: 'Тест',
     quizMe: 'Мені тексер',
     saveLesson: 'Сабақты сақтау',
@@ -772,19 +777,24 @@ export default function App() {
   const currentFlashcard = flashcards[currentFlashcardIndex];
   const answeredQuizCount = quizAnswers.filter((answer) => answer.trim()).length;
   const timerTotalSeconds = (timerMode === 'focus' ? focusMinutes : breakMinutes) * 60;
+  const timerPercent = timerTotalSeconds > 0 ? ((timerTotalSeconds - timerSecondsLeft) / timerTotalSeconds) * 100 : 0;
   const tutorQuestionCount = tutorMessages.filter((message) => message.role === 'user').length;
+  const savedLessonsPercent = (savedLessons.length / maxSavedLessons) * 100;
+  const flashcardPercent = flashcards.length > 0 ? ((currentFlashcardIndex + 1) / flashcards.length) * 100 : 0;
+  const quizPercent = quiz.length > 0 ? (answeredQuizCount / quiz.length) * 100 : 0;
+  const streakPercent = Math.min((studyPet.streak / eggWarmDays) * 100, 100);
   const toolProgress =
     page === 'flashcards'
       ? {
           label: copy.flashcards,
           detail: flashcards.length > 0 ? `${currentFlashcardIndex + 1} / ${flashcards.length}` : `0 / 0`,
-          percent: flashcards.length > 0 ? ((currentFlashcardIndex + 1) / flashcards.length) * 100 : 0,
+          percent: flashcardPercent,
         }
       : page === 'quiz'
         ? {
             label: copy.quiz,
             detail: quiz.length > 0 ? `${answeredQuizCount} / ${quiz.length}` : `0 / 0`,
-            percent: quiz.length > 0 ? (answeredQuizCount / quiz.length) * 100 : 0,
+            percent: quizPercent,
           }
         : page === 'tutor'
           ? {
@@ -795,8 +805,8 @@ export default function App() {
           : page === 'focusTimer'
             ? {
                 label: 'Focus Timer',
-                detail: `${Math.round(((timerTotalSeconds - timerSecondsLeft) / timerTotalSeconds) * 100)}%`,
-                percent: timerTotalSeconds > 0 ? ((timerTotalSeconds - timerSecondsLeft) / timerTotalSeconds) * 100 : 0,
+                detail: `${Math.round(timerPercent)}%`,
+                percent: timerPercent,
               }
             : null;
 
@@ -1718,6 +1728,8 @@ ${trimmedMaterial}`;
                           ? copy.quiz
                           : page === 'focusTimer'
                             ? 'Focus Timer'
+                            : page === 'progress'
+                              ? copy.progress
                       : copy.studyHelperTitle}
             </h1>
           </div>
@@ -2249,6 +2261,59 @@ ${trimmedMaterial}`;
               </div>
             )}
           </section>
+        ) : page === 'progress' ? (
+          <section className="progress-page" aria-label="Progress page">
+            <article className="progress-card main-progress-card">
+              <p className="card-label">Study streak</p>
+              <h2>{studyPet.streak} days</h2>
+              <p>
+                {!session
+                  ? 'Sign in to grow your streak and hatch your pet.'
+                  : isPetHatched
+                    ? `${petName} is hatched and ready to study with you.`
+                    : `${warmDaysShown}/${eggWarmDays} warm days before the egg hatches.`}
+              </p>
+              <div className="progress-card-track" aria-hidden="true">
+                <span style={{ width: `${Math.min(Math.max(streakPercent, 0), 100)}%` }} />
+              </div>
+            </article>
+
+            <article className="progress-card">
+              <p className="card-label">{copy.lessons}</p>
+              <h3>{savedLessons.length} / {maxSavedLessons}</h3>
+              <p>Saved lessons</p>
+              <div className="progress-card-track" aria-hidden="true">
+                <span style={{ width: `${Math.min(Math.max(savedLessonsPercent, 0), 100)}%` }} />
+              </div>
+            </article>
+
+            <article className="progress-card">
+              <p className="card-label">{copy.flashcards}</p>
+              <h3>{flashcards.length > 0 ? `${currentFlashcardIndex + 1} / ${flashcards.length}` : '0 / 0'}</h3>
+              <p>Current flashcard set</p>
+              <div className="progress-card-track" aria-hidden="true">
+                <span style={{ width: `${Math.min(Math.max(flashcardPercent, 0), 100)}%` }} />
+              </div>
+            </article>
+
+            <article className="progress-card">
+              <p className="card-label">{copy.quiz}</p>
+              <h3>{quiz.length > 0 ? `${answeredQuizCount} / ${quiz.length}` : '0 / 0'}</h3>
+              <p>Answers filled in</p>
+              <div className="progress-card-track" aria-hidden="true">
+                <span style={{ width: `${Math.min(Math.max(quizPercent, 0), 100)}%` }} />
+              </div>
+            </article>
+
+            <article className="progress-card">
+              <p className="card-label">Focus Timer</p>
+              <h3>{Math.round(timerPercent)}%</h3>
+              <p>{timerMode === 'focus' ? 'Focus session' : 'Break session'}</p>
+              <div className="progress-card-track" aria-hidden="true">
+                <span style={{ width: `${Math.min(Math.max(timerPercent, 0), 100)}%` }} />
+              </div>
+            </article>
+          </section>
         ) : page === 'focusTimer' ? (
           <section className="focus-timer-page" aria-label="Focus timer">
             <div className="timer-panel">
@@ -2455,6 +2520,13 @@ ${trimmedMaterial}`;
           onClick={() => goToPage('focusTimer')}
         >
           Focus Timer
+        </button>
+        <button
+          className="drawer-tool-button"
+          type="button"
+          onClick={() => goToPage('progress')}
+        >
+          {copy.progress}
         </button>
       </aside>
 
