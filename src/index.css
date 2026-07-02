@@ -1244,6 +1244,7 @@ select:focus {
 :root[data-theme='dark'] .source-form,
 :root[data-theme='dark'] .lesson-item,
 :root[data-theme='dark'] .calculator-panel,
+:root[data-theme='dark'] .study-method-tile,
 :root[data-theme='dark'] .search-card,
 :root[data-theme='dark'] .result,
 :root[data-theme='dark'] .summary-modal,
@@ -1562,6 +1563,48 @@ select:focus {
 
 .calculator-key.zero {
   grid-column: span 2;
+}
+
+.study-methods-page {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.study-method-tile {
+  min-height: 118px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 24px;
+  font-weight: 900;
+  text-align: left;
+}
+
+.study-method-tile:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.study-method-modal-copy {
+  display: grid;
+  gap: 14px;
+  color: var(--ink);
+  line-height: 1.55;
+}
+
+.study-method-modal-copy ol {
+  display: grid;
+  gap: 8px;
+  padding-left: 22px;
+}
+
+.study-method-modal-copy li::marker {
+  color: var(--accent);
+  font-weight: 900;
 }
 
 .progress-page {
@@ -2147,6 +2190,10 @@ select:focus {
   }
 
   .progress-page {
+    grid-template-columns: 1fr;
+  }
+
+  .study-methods-page {
     grid-template-columns: 1fr;
   }
 

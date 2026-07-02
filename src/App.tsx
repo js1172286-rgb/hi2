@@ -759,6 +759,7 @@ export default function App() {
   const [calculatorStoredValue, setCalculatorStoredValue] = useState<number | null>(null);
   const [calculatorOperator, setCalculatorOperator] = useState<CalculatorOperator | null>(null);
   const [isCalculatorWaiting, setIsCalculatorWaiting] = useState(false);
+  const [isPomodoroInfoOpen, setIsPomodoroInfoOpen] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -2722,7 +2723,9 @@ ${trimmedMaterial}`;
           </section>
         ) : page === 'studyMethods' ? (
           <section className="study-methods-page" aria-label="Study methods">
-            <p className="empty-state large">No study methods added yet.</p>
+            <button className="study-method-tile" type="button" onClick={() => setIsPomodoroInfoOpen(true)}>
+              Pomodoro
+            </button>
           </section>
         ) : (
           <>
@@ -2810,6 +2813,31 @@ ${trimmedMaterial}`;
             >
               {isSummaryCopied ? '✓ Copied' : 'Copy'}
             </button>
+          </section>
+        </div>
+      )}
+
+      {isPomodoroInfoOpen && (
+        <div className="summary-modal-backdrop" role="presentation">
+          <section className="summary-modal study-method-modal" role="dialog" aria-modal="true" aria-label="Pomodoro method">
+            <div className="summary-modal-heading">
+              <h2>Pomodoro</h2>
+              <button className="small-button" type="button" onClick={() => setIsPomodoroInfoOpen(false)}>
+                Close
+              </button>
+            </div>
+            <div className="study-method-modal-copy">
+              <p>
+                Pomodoro helps you focus by studying in short timed sessions, then resting before your brain gets too tired.
+              </p>
+              <ol>
+                <li>Choose one task to study.</li>
+                <li>Set a 25 minute focus timer.</li>
+                <li>Work only on that task until the timer ends.</li>
+                <li>Take a 5 minute break.</li>
+                <li>After 4 rounds, take a longer break.</li>
+              </ol>
+            </div>
           </section>
         </div>
       )}
