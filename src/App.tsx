@@ -710,6 +710,45 @@ function getLessonKnowledgePercent(lesson: SavedLesson) {
   return Math.min(10 + sourceProgress + wordProgress, 100);
 }
 
+function getWeakestLesson(lessons: SavedLesson[]) {
+  if (lessons.length === 0) return null;
+  return lessons.reduce((weakest, lesson) =>
+    getLessonKnowledgePercent(lesson) < getLessonKnowledgePercent(weakest) ? lesson : weakest,
+  );
+}
+
+function getStudyKeywords(text: string) {
+  const skipWords = new Set([
+    'about',
+    'after',
+    'again',
+    'because',
+    'before',
+    'could',
+    'every',
+    'first',
+    'learn',
+    'other',
+    'should',
+    'their',
+    'there',
+    'these',
+    'thing',
+    'which',
+    'would',
+  ]);
+
+  return Array.from(
+    new Set(
+      text
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .split(/\s+/)
+        .filter((word) => word.length > 4 && !skipWords.has(word)),
+    ),
+  ).slice(0, 8);
+}
+
 function formatTimerTime(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
   const seconds = (totalSeconds % 60).toString().padStart(2, '0');
@@ -771,6 +810,7 @@ export default function App() {
   const [isTeachChatOpen, setIsTeachChatOpen] = useState(false);
   const [teachMessages, setTeachMessages] = useState<TeachMessage[]>([]);
   const [teachAnswer, setTeachAnswer] = useState('');
+  const [teachLessonId, setTeachLessonId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -1117,13 +1157,21 @@ export default function App() {
   }
 
   function startTeachPetChat() {
+    const weakestLesson = getWeakestLesson(savedLessons);
+    const weakestLessonPercent = weakestLesson ? getLessonKnowledgePercent(weakestLesson) : 0;
+    const lessonKeywords = weakestLesson ? getStudyKeywords(getLessonMaterial(weakestLesson)) : [];
+    const firstKeyword = lessonKeywords[0] || 'the main idea';
+
     setIsTeachInfoOpen(false);
     setIsTeachChatOpen(true);
     setTeachAnswer('');
+    setTeachLessonId(weakestLesson?.id ?? null);
     setTeachMessages([
       {
         role: 'pet',
-        text: `Hi, I am ${petName}. Please teach me something, but explain it like I am totally new to it.`,
+        text: weakestLesson
+          ? `Hi, I am ${petName}. Your lowest progress lesson is "${weakestLesson.title}" at ${weakestLessonPercent}%. Can you teach me about "${firstKeyword}" from that lesson? Explain it like I am totally new.`
+          : `Hi, I am ${petName}. Save a lesson first and I can ask about the one you know the least. For now, teach me any topic like I am totally new.`,
       },
     ]);
   }
@@ -1132,21 +1180,20 @@ export default function App() {
     const answer = teachAnswer.trim();
     if (!answer) return;
 
-    const usefulWords = answer
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, ' ')
-      .split(/\s+/)
-      .filter((word) => word.length > 4 && !['because', 'about', 'there', 'their', 'would', 'could', 'should', 'which'].includes(word));
-    const focusWord = usefulWords[0] || 'that idea';
+    const activeLesson = savedLessons.find((lesson) => lesson.id === teachLessonId) || getWeakestLesson(savedLessons);
+    const userAnswerCount = teachMessages.filter((message) => message.role === 'user').length;
+    const lessonKeywords = activeLesson ? getStudyKeywords(getLessonMaterial(activeLesson)) : [];
+    const answerKeywords = getStudyKeywords(answer);
+    const focusWord = lessonKeywords[userAnswerCount % Math.max(lessonKeywords.length, 1)] || answerKeywords[0] || 'that idea';
+    const lessonTitle = activeLesson?.title || 'this topic';
     const petQuestions = [
-      `Wait, what does "${focusWord}" mean in simpler words?`,
-      `Can you give me a tiny example of "${focusWord}"?`,
-      `Why is "${focusWord}" important?`,
+      `In "${lessonTitle}", what does "${focusWord}" mean in simpler words?`,
+      `Can you give me a tiny example of "${focusWord}" from "${lessonTitle}"?`,
+      `Why is "${focusWord}" important in this lesson?`,
       `I am still confused. Can you explain "${focusWord}" step by step?`,
       `How would I know when to use "${focusWord}"?`,
-      `Can you compare "${focusWord}" to something easy?`,
+      `Can you connect "${focusWord}" to another part of "${lessonTitle}"?`,
     ];
-    const userAnswerCount = teachMessages.filter((message) => message.role === 'user').length;
     const nextQuestion = petQuestions[userAnswerCount % petQuestions.length];
 
     setTeachMessages([...teachMessages, { role: 'user', text: answer }, { role: 'pet', text: nextQuestion }]);
