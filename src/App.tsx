@@ -2073,17 +2073,16 @@ ${trimmedMaterial}`;
             </div>
 
             <div className="tutor-input-panel">
-              <label className="field">
-                <span>{copy.askTutor}</span>
+              <label className="tutor-composer">
                 <textarea
                   value={tutorQuestion}
                   onChange={(event) => setTutorQuestion(event.target.value)}
                   placeholder={copy.askTutorPlaceholder}
                 />
+                <button className="generate-button" type="button" onClick={askTutor} disabled={isTutorLoading}>
+                  {isTutorLoading ? copy.thinking : copy.askTutor}
+                </button>
               </label>
-              <button className="generate-button" type="button" onClick={askTutor} disabled={isTutorLoading}>
-                {isTutorLoading ? copy.thinking : copy.askTutor}
-              </button>
               {tutorError && <p className="message">{tutorError}</p>}
             </div>
           </section>

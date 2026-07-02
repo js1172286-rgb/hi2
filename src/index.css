@@ -592,9 +592,12 @@ select:focus {
 
 .tutor-page {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 18px;
-  align-items: start;
+  grid-template-rows: minmax(360px, 1fr) auto;
+  min-height: 620px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  overflow: hidden;
 }
 
 .account-page {
@@ -1280,34 +1283,42 @@ select:focus {
 
 .tutor-chat,
 .tutor-input-panel {
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fff;
+  background: var(--card);
 }
 
 .tutor-chat {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-  max-height: 560px;
+  max-height: 620px;
   overflow: auto;
-  padding: 18px;
+  padding: 22px;
 }
 
 .tutor-message {
-  max-width: 84%;
-  padding: 14px;
+  max-width: min(74%, 620px);
+  padding: 12px 14px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 18px;
   background: var(--panel);
+  box-shadow: 0 8px 22px rgba(20, 33, 38, 0.06);
 }
 
 .tutor-message.user {
-  justify-self: end;
-  background: var(--accent-soft);
+  align-self: flex-end;
+  border-bottom-right-radius: 6px;
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
 }
 
 .tutor-message.tutor {
-  justify-self: start;
+  align-self: flex-start;
+  border-bottom-left-radius: 6px;
+}
+
+.tutor-message.user .card-label {
+  color: rgba(255, 255, 255, 0.78);
 }
 
 .tutor-message p:last-child {
@@ -1317,12 +1328,29 @@ select:focus {
 
 .tutor-input-panel {
   display: grid;
-  gap: 12px;
-  padding: 16px;
+  gap: 8px;
+  padding: 14px;
+  border-top: 1px solid var(--line);
 }
 
-.tutor-input-panel textarea {
-  min-height: 170px;
+.tutor-composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.tutor-composer textarea {
+  min-height: 54px;
+  max-height: 160px;
+  resize: vertical;
+  border-radius: 18px;
+}
+
+.tutor-composer .generate-button {
+  min-height: 54px;
+  padding-inline: 18px;
+  border-radius: 18px;
 }
 
 .focus-timer-page {
@@ -1801,11 +1829,19 @@ select:focus {
   .pet-panel,
   .lessons-page-grid,
   .other-materials-page,
-  .tutor-page,
+  .tutor-composer,
   .search-results,
   .lesson-actions,
   .flashcard-grid {
     grid-template-columns: 1fr;
+  }
+
+  .tutor-page {
+    min-height: 560px;
+  }
+
+  .tutor-message {
+    max-width: 92%;
   }
 
   .lessons-page-heading {
