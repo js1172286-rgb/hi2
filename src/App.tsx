@@ -848,6 +848,7 @@ export default function App() {
   const [notePenColor, setNotePenColor] = useState(() => (readTheme() === 'dark' ? '#f7f8f8' : '#142126'));
   const [notePenSize, setNotePenSize] = useState(7);
   const [isNoteDirty, setIsNoteDirty] = useState(false);
+  const [isSavedNotesOpen, setIsSavedNotesOpen] = useState(false);
   const [notesNotice, setNotesNotice] = useState('');
   const [notesError, setNotesError] = useState('');
   const [summary, setSummary] = useState('');
@@ -3127,9 +3128,14 @@ ${trimmedMaterial}`;
                   <p className="card-label">{copy.notes}</p>
                   <h2>{activeNoteId ? 'Edit note' : 'New note'}</h2>
                 </div>
-                <button className="small-button muted-button notes-new-button" type="button" onClick={startNewNote}>
-                  New note
-                </button>
+                <div className="notes-heading-actions">
+                  <button className="small-button" type="button" onClick={() => setIsSavedNotesOpen(true)}>
+                    Saved notes
+                  </button>
+                  <button className="small-button muted-button notes-new-button" type="button" onClick={startNewNote}>
+                    New note
+                  </button>
+                </div>
               </div>
 
               <label className="field">
@@ -3198,51 +3204,6 @@ ${trimmedMaterial}`;
               {notesError && <p className="message">{notesError}</p>}
               {notesNotice && <p className="notice">{notesNotice}</p>}
             </div>
-
-            <aside className="notes-list-panel" aria-label="Saved notes">
-              <div className="notes-panel-heading">
-                <div>
-                  <p className="card-label">Saved</p>
-                  <h2>Your notes</h2>
-                </div>
-                <span className="notes-count-pill">{savedNotes.length}</span>
-              </div>
-
-              {savedNotes.length === 0 ? (
-                <p className="empty-state large">No notes saved yet.</p>
-              ) : (
-                <div className="notes-list">
-                  {savedNotes.map((note) => (
-                    <article className={note.id === activeNoteId ? 'note-card active' : 'note-card'} key={note.id}>
-                      <button className="note-card-main" type="button" onClick={() => openStudyNote(note)}>
-                        <span className="note-preview">
-                          {note.imageData ? (
-                            <img src={note.imageData} alt="" />
-                          ) : (
-                            <span>{note.body?.slice(0, 80) || 'Freehand note'}</span>
-                          )}
-                        </span>
-                        <span className="note-card-top">
-                          <strong>{note.title}</strong>
-                          <time dateTime={note.updatedAt}>{new Date(note.updatedAt).toLocaleDateString()}</time>
-                        </span>
-                        <span className="note-card-word-count">
-                          {note.imageData ? 'Freehand' : `${getWordCount(note.body ?? '')} ${copy.words}`}
-                        </span>
-                      </button>
-                      <div className="note-card-actions">
-                        <button className="small-button" type="button" onClick={() => openStudyNote(note)}>
-                          Open
-                        </button>
-                        <button className="small-button muted-button" type="button" onClick={() => deleteStudyNote(note.id)}>
-                          Delete
-                        </button>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              )}
-            </aside>
           </section>
         ) : page === 'focusTimer' ? (
           <section className="focus-timer-page" aria-label="Focus timer">
@@ -3488,6 +3449,74 @@ ${trimmedMaterial}`;
                 No, use English answers
               </button>
             </div>
+          </section>
+        </div>
+      )}
+
+      {isSavedNotesOpen && (
+        <div className="summary-modal-backdrop" role="presentation">
+          <section className="summary-modal saved-notes-modal" role="dialog" aria-modal="true" aria-label="Saved notes">
+            <div className="summary-modal-heading">
+              <div>
+                <p className="card-label">Saved</p>
+                <h2>Your notes</h2>
+              </div>
+              <div className="notes-heading-actions">
+                <span className="notes-count-pill">{savedNotes.length}</span>
+                <button className="small-button" type="button" onClick={() => setIsSavedNotesOpen(false)}>
+                  Close
+                </button>
+              </div>
+            </div>
+
+            {savedNotes.length === 0 ? (
+              <p className="empty-state large">No notes saved yet.</p>
+            ) : (
+              <div className="notes-list saved-notes-modal-list">
+                {savedNotes.map((note) => (
+                  <article className={note.id === activeNoteId ? 'note-card active' : 'note-card'} key={note.id}>
+                    <button
+                      className="note-card-main"
+                      type="button"
+                      onClick={() => {
+                        openStudyNote(note);
+                        setIsSavedNotesOpen(false);
+                      }}
+                    >
+                      <span className="note-preview">
+                        {note.imageData ? (
+                          <img src={note.imageData} alt="" />
+                        ) : (
+                          <span>{note.body?.slice(0, 80) || 'Freehand note'}</span>
+                        )}
+                      </span>
+                      <span className="note-card-top">
+                        <strong>{note.title}</strong>
+                        <time dateTime={note.updatedAt}>{new Date(note.updatedAt).toLocaleDateString()}</time>
+                      </span>
+                      <span className="note-card-word-count">
+                        {note.imageData ? 'Freehand' : `${getWordCount(note.body ?? '')} ${copy.words}`}
+                      </span>
+                    </button>
+                    <div className="note-card-actions">
+                      <button
+                        className="small-button"
+                        type="button"
+                        onClick={() => {
+                          openStudyNote(note);
+                          setIsSavedNotesOpen(false);
+                        }}
+                      >
+                        Open
+                      </button>
+                      <button className="small-button muted-button" type="button" onClick={() => deleteStudyNote(note.id)}>
+                        Delete
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
           </section>
         </div>
       )}

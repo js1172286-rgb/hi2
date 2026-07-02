@@ -1430,7 +1430,6 @@ select:focus {
 :root[data-theme='dark'] .source-form,
 :root[data-theme='dark'] .lesson-item,
 :root[data-theme='dark'] .notes-editor-panel,
-:root[data-theme='dark'] .notes-list-panel,
 :root[data-theme='dark'] .note-card,
 :root[data-theme='dark'] .calculator-panel,
 :root[data-theme='dark'] .study-method-tile,
@@ -2096,24 +2095,18 @@ select:focus {
 
 .notes-page {
   display: grid;
-  grid-template-columns: minmax(420px, 1fr) minmax(260px, 360px);
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   align-items: start;
 }
 
-.notes-editor-panel,
-.notes-list-panel {
+.notes-editor-panel {
   display: grid;
   gap: 16px;
   padding: 20px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--card);
-}
-
-.notes-list-panel {
-  max-height: min(720px, calc(100vh - 160px));
-  overflow: auto;
 }
 
 .notes-panel-heading {
@@ -2132,6 +2125,12 @@ select:focus {
 
 .notes-new-button {
   white-space: nowrap;
+}
+
+.notes-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .notes-meta-row {
@@ -2227,6 +2226,30 @@ select:focus {
 .notes-list {
   display: grid;
   gap: 10px;
+}
+
+.saved-notes-modal {
+  width: min(760px, 100%);
+}
+
+.saved-notes-modal-list {
+  max-height: min(58vh, 560px);
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.saved-notes-modal-list .note-card {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.saved-notes-modal-list .note-card-main {
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: center;
+}
+
+.saved-notes-modal-list .note-preview {
+  grid-row: span 3;
 }
 
 .note-card {
@@ -2892,14 +2915,22 @@ select:focus {
     grid-template-columns: 1fr;
   }
 
-  .notes-list-panel {
-    max-height: none;
-    overflow: visible;
-  }
-
   .notes-panel-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .notes-heading-actions {
+    flex-wrap: wrap;
+  }
+
+  .saved-notes-modal-list .note-card,
+  .saved-notes-modal-list .note-card-main {
+    grid-template-columns: 1fr;
+  }
+
+  .saved-notes-modal-list .note-preview {
+    grid-row: auto;
   }
 
   .freehand-toolbar {
