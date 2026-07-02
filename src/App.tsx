@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 
@@ -73,7 +73,8 @@ type SavedLesson = {
 type StudyNote = {
   id: string;
   title: string;
-  body: string;
+  body?: string;
+  imageData?: string;
   updatedAt: string;
 };
 
@@ -127,6 +128,8 @@ const themeKey = 'study-helper-theme';
 const studyPetKey = 'study-helper-pet';
 const maxSavedLessons = 6;
 const maxSavedNotes = 20;
+const noteCanvasWidth = 1200;
+const noteCanvasHeight = 720;
 const eggWarmDays = 3;
 const defaultFocusMinutes = 25;
 const defaultBreakMinutes = 5;
@@ -840,7 +843,11 @@ export default function App() {
   const [savedNotes, setSavedNotes] = useState<StudyNote[]>([]);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [noteTitle, setNoteTitle] = useState('');
-  const [noteBody, setNoteBody] = useState('');
+  const [noteImageData, setNoteImageData] = useState('');
+  const [noteFallbackText, setNoteFallbackText] = useState('');
+  const [notePenColor, setNotePenColor] = useState(() => (readTheme() === 'dark' ? '#f7f8f8' : '#142126'));
+  const [notePenSize, setNotePenSize] = useState(7);
+  const [isNoteDirty, setIsNoteDirty] = useState(false);
   const [notesNotice, setNotesNotice] = useState('');
   const [notesError, setNotesError] = useState('');
   const [summary, setSummary] = useState('');
@@ -911,6 +918,9 @@ export default function App() {
   const [tutorError, setTutorError] = useState('');
   const [isTutorLoading, setIsTutorLoading] = useState(false);
   const materialTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const noteCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const isNoteDrawingRef = useRef(false);
+  const lastNotePointRef = useRef<{ x: number; y: number } | null>(null);
   const hatchTimerRef = useRef<number | null>(null);
   const summaryCopyTimerRef = useRef<number | null>(null);
 
@@ -945,7 +955,7 @@ export default function App() {
   const lessonRingSlots = Array.from({ length: maxSavedLessons }, (_, index) => savedLessons[index] ?? null);
   const flashcardPercent = flashcards.length > 0 ? ((currentFlashcardIndex + 1) / flashcards.length) * 100 : 0;
   const quizPercent = quiz.length > 0 ? (answeredQuizCount / quiz.length) * 100 : 0;
-  const noteWordCount = getWordCount(noteBody);
+  const notePaperColor = theme === 'dark' ? '#151719' : '#fffdf5';
   const streakPercent = Math.min((studyPet.streak / eggWarmDays) * 100, 100);
   const toolProgress =
     page === 'flashcards'
@@ -975,8 +985,8 @@ export default function App() {
             : page === 'notes'
               ? {
                   label: copy.notes,
-                  detail: `${noteWordCount} ${copy.words}`,
-                  percent: Math.min((noteWordCount / 250) * 100, 100),
+                  detail: `${savedNotes.length} / ${maxSavedNotes} saved`,
+                  percent: Math.min((savedNotes.length / maxSavedNotes) * 100, 100),
                 }
             : null;
 
@@ -1058,6 +1068,11 @@ export default function App() {
     textarea.style.height = 'auto';
     textarea.style.height = `${textarea.scrollHeight}px`;
   }, [material]);
+
+  useEffect(() => {
+    if (page !== 'notes') return;
+    resetNoteCanvas(noteImageData, noteFallbackText);
+  }, [noteFallbackText, noteImageData, page, theme]);
 
   useEffect(() => {
     if (page !== 'flashcards') return;
@@ -1429,20 +1444,160 @@ Write exactly one short follow-up question from the pet. The question must be ba
     window.localStorage.setItem(savedNotesKey, JSON.stringify(nextNotes));
   }
 
-  function startNewNote() {
-    setActiveNoteId(null);
-    setNoteTitle('');
-    setNoteBody('');
+  function getNoteCanvasContext() {
+    const canvas = noteCanvasRef.current;
+    const context = canvas?.getContext('2d');
+    if (!context) return null;
+
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    return context;
+  }
+
+  function drawTextNoteFallback(context: CanvasRenderingContext2D, text: string) {
+    const words = text.split(/\s+/);
+    const lines: string[] = [];
+    let line = '';
+
+    words.forEach((word) => {
+      const testLine = line ? `${line} ${word}` : word;
+      if (context.measureText(testLine).width > 1040 && line) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = testLine;
+      }
+    });
+
+    if (line) lines.push(line);
+
+    context.fillStyle = theme === 'dark' ? '#f7f8f8' : '#142126';
+    context.font = '28px Inter, system-ui, sans-serif';
+    context.textBaseline = 'top';
+    lines.slice(0, 12).forEach((textLine, index) => {
+      context.fillText(textLine, 72, 72 + index * 44);
+    });
+  }
+
+  function resetNoteCanvas(imageData = '', fallbackText = '') {
+    const context = getNoteCanvasContext();
+    if (!context) return;
+
+    context.clearRect(0, 0, noteCanvasWidth, noteCanvasHeight);
+    context.fillStyle = notePaperColor;
+    context.fillRect(0, 0, noteCanvasWidth, noteCanvasHeight);
+
+    context.strokeStyle = theme === 'dark' ? 'rgba(247, 248, 248, 0.07)' : 'rgba(47, 111, 115, 0.12)';
+    context.lineWidth = 1;
+    for (let y = 82; y < noteCanvasHeight; y += 48) {
+      context.beginPath();
+      context.moveTo(56, y);
+      context.lineTo(noteCanvasWidth - 56, y);
+      context.stroke();
+    }
+
+    if (imageData) {
+      const image = new Image();
+      image.onload = () => {
+        context.drawImage(image, 0, 0, noteCanvasWidth, noteCanvasHeight);
+      };
+      image.src = imageData;
+      return;
+    }
+
+    if (fallbackText) {
+      drawTextNoteFallback(context, fallbackText);
+    }
+  }
+
+  function getNotePoint(event: ReactPointerEvent<HTMLCanvasElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    return {
+      x: ((event.clientX - rect.left) / rect.width) * noteCanvasWidth,
+      y: ((event.clientY - rect.top) / rect.height) * noteCanvasHeight,
+    };
+  }
+
+  function drawNoteDot(point: { x: number; y: number }) {
+    const context = getNoteCanvasContext();
+    if (!context) return;
+
+    context.fillStyle = notePenColor;
+    context.beginPath();
+    context.arc(point.x, point.y, notePenSize / 2, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  function drawNoteLine(from: { x: number; y: number }, to: { x: number; y: number }) {
+    const context = getNoteCanvasContext();
+    if (!context) return;
+
+    context.strokeStyle = notePenColor;
+    context.lineWidth = notePenSize;
+    context.beginPath();
+    context.moveTo(from.x, from.y);
+    context.lineTo(to.x, to.y);
+    context.stroke();
+  }
+
+  function startNoteDrawing(event: ReactPointerEvent<HTMLCanvasElement>) {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const point = getNotePoint(event);
+    isNoteDrawingRef.current = true;
+    lastNotePointRef.current = point;
+    drawNoteDot(point);
+    setIsNoteDirty(true);
     setNotesError('');
     setNotesNotice('');
   }
 
-  function saveStudyNote() {
-    const trimmedBody = noteBody.trim();
-    const trimmedTitle = noteTitle.trim() || `Note ${savedNotes.length + 1}`;
+  function continueNoteDrawing(event: ReactPointerEvent<HTMLCanvasElement>) {
+    if (!isNoteDrawingRef.current || !lastNotePointRef.current) return;
 
-    if (!trimmedBody) {
-      setNotesError('Write something in the note first.');
+    event.preventDefault();
+    const point = getNotePoint(event);
+    drawNoteLine(lastNotePointRef.current, point);
+    lastNotePointRef.current = point;
+  }
+
+  function stopNoteDrawing(event: ReactPointerEvent<HTMLCanvasElement>) {
+    if (!isNoteDrawingRef.current) return;
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    isNoteDrawingRef.current = false;
+    lastNotePointRef.current = null;
+  }
+
+  function startNewNote() {
+    setActiveNoteId(null);
+    setNoteTitle('');
+    setNoteImageData('');
+    setNoteFallbackText('');
+    setIsNoteDirty(false);
+    setNotesError('');
+    setNotesNotice('');
+    resetNoteCanvas('');
+  }
+
+  function clearStudyNoteCanvas() {
+    resetNoteCanvas('');
+    setNoteImageData('');
+    setNoteFallbackText('');
+    setIsNoteDirty(true);
+    setNotesError('');
+    setNotesNotice('Page cleared.');
+  }
+
+  function saveStudyNote() {
+    const trimmedTitle = noteTitle.trim() || `Note ${savedNotes.length + 1}`;
+    const canvas = noteCanvasRef.current;
+    const imageData = canvas?.toDataURL('image/png') ?? noteImageData;
+
+    if (!imageData || (!isNoteDirty && !activeNoteId && !noteImageData)) {
+      setNotesError('Draw something on the page first.');
       setNotesNotice('');
       return;
     }
@@ -1450,7 +1605,8 @@ Write exactly one short follow-up question from the pet. The question must be ba
     const nextNote: StudyNote = {
       id: activeNoteId ?? crypto.randomUUID(),
       title: trimmedTitle.slice(0, 70),
-      body: trimmedBody,
+      body: '',
+      imageData,
       updatedAt: new Date().toISOString(),
     };
 
@@ -1458,17 +1614,22 @@ Write exactly one short follow-up question from the pet. The question must be ba
     updateSavedNotes([nextNote, ...withoutCurrent].slice(0, maxSavedNotes));
     setActiveNoteId(nextNote.id);
     setNoteTitle(nextNote.title);
-    setNoteBody(nextNote.body);
+    setNoteImageData(imageData);
+    setNoteFallbackText('');
+    setIsNoteDirty(false);
     setNotesError('');
-    setNotesNotice('Note saved.');
+    setNotesNotice('Freehand note saved.');
   }
 
   function openStudyNote(note: StudyNote) {
     setActiveNoteId(note.id);
     setNoteTitle(note.title);
-    setNoteBody(note.body);
+    setNoteImageData(note.imageData ?? '');
+    setNoteFallbackText(note.imageData ? '' : (note.body ?? ''));
+    setIsNoteDirty(false);
     setNotesError('');
     setNotesNotice(`Opened "${note.title}".`);
+    resetNoteCanvas(note.imageData ?? '', note.body ?? '');
   }
 
   function deleteStudyNote(id: string) {
@@ -1481,24 +1642,6 @@ Write exactly one short follow-up question from the pet. The question must be ba
       setNotesError('');
       setNotesNotice('Note deleted.');
     }
-  }
-
-  function useCurrentNoteForStudy(note?: StudyNote) {
-    const title = (note?.title ?? noteTitle).trim();
-    const body = (note?.body ?? noteBody).trim();
-
-    if (!body) {
-      setNotesError('Write or open a note first.');
-      setNotesNotice('');
-      return;
-    }
-
-    setLessonName(title || 'Untitled note');
-    setMaterial(body);
-    setError('');
-    setNotice(`Loaded "${title || 'Untitled note'}" into study material.`);
-    clearResults();
-    goToPage('study');
   }
 
   function updateLanguage(nextLanguage: Language) {
@@ -2998,30 +3141,57 @@ ${trimmedMaterial}`;
                 />
               </label>
 
-              <label className="field notes-body-field">
-                <span>Note</span>
-                <textarea
-                  value={noteBody}
-                  onChange={(event) => {
-                    setNoteBody(event.target.value);
-                    setNotesError('');
-                    setNotesNotice('');
-                  }}
-                  placeholder="Write class notes, definitions, formulas, or things you want to remember..."
+              <div className="freehand-toolbar" aria-label="Freehand note tools">
+                <div className="note-color-row" aria-label="Pen color">
+                  {['#142126', '#2f6f73', '#5e6ad2', '#b84444', '#f7f8f8'].map((color) => (
+                    <button
+                      className={notePenColor === color ? 'note-color-swatch active' : 'note-color-swatch'}
+                      key={color}
+                      type="button"
+                      style={{ background: color }}
+                      onClick={() => setNotePenColor(color)}
+                      aria-label={`Use pen color ${color}`}
+                    />
+                  ))}
+                </div>
+                <label className="note-size-control">
+                  <span>Pen size</span>
+                  <input
+                    min="2"
+                    max="24"
+                    type="range"
+                    value={notePenSize}
+                    onChange={(event) => setNotePenSize(Number(event.target.value))}
+                  />
+                  <strong>{notePenSize}</strong>
+                </label>
+                <button className="small-button muted-button" type="button" onClick={clearStudyNoteCanvas}>
+                  Clear
+                </button>
+              </div>
+
+              <div className="freehand-canvas-wrap">
+                <canvas
+                  ref={noteCanvasRef}
+                  width={noteCanvasWidth}
+                  height={noteCanvasHeight}
+                  onPointerDown={startNoteDrawing}
+                  onPointerMove={continueNoteDrawing}
+                  onPointerUp={stopNoteDrawing}
+                  onPointerCancel={stopNoteDrawing}
+                  onPointerLeave={stopNoteDrawing}
+                  aria-label="Freehand note canvas"
                 />
-              </label>
+              </div>
 
               <div className="notes-meta-row">
-                <span>{noteWordCount} {copy.words}</span>
+                <span>{isNoteDirty ? 'Unsaved changes' : 'Ready'}</span>
                 <span>{savedNotes.length} / {maxSavedNotes} saved</span>
               </div>
 
               <div className="action-row notes-action-row">
                 <button className="generate-button" type="button" onClick={saveStudyNote}>
-                  Save note
-                </button>
-                <button className="save-button" type="button" onClick={() => useCurrentNoteForStudy()}>
-                  Use in study
+                  Save freehand note
                 </button>
               </div>
 
@@ -3045,16 +3215,24 @@ ${trimmedMaterial}`;
                   {savedNotes.map((note) => (
                     <article className={note.id === activeNoteId ? 'note-card active' : 'note-card'} key={note.id}>
                       <button className="note-card-main" type="button" onClick={() => openStudyNote(note)}>
+                        <span className="note-preview">
+                          {note.imageData ? (
+                            <img src={note.imageData} alt="" />
+                          ) : (
+                            <span>{note.body?.slice(0, 80) || 'Freehand note'}</span>
+                          )}
+                        </span>
                         <span className="note-card-top">
                           <strong>{note.title}</strong>
                           <time dateTime={note.updatedAt}>{new Date(note.updatedAt).toLocaleDateString()}</time>
                         </span>
-                        <span className="note-card-word-count">{getWordCount(note.body)} {copy.words}</span>
-                        <p>{note.body.slice(0, 120)}{note.body.length > 120 ? '...' : ''}</p>
+                        <span className="note-card-word-count">
+                          {note.imageData ? 'Freehand' : `${getWordCount(note.body ?? '')} ${copy.words}`}
+                        </span>
                       </button>
                       <div className="note-card-actions">
-                        <button className="small-button" type="button" onClick={() => useCurrentNoteForStudy(note)}>
-                          Study
+                        <button className="small-button" type="button" onClick={() => openStudyNote(note)}>
+                          Open
                         </button>
                         <button className="small-button muted-button" type="button" onClick={() => deleteStudyNote(note.id)}>
                           Delete
