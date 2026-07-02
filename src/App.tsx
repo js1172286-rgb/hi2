@@ -778,6 +778,7 @@ export default function App() {
   const copy = fullTranslations[language];
   const currentAccountName = session?.user.user_metadata.display_name || session?.user.email || '';
   const isPetHatched = Boolean(studyPet.petType || studyPet.petImage);
+  const isPetFrozen = Boolean(session && studyPet.hasChosenEggColor && studyPet.lastStudyDate !== getTodayKey());
   const petName = getPetName(studyPet.petType, studyPet.petImage, copy);
   const displayedEggColor = studyPet.hasChosenEggColor ? studyPet.eggColor : pendingEggColor;
   const warmDaysShown = Math.min(studyPet.streak, eggWarmDays);
@@ -2028,7 +2029,10 @@ ${trimmedMaterial}`;
               )}
             </div>
             <div className="pet-panel">
-              <div className={isPetHatched ? 'pet-visual hatched' : `pet-visual egg egg-${displayedEggColor}`} aria-hidden="true">
+              <div
+                className={`${isPetHatched ? 'pet-visual hatched' : `pet-visual egg egg-${displayedEggColor}`} ${isPetFrozen ? 'frozen' : ''}`}
+                aria-hidden="true"
+              >
                 {studyPet.petImage ? (
                   <img className="pet-image" src={studyPet.petImage} alt="" />
                 ) : isPetHatched ? (
