@@ -2269,6 +2269,51 @@ select:focus {
   grid-column: 1 / -1;
 }
 
+.knowledge-map-card {
+  grid-column: 1 / -1;
+}
+
+.knowledge-area-list {
+  display: grid;
+  gap: 8px;
+}
+
+.knowledge-area-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.knowledge-area-row div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.knowledge-area-row strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.knowledge-area-row span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.knowledge-area-row b {
+  color: var(--accent);
+  font-size: 18px;
+}
+
 .lesson-ring-grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -3061,6 +3106,17 @@ select:focus {
   color: var(--ink);
   font-weight: 800;
   line-height: 1.4;
+}
+
+.quiz-area-tag {
+  width: fit-content;
+  margin-bottom: 10px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .answer {

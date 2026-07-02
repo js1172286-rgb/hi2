@@ -36,6 +36,7 @@ type Flashcard = {
 type QuizQuestion = {
   question: string;
   answer: string;
+  area?: string;
 };
 
 type FlashcardResponse = {
@@ -53,6 +54,14 @@ type QuizGrade = {
 
 type QuizGradeResponse = {
   grades?: QuizGrade[];
+};
+
+type KnowledgeAreaStat = {
+  area: string;
+  attempts: number;
+  correct: number;
+  mistakes: number;
+  lastPracticed: string;
 };
 
 type BlurtingHighlightCategory = 'good' | 'needsWork' | 'wrong';
@@ -139,6 +148,7 @@ type LessonRingStyle = CSSProperties & {
 
 const savedLessonsKey = 'study-helper-lessons';
 const savedNotesKey = 'study-helper-notes';
+const knowledgeStatsKey = 'study-helper-knowledge-stats';
 const languageKey = 'study-helper-language';
 const themeKey = 'study-helper-theme';
 const studyPetKey = 'study-helper-pet';
@@ -659,6 +669,10 @@ function getStudyPetKey(userId?: string) {
   return userId ? `${studyPetKey}:${userId}` : studyPetKey;
 }
 
+function getKnowledgeStatsKey(userId?: string) {
+  return userId ? `${knowledgeStatsKey}:${userId}` : knowledgeStatsKey;
+}
+
 function readStudyPet(userId?: string): StudyPet {
   try {
     if (!userId) return emptyStudyPet;
@@ -838,6 +852,35 @@ function getStudyKeywords(text: string) {
   ).slice(0, 8);
 }
 
+function normalizeQuizArea(area: string | undefined, question: string) {
+  const cleanedArea = area?.replace(/\s+/g, ' ').trim();
+  if (cleanedArea) return cleanedArea.slice(0, 48);
+  return getStudyKeywords(question)[0] || 'General';
+}
+
+function readKnowledgeStats(userId?: string) {
+  try {
+    const rawStats = window.localStorage.getItem(getKnowledgeStatsKey(userId));
+    if (!rawStats) return [];
+    const parsed = JSON.parse(rawStats) as KnowledgeAreaStat[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function formatKnowledgeStatsForAi(stats: KnowledgeAreaStat[]) {
+  if (!stats.length) return 'No quiz performance data yet.';
+
+  return stats
+    .slice(0, 8)
+    .map((stat) => {
+      const accuracy = stat.attempts > 0 ? Math.round((stat.correct / stat.attempts) * 100) : 0;
+      return `${stat.area}: ${stat.correct}/${stat.attempts} correct, ${stat.mistakes} mistakes, ${accuracy}% accuracy`;
+    })
+    .join('\n');
+}
+
 function formatTimerTime(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
   const seconds = (totalSeconds % 60).toString().padStart(2, '0');
@@ -929,6 +972,7 @@ export default function App() {
   const [quizQuestionCount, setQuizQuestionCount] = useState(5);
   const [quizError, setQuizError] = useState('');
   const [quizKeyboardCheck, setQuizKeyboardCheck] = useState<QuizKeyboardCheck | null>(null);
+  const [knowledgeStats, setKnowledgeStats] = useState<KnowledgeAreaStat[]>([]);
   const [timerMode, setTimerMode] = useState<TimerMode>('focus');
   const [focusMinutes, setFocusMinutes] = useState(defaultFocusMinutes);
   const [breakMinutes, setBreakMinutes] = useState(defaultBreakMinutes);
@@ -1022,6 +1066,7 @@ export default function App() {
   const pomodoroBreakMinutes = pomodoroShortBreaks * 5 + pomodoroLongBreaks * 15;
   const tutorQuestionCount = tutorMessages.filter((message) => message.role === 'user').length;
   const lessonRingSlots = Array.from({ length: maxSavedLessons }, (_, index) => savedLessons[index] ?? null);
+  const weakKnowledgeStats = [...knowledgeStats].sort((a, b) => b.mistakes - a.mistakes || a.correct - b.correct).slice(0, 5);
   const flashcardPercent = flashcards.length > 0 ? ((currentFlashcardIndex + 1) / flashcards.length) * 100 : 0;
   const quizPercent = quiz.length > 0 ? (answeredQuizCount / quiz.length) * 100 : 0;
   const notePaperColor = theme === 'dark' ? '#151719' : '#fffdf5';
@@ -1098,6 +1143,7 @@ export default function App() {
     setStudyPet(savedPet);
     setPendingEggColor(savedPet.eggColor);
     setHatchPopup(null);
+    setKnowledgeStats(readKnowledgeStats(session?.user.id));
   }, [session?.user.id]);
 
   useEffect(() => {
@@ -1317,8 +1363,9 @@ export default function App() {
   function startTeachPetChat() {
     const weakestLesson = getWeakestLesson(savedLessons);
     const weakestLessonPercent = weakestLesson ? getLessonKnowledgePercent(weakestLesson) : 0;
+    const weakestQuestionArea = weakKnowledgeStats[0];
     const lessonKeywords = weakestLesson ? getStudyKeywords(getLessonMaterial(weakestLesson)) : [];
-    const firstKeyword = lessonKeywords[0] || 'the main idea';
+    const firstKeyword = weakestQuestionArea?.area || lessonKeywords[0] || 'the main idea';
 
     setIsTeachInfoOpen(false);
     setIsTeachChatOpen(true);
@@ -1468,6 +1515,7 @@ ${studentNotes}`,
 
     setIsTeachPetThinking(true);
     const lessonMaterial = getLessonMaterial(activeLesson);
+    const knowledgeStatsContext = formatKnowledgeStatsForAi(knowledgeStats);
     const recentChat = nextMessages
       .slice(-8)
       .map((message) => `${message.role === 'user' ? 'Student' : petName}: ${message.text}`)
@@ -1483,14 +1531,17 @@ Weakest lesson progress: ${getLessonKnowledgePercent(activeLesson)}%
 Lesson material:
 ${lessonMaterial}
 
+Student quiz knowledge map:
+${knowledgeStatsContext}
+
 Recent chat:
 ${recentChat}
 
 Student's latest explanation:
 ${answer}
 
-Write exactly one short follow-up question from the pet. The question must be based on the lesson material and the student's explanation. The pet should sound confused in a cute/simple way, but it should ask an accurate question that helps the student explain the weak lesson better.`,
-        system: 'You are a study pet helping with the Teach Somebody method. Ask only one clear question. Do not answer the topic yourself. Do not mention that you are an AI. Keep it under 28 words.',
+Write exactly one short follow-up question from the pet. The question must be based on the lesson material, the student's explanation, and the quiz knowledge map. Prefer areas with more mistakes when they fit the lesson. The pet should sound confused in a cute/simple way, but it should ask an accurate question that helps the student explain the weak lesson better.`,
+        system: 'You are a study pet helping with the Teach Somebody method. Use the quiz knowledge map to focus weak areas. Ask only one clear question. Do not answer the topic yourself. Do not mention that you are an AI. Keep it under 28 words.',
       },
     });
 
@@ -1614,6 +1665,48 @@ Write exactly one short follow-up question from the pet. The question must be ba
   function updateSavedNotes(nextNotes: StudyNote[]) {
     setSavedNotes(nextNotes);
     window.localStorage.setItem(savedNotesKey, JSON.stringify(nextNotes));
+  }
+
+  function updateKnowledgeStats(nextStats: KnowledgeAreaStat[]) {
+    setKnowledgeStats(nextStats);
+    window.localStorage.setItem(getKnowledgeStatsKey(session?.user.id), JSON.stringify(nextStats));
+  }
+
+  function recordQuizKnowledgeStats(grades: QuizGrade[]) {
+    const now = new Date().toISOString();
+    const statMap = new Map<string, KnowledgeAreaStat>();
+
+    knowledgeStats.forEach((stat) => {
+      statMap.set(stat.area.toLowerCase(), { ...stat });
+    });
+
+    quiz.forEach((item, index) => {
+      const area = normalizeQuizArea(item.area, item.question);
+      const key = area.toLowerCase();
+      const existing = statMap.get(key) ?? {
+        area,
+        attempts: 0,
+        correct: 0,
+        mistakes: 0,
+        lastPracticed: now,
+      };
+      const wasCorrect = Boolean(grades[index]?.correct);
+
+      statMap.set(key, {
+        ...existing,
+        area: existing.area || area,
+        attempts: existing.attempts + 1,
+        correct: existing.correct + (wasCorrect ? 1 : 0),
+        mistakes: existing.mistakes + (wasCorrect ? 0 : 1),
+        lastPracticed: now,
+      });
+    });
+
+    const nextStats = Array.from(statMap.values())
+      .sort((a, b) => b.mistakes - a.mistakes || b.attempts - a.attempts)
+      .slice(0, 30);
+
+    updateKnowledgeStats(nextStats);
   }
 
   function getNoteCanvasContext() {
@@ -2195,6 +2288,8 @@ Write exactly one short follow-up question from the pet. The question must be ba
           .join('\n\n---\n\n')
       : 'No saved lessons yet.';
 
+    const knowledgeStatsContext = formatKnowledgeStatsForAi(knowledgeStats);
+
     const recentChat = nextMessages
       .slice(-8)
       .map((message) => `${message.role === 'user' ? 'Student' : 'Tutor'}: ${message.text}`)
@@ -2210,12 +2305,15 @@ ${savedLessonsContext}
 Current material:
 ${materialContext}
 
+Student quiz knowledge map:
+${knowledgeStatsContext}
+
 Recent chat:
 ${recentChat}
 
 Student question:
 ${question}`,
-        system: 'You are a friendly AI tutor. Prioritize the student saved lessons over general knowledge. Explain step by step, keep answers clear, ask one follow-up question when useful, and do not invent facts outside the provided material unless the student asks for general explanation.',
+        system: 'You are a friendly AI tutor. Prioritize the student saved lessons and quiz knowledge map over general knowledge. Explain step by step, keep answers clear, ask one follow-up question when useful, and do not invent facts outside the provided material unless the student asks for general explanation.',
       },
     });
 
@@ -2266,6 +2364,8 @@ ${question}`,
 
     if (quiz.length === 0) return;
 
+    const shouldRecordStats = !isQuizSubmitted;
+
     setIsQuizChecking(true);
     setQuizError('');
 
@@ -2315,6 +2415,9 @@ ${JSON.stringify(quizToGrade, null, 2)}`,
     setQuizGrades(nextGrades);
     setIsQuizSubmitted(true);
     setShowQuizAnswers(true);
+    if (shouldRecordStats) {
+      recordQuizKnowledgeStats(nextGrades);
+    }
     markStudyActivity();
   }
 
@@ -2426,6 +2529,9 @@ ${trimmedMaterial}`;
 
     if (mode === 'quiz') {
       const requestedQuestionCount = Math.min(20, Math.max(1, Math.round(quizQuestionCount)));
+      const knowledgeInstruction = knowledgeStats.length
+        ? `\n\nStudent quiz knowledge map:\n${formatKnowledgeStatsForAi(knowledgeStats)}\nUse this to include more questions from areas with more mistakes, while still testing the study material.`
+        : '';
       const keyboardInstruction =
         quizKeyboardPreference === 'englishAnswers'
           ? `\n\nKeyboard adjustment: The notes seem to include ${quizKeyboardLanguage || 'another language'}, but the student said they do not have that keyboard. Write every quiz question in English, make every correct answer possible to type in English, and do not require typing non-English characters. Test the same ideas from the notes, just make the student's typed answers English-friendly.`
@@ -2433,11 +2539,12 @@ ${trimmedMaterial}`;
 
       return `Create a short study quiz from these notes.
 ${keyboardInstruction}
+${knowledgeInstruction}
 
 Return only valid JSON in this exact shape:
 {
   "quiz": [
-    { "question": "short quiz question", "answer": "correct answer" }
+    { "area": "short topic area", "question": "short quiz question", "answer": "correct answer" }
   ]
 }
 
@@ -3182,6 +3289,7 @@ ${trimmedMaterial}`;
                 <div className="quiz-list">
                   {quiz.map((item, index) => (
                     <article className="quiz-item" key={`${item.question}-${index}`}>
+                      <p className="quiz-area-tag">{normalizeQuizArea(item.area, item.question)}</p>
                       <label>
                         <span>{index + 1}. {item.question}</span>
                         <input
@@ -3248,6 +3356,31 @@ ${trimmedMaterial}`;
                           <span>{percent}%</span>
                         </div>
                         <p>{lesson ? lesson.title : `Lesson ${index + 1}`}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </article>
+            )}
+
+            {knowledgeStats.length > 0 && (
+              <article className="progress-card knowledge-map-card">
+                <div>
+                  <p className="card-label">Question areas</p>
+                  <h3>{knowledgeStats.reduce((total, stat) => total + stat.mistakes, 0)} mistakes</h3>
+                  <p>AI uses this to focus future quizzes and tutoring.</p>
+                </div>
+                <div className="knowledge-area-list">
+                  {weakKnowledgeStats.map((stat) => {
+                    const accuracy = stat.attempts > 0 ? Math.round((stat.correct / stat.attempts) * 100) : 0;
+
+                    return (
+                      <div className="knowledge-area-row" key={stat.area}>
+                        <div>
+                          <strong>{stat.area}</strong>
+                          <span>{stat.mistakes} mistakes · {stat.correct}/{stat.attempts} correct</span>
+                        </div>
+                        <b>{accuracy}%</b>
                       </div>
                     );
                   })}
