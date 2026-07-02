@@ -737,7 +737,7 @@ select:focus {
 .pet-visual.frozen::before {
   content: '';
   position: absolute;
-  inset: -34px;
+  inset: -48px;
   z-index: 3;
   background: url('/pets/ice-cube.png') center / contain no-repeat;
   opacity: 0.86;
@@ -780,8 +780,8 @@ select:focus {
 
 .egg-core {
   position: relative;
-  width: 82px;
-  height: 100px;
+  width: 92px;
+  height: 108px;
   display: block;
   overflow: hidden;
   border-radius: 50% 50% 46% 46%;
