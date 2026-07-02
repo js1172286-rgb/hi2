@@ -2984,8 +2984,8 @@ ${trimmedMaterial}`;
                   <p className="card-label">{copy.notes}</p>
                   <h2>{activeNoteId ? 'Edit note' : 'New note'}</h2>
                 </div>
-                <button className="small-button muted-button" type="button" onClick={startNewNote}>
-                  New
+                <button className="small-button muted-button notes-new-button" type="button" onClick={startNewNote}>
+                  New note
                 </button>
               </div>
 
@@ -3035,6 +3035,7 @@ ${trimmedMaterial}`;
                   <p className="card-label">Saved</p>
                   <h2>Your notes</h2>
                 </div>
+                <span className="notes-count-pill">{savedNotes.length}</span>
               </div>
 
               {savedNotes.length === 0 ? (
@@ -3044,10 +3045,12 @@ ${trimmedMaterial}`;
                   {savedNotes.map((note) => (
                     <article className={note.id === activeNoteId ? 'note-card active' : 'note-card'} key={note.id}>
                       <button className="note-card-main" type="button" onClick={() => openStudyNote(note)}>
-                        <strong>{note.title}</strong>
-                        <span>{getWordCount(note.body)} {copy.words}</span>
+                        <span className="note-card-top">
+                          <strong>{note.title}</strong>
+                          <time dateTime={note.updatedAt}>{new Date(note.updatedAt).toLocaleDateString()}</time>
+                        </span>
+                        <span className="note-card-word-count">{getWordCount(note.body)} {copy.words}</span>
                         <p>{note.body.slice(0, 120)}{note.body.length > 120 ? '...' : ''}</p>
-                        <time dateTime={note.updatedAt}>{new Date(note.updatedAt).toLocaleDateString()}</time>
                       </button>
                       <div className="note-card-actions">
                         <button className="small-button" type="button" onClick={() => useCurrentNoteForStudy(note)}>
