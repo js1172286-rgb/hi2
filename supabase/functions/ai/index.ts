@@ -6,10 +6,10 @@
 //   2) Положи его в секрет:  npm run ai:secret -- GEMINI_API_KEY=твой_ключ
 //   3) Задеплой функцию:     npm run ai:deploy
 //
-// Модель можно поменять (gemini-2.0-flash — быстрая и бесплатная).
+// Stable lightweight model for summaries, quizzes, flashcards, and tutor chat.
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-const MODEL = 'gemini-2.0-flash';
+const MODEL = 'gemini-3.1-flash-lite';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
