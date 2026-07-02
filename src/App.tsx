@@ -55,7 +55,16 @@ type QuizGradeResponse = {
   grades?: QuizGrade[];
 };
 
+type BlurtingHighlightCategory = 'good' | 'needsWork' | 'wrong';
+
+type BlurtingHighlight = {
+  quote: string;
+  category: BlurtingHighlightCategory;
+  note?: string;
+};
+
 type BlurtingReview = {
+  highlights?: BlurtingHighlight[];
   good?: string[];
   needsWork?: string[];
   wrong?: string[];
@@ -737,6 +746,63 @@ function getWordCount(text: string) {
   return text.split(/\s+/).filter(Boolean).length;
 }
 
+function normalizeBlurtingCategory(category: string): BlurtingHighlightCategory {
+  if (category === 'wrong') return 'wrong';
+  if (category === 'needsWork') return 'needsWork';
+  return 'good';
+}
+
+function getBlurtingCategoryClass(category: BlurtingHighlightCategory) {
+  return category === 'needsWork' ? 'needs-work' : category;
+}
+
+function getBlurtingHighlightSegments(text: string, highlights: BlurtingHighlight[]) {
+  const matchedHighlights: { start: number; end: number; category: BlurtingHighlightCategory; note?: string }[] = [];
+  const lowerText = text.toLowerCase();
+
+  highlights.forEach((highlight) => {
+    const quote = highlight.quote?.trim();
+    if (!quote) return;
+
+    const start = lowerText.indexOf(quote.toLowerCase());
+    const end = start + quote.length;
+    const overlaps = matchedHighlights.some((item) => start < item.end && end > item.start);
+
+    if (start >= 0 && !overlaps) {
+      matchedHighlights.push({
+        start,
+        end,
+        category: normalizeBlurtingCategory(highlight.category),
+        note: highlight.note,
+      });
+    }
+  });
+
+  matchedHighlights.sort((a, b) => a.start - b.start);
+
+  const segments: { text: string; category?: BlurtingHighlightCategory; note?: string }[] = [];
+  let cursor = 0;
+
+  matchedHighlights.forEach((highlight) => {
+    if (highlight.start > cursor) {
+      segments.push({ text: text.slice(cursor, highlight.start) });
+    }
+
+    segments.push({
+      text: text.slice(highlight.start, highlight.end),
+      category: highlight.category,
+      note: highlight.note,
+    });
+    cursor = highlight.end;
+  });
+
+  if (cursor < text.length) {
+    segments.push({ text: text.slice(cursor) });
+  }
+
+  return segments.length ? segments : [{ text }];
+}
+
 function getLessonKnowledgePercent(lesson: SavedLesson) {
   const sourceCount = getLessonSources(lesson).length;
   const wordCount = getWordCount(getLessonMaterial(lesson));
@@ -1323,16 +1389,27 @@ export default function App() {
 
 Return only valid JSON in this exact shape:
 {
-  "good": ["accurate point the student remembered"],
-  "needsWork": ["partly correct point or missing detail to improve"],
-  "wrong": ["incorrect point and the correction"],
+  "highlights": [
+    {
+      "quote": "exact words copied from the student's blurting notes",
+      "category": "good",
+      "note": "short reason or correction"
+    }
+  ],
   "review": "short review paragraph telling the student what to study next"
 }
 
 Use these categories:
-- good: correct ideas from the student's notes
-- needsWork: ideas that are close but incomplete, vague, or missing an important detail
-- wrong: ideas that are factually incorrect compared with the real notes
+- good: exact quote is correct compared with the real notes
+- needsWork: exact quote is close but incomplete, vague, or missing an important detail
+- wrong: exact quote is factually incorrect compared with the real notes
+
+Important:
+- Every quote must be copied exactly from the student's blurting notes.
+- Do not paraphrase quote text.
+- Use short complete phrases or sentences.
+- Avoid overlapping quotes.
+- If a point is missing from the student's notes, mention it in the review instead of making a highlight.
 
 Real study notes:
 ${comparisonNotes}
@@ -1362,6 +1439,7 @@ ${studentNotes}`,
     }
 
     setBlurtingReview({
+      highlights: parsed.highlights ?? [],
       good: parsed.good ?? [],
       needsWork: parsed.needsWork ?? [],
       wrong: parsed.wrong ?? [],
@@ -3820,43 +3898,40 @@ ${trimmedMaterial}`;
               {blurtingError && <p className="message">{blurtingError}</p>}
 
               {blurtingReview && (
-                <div className="blurting-feedback-grid" aria-label="Blurting feedback">
-                  <article className="blurting-feedback-card good">
-                    <h3>Good points</h3>
-                    {blurtingReview.good?.length ? (
-                      <ul>
-                        {blurtingReview.good.map((point, index) => (
-                          <li key={`good-${index}`}>{point}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p>No fully correct points found yet.</p>
+                <div className="blurting-paper-review" aria-label="Blurting feedback">
+                  <div className="blurting-highlight-legend" aria-label="Highlight colors">
+                    <span className="good">Good</span>
+                    <span className="needs-work">Needs work</span>
+                    <span className="wrong">Wrong</span>
+                  </div>
+                  <div className="blurting-paper" aria-label="Highlighted blurting notes">
+                    {getBlurtingHighlightSegments(blurtingNotes, blurtingReview.highlights ?? []).map((segment, index) =>
+                      segment.category ? (
+                        <mark
+                          className={`blurting-highlight ${getBlurtingCategoryClass(segment.category)}`}
+                          key={`highlight-${index}`}
+                          title={segment.note}
+                        >
+                          {segment.text}
+                        </mark>
+                      ) : (
+                        <span key={`plain-${index}`}>{segment.text}</span>
+                      ),
                     )}
-                  </article>
-                  <article className="blurting-feedback-card needs-work">
-                    <h3>Needs work</h3>
-                    {blurtingReview.needsWork?.length ? (
-                      <ul>
-                        {blurtingReview.needsWork.map((point, index) => (
-                          <li key={`needs-work-${index}`}>{point}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p>No almost-correct points found.</p>
-                    )}
-                  </article>
-                  <article className="blurting-feedback-card wrong">
-                    <h3>Wrong</h3>
-                    {blurtingReview.wrong?.length ? (
-                      <ul>
-                        {blurtingReview.wrong.map((point, index) => (
-                          <li key={`wrong-${index}`}>{point}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p>No incorrect points found.</p>
-                    )}
-                  </article>
+                  </div>
+                  {blurtingReview.highlights?.some((highlight) => highlight.note) && (
+                    <div className="blurting-highlight-notes">
+                      {blurtingReview.highlights.filter((highlight) => highlight.note).map((highlight, index) => (
+                        <p
+                          className={getBlurtingCategoryClass(normalizeBlurtingCategory(highlight.category))}
+                          key={`${highlight.quote}-${index}`}
+                        >
+                          <strong>{normalizeBlurtingCategory(highlight.category) === 'needsWork' ? 'Needs work' : normalizeBlurtingCategory(highlight.category)}:</strong>{' '}
+                          {highlight.note}
+                        </p>
+                      ))}
+                    </div>
+                  )}
                   <article className="blurting-review-card">
                     <h3>Review</h3>
                     <p>{blurtingReview.review || 'Review the missing details, then try blurting again later.'}</p>
