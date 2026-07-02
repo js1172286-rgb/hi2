@@ -1641,6 +1641,16 @@ select:focus {
   min-height: 42px;
 }
 
+.summary-copy-button.copied {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+:root[data-theme='dark'] .summary-copy-button.copied {
+  background: #1f2427;
+  color: #d9f1f1;
+}
+
 .flashcard-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

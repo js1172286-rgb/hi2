@@ -696,6 +696,7 @@ export default function App() {
   const [material, setMaterial] = useState('');
   const [savedLessons, setSavedLessons] = useState<SavedLesson[]>([]);
   const [summary, setSummary] = useState('');
+  const [isSummaryCopied, setIsSummaryCopied] = useState(false);
   const [studyPet, setStudyPet] = useState<StudyPet>(emptyStudyPet);
   const [pendingEggColor, setPendingEggColor] = useState<EggColor>('green');
   const [hatchPopup, setHatchPopup] = useState<HatchPopup | null>(null);
@@ -749,6 +750,7 @@ export default function App() {
   const [isTutorLoading, setIsTutorLoading] = useState(false);
   const materialTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const hatchTimerRef = useRef<number | null>(null);
+  const summaryCopyTimerRef = useRef<number | null>(null);
 
   const searchedSharedMaterials = sharedMaterials.filter((item) => {
     const query = searchQuery.trim().toLowerCase();
@@ -833,6 +835,9 @@ export default function App() {
     return () => {
       if (hatchTimerRef.current) {
         window.clearTimeout(hatchTimerRef.current);
+      }
+      if (summaryCopyTimerRef.current) {
+        window.clearTimeout(summaryCopyTimerRef.current);
       }
     };
   }, []);
@@ -1028,6 +1033,7 @@ export default function App() {
 
   function clearResults() {
     setSummary('');
+    setIsSummaryCopied(false);
     setFlashcards([]);
     setCurrentFlashcardIndex(0);
     setIsFlashcardFlipped(false);
@@ -1558,6 +1564,7 @@ ${trimmedMaterial}`;
 
     if (mode === 'summary') {
       setSummary(demoSummary);
+      setIsSummaryCopied(false);
       setError('');
       setNotice('Demo summary is showing for preview. AI summaries can be turned back on later.');
       setFlashcards([]);
@@ -1647,8 +1654,16 @@ ${trimmedMaterial}`;
 
     try {
       await navigator.clipboard.writeText(summary);
+      if (summaryCopyTimerRef.current) {
+        window.clearTimeout(summaryCopyTimerRef.current);
+      }
+      setIsSummaryCopied(true);
       setNotice('Summary copied.');
+      summaryCopyTimerRef.current = window.setTimeout(() => {
+        setIsSummaryCopied(false);
+      }, 1800);
     } catch {
+      setIsSummaryCopied(false);
       setError('Could not copy the summary.');
     }
   }
@@ -2313,13 +2328,24 @@ ${trimmedMaterial}`;
           <section className="summary-modal" role="dialog" aria-modal="true" aria-label={copy.quickSummary}>
             <div className="summary-modal-heading">
               <h2>{copy.quickSummary}</h2>
-              <button className="small-button" type="button" onClick={() => setSummary('')}>
+              <button
+                className="small-button"
+                type="button"
+                onClick={() => {
+                  setSummary('');
+                  setIsSummaryCopied(false);
+                }}
+              >
                 Close
               </button>
             </div>
             <pre>{summary}</pre>
-            <button className="generate-button summary-copy-button" type="button" onClick={copySummaryToClipboard}>
-              Copy
+            <button
+              className={isSummaryCopied ? 'generate-button summary-copy-button copied' : 'generate-button summary-copy-button'}
+              type="button"
+              onClick={copySummaryToClipboard}
+            >
+              {isSummaryCopied ? '✓ Copied' : 'Copy'}
             </button>
           </section>
         </div>
