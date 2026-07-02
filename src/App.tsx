@@ -54,6 +54,13 @@ type QuizGradeResponse = {
   grades?: QuizGrade[];
 };
 
+type QuizKeyboardPreference = 'hasKeyboard' | 'englishAnswers';
+
+type QuizKeyboardCheck = {
+  material: string;
+  languageName: string;
+};
+
 type SavedLesson = {
   id: string;
   title: string;
@@ -763,6 +770,28 @@ function clampTimerMinutes(value: number) {
   return Math.min(180, Math.max(1, Math.round(value)));
 }
 
+function detectQuizKeyboardLanguage(text: string) {
+  const scriptChecks = [
+    { languageName: 'Russian/Kazakh Cyrillic', pattern: /[\u0400-\u052f]/ },
+    { languageName: 'Greek', pattern: /[\u0370-\u03ff]/ },
+    { languageName: 'Arabic', pattern: /[\u0600-\u06ff]/ },
+    { languageName: 'Hebrew', pattern: /[\u0590-\u05ff]/ },
+    { languageName: 'Chinese/Japanese/Korean', pattern: /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/ },
+    { languageName: 'Hindi/Devanagari', pattern: /[\u0900-\u097f]/ },
+    { languageName: 'Thai', pattern: /[\u0e00-\u0e7f]/ },
+  ];
+
+  const scriptMatch = scriptChecks.find((check) => check.pattern.test(text));
+  if (scriptMatch) return scriptMatch.languageName;
+
+  const accentedLatinLetters = text.match(/[\u00c0-\u024f]/g);
+  if (accentedLatinLetters && accentedLatinLetters.length >= 3) {
+    return 'a language with accented letters';
+  }
+
+  return '';
+}
+
 function readSavedLessons() {
   try {
     const rawLessons = window.localStorage.getItem(savedLessonsKey);
@@ -797,6 +826,7 @@ export default function App() {
   const [isQuizSubmitted, setIsQuizSubmitted] = useState(false);
   const [isQuizChecking, setIsQuizChecking] = useState(false);
   const [quizError, setQuizError] = useState('');
+  const [quizKeyboardCheck, setQuizKeyboardCheck] = useState<QuizKeyboardCheck | null>(null);
   const [timerMode, setTimerMode] = useState<TimerMode>('focus');
   const [focusMinutes, setFocusMinutes] = useState(defaultFocusMinutes);
   const [breakMinutes, setBreakMinutes] = useState(defaultBreakMinutes);
@@ -1943,7 +1973,11 @@ ${JSON.stringify(quizToGrade, null, 2)}`,
     setNotice(`${copy.addAnotherSource}: "${lesson.title}".`);
   }
 
-  function buildPrompt(trimmedMaterial: string) {
+  function buildPrompt(
+    trimmedMaterial: string,
+    quizKeyboardPreference?: QuizKeyboardPreference,
+    quizKeyboardLanguage?: string,
+  ) {
     if (mode === 'flashcards') {
       return `Turn these study notes into 6 useful flashcards.
 
@@ -1959,7 +1993,13 @@ ${trimmedMaterial}`;
     }
 
     if (mode === 'quiz') {
+      const keyboardInstruction =
+        quizKeyboardPreference === 'englishAnswers'
+          ? `\n\nKeyboard adjustment: The notes seem to include ${quizKeyboardLanguage || 'another language'}, but the student said they do not have that keyboard. Write every quiz question in English, make every correct answer possible to type in English, and do not require typing non-English characters. Test the same ideas from the notes, just make the student's typed answers English-friendly.`
+          : '';
+
       return `Create a short study quiz from these notes.
+${keyboardInstruction}
 
 Return only valid JSON in this exact shape:
 {
@@ -1981,39 +2021,13 @@ Use this format:
 
 Study material:
 ${trimmedMaterial}`;
-  }
-
-  async function generateStudyHelp() {
-    const trimmedMaterial = material.trim();
-
-    if (mode === 'quiz' && !requireSignedIn(copy.signInForQuiz)) {
-      return;
     }
 
-    if (mode === 'summary') {
-      setSummary(demoSummary);
-      setIsSummaryCopied(false);
-      setError('');
-      setNotice('Demo summary is showing for preview. AI summaries can be turned back on later.');
-      setFlashcards([]);
-      setQuiz([]);
-      return;
-    }
-
-    if (!trimmedMaterial) {
-      setError(copy.pasteMaterialFirst);
-      setNotice('');
-      clearResults();
-      return;
-    }
-
-    if (!isSupabaseConfigured) {
-      setError('Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env.local first.');
-      setNotice('');
-      clearResults();
-      return;
-    }
-
+  async function runStudyGeneration(
+    trimmedMaterial: string,
+    quizKeyboardPreference?: QuizKeyboardPreference,
+    quizKeyboardLanguage?: string,
+  ) {
     setIsLoading(true);
     setError('');
     setNotice('');
@@ -2021,7 +2035,7 @@ ${trimmedMaterial}`;
 
     const { data, error: invokeError } = await supabase.functions.invoke<AiResponse>('ai', {
       body: {
-        prompt: buildPrompt(trimmedMaterial),
+        prompt: buildPrompt(trimmedMaterial, quizKeyboardPreference, quizKeyboardLanguage),
         system: 'You are a helpful study assistant. Keep explanations short, clear, and easy for a student to review.',
       },
     });
@@ -2075,6 +2089,58 @@ ${trimmedMaterial}`;
 
     setSummary(text || copy.noSummaryReturned);
     markStudyActivity();
+  }
+
+  async function generateStudyHelp() {
+    const trimmedMaterial = material.trim();
+
+    if (mode === 'quiz' && !requireSignedIn(copy.signInForQuiz)) {
+      return;
+    }
+
+    if (mode === 'summary') {
+      setSummary(demoSummary);
+      setIsSummaryCopied(false);
+      setError('');
+      setNotice('Demo summary is showing for preview. AI summaries can be turned back on later.');
+      setFlashcards([]);
+      setQuiz([]);
+      return;
+    }
+
+    if (!trimmedMaterial) {
+      setError(copy.pasteMaterialFirst);
+      setNotice('');
+      clearResults();
+      return;
+    }
+
+    if (!isSupabaseConfigured) {
+      setError('Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env.local first.');
+      setNotice('');
+      clearResults();
+      return;
+    }
+
+    if (mode === 'quiz') {
+      const quizLanguageName = detectQuizKeyboardLanguage(trimmedMaterial);
+      if (quizLanguageName) {
+        setQuizKeyboardCheck({ material: trimmedMaterial, languageName: quizLanguageName });
+        setError('');
+        setNotice('');
+        return;
+      }
+    }
+
+    await runStudyGeneration(trimmedMaterial);
+  }
+
+  async function answerQuizKeyboardCheck(preference: QuizKeyboardPreference) {
+    if (!quizKeyboardCheck) return;
+
+    const nextCheck = quizKeyboardCheck;
+    setQuizKeyboardCheck(null);
+    await runStudyGeneration(nextCheck.material, preference, nextCheck.languageName);
   }
 
   async function copySummaryToClipboard() {
@@ -3008,6 +3074,31 @@ ${trimmedMaterial}`;
           </>
         )}
       </section>
+
+      {quizKeyboardCheck && (
+        <div className="summary-modal-backdrop" role="presentation">
+          <section className="summary-modal keyboard-check-modal" role="dialog" aria-modal="true" aria-label="Quiz keyboard check">
+            <div className="summary-modal-heading">
+              <h2>Quiz keyboard check</h2>
+              <button className="small-button" type="button" onClick={() => setQuizKeyboardCheck(null)}>
+                Close
+              </button>
+            </div>
+            <p>
+              These notes seem to include {quizKeyboardCheck.languageName}. Do you have that language keyboard on this
+              device?
+            </p>
+            <div className="keyboard-choice-actions">
+              <button className="save-button" type="button" onClick={() => void answerQuizKeyboardCheck('hasKeyboard')}>
+                Yes, I have it
+              </button>
+              <button className="generate-button" type="button" onClick={() => void answerQuizKeyboardCheck('englishAnswers')}>
+                No, use English answers
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
 
       {summary && (
         <div className="summary-modal-backdrop" role="presentation">

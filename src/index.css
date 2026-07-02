@@ -2379,6 +2379,24 @@ select:focus {
   color: var(--accent);
 }
 
+.keyboard-check-modal p {
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.keyboard-choice-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.keyboard-choice-actions .generate-button,
+.keyboard-choice-actions .save-button {
+  width: 100%;
+  min-width: 0;
+}
+
 :root[data-theme='dark'] .summary-copy-button.copied {
   background: #1f2427;
   color: #d9f1f1;
@@ -2657,6 +2675,7 @@ select:focus {
   .tutor-composer,
   .search-results,
   .lesson-actions,
+  .keyboard-choice-actions,
   .flashcard-grid {
     grid-template-columns: 1fr;
   }
