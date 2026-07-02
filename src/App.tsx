@@ -2194,9 +2194,14 @@ ${trimmedMaterial}`;
           </div>
           <div className="header-actions">
             {page === 'starter' ? null : page === 'study' ? (
-              <button className="nav-button" type="button" onClick={() => setIsOptionsOpen(!isOptionsOpen)}>
-                {copy.studyOptions}
-              </button>
+              <>
+                <button className="nav-button" type="button" onClick={() => setIsOptionsOpen(!isOptionsOpen)}>
+                  {copy.studyOptions}
+                </button>
+                <button className="nav-button" type="button" onClick={() => goToPage('lessons')}>
+                  {copy.lessons}
+                </button>
+              </>
             ) : page === 'otherMaterials' ? (
               !isUploadingSharedMaterial && (
                 <button
