@@ -1109,6 +1109,7 @@ select:focus {
 :root[data-theme='dark'] .mode-card,
 :root[data-theme='dark'] .editor-panel,
 :root[data-theme='dark'] .account-page,
+:root[data-theme='dark'] .other-materials-page,
 :root[data-theme='dark'] .account-panel,
 :root[data-theme='dark'] .pet-panel,
 :root[data-theme='dark'] .lesson-card-large,
@@ -1275,7 +1276,7 @@ select:focus {
   padding: 20px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--card);
 }
 
 .other-materials-page {
