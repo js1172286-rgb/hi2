@@ -2228,15 +2228,6 @@ ${trimmedMaterial}`;
         </div>
       )}
 
-      <button
-        className={isToolDrawerOpen ? 'tool-drawer-tab open' : 'tool-drawer-tab'}
-        type="button"
-        onClick={() => setIsToolDrawerOpen(!isToolDrawerOpen)}
-        aria-label={isToolDrawerOpen ? 'Close tools menu' : 'Open tools menu'}
-        aria-expanded={isToolDrawerOpen}
-      >
-        {isToolDrawerOpen ? '<' : '>'}
-      </button>
       <aside className={isToolDrawerOpen ? 'tool-drawer open' : 'tool-drawer'} aria-label="Tool menu">
         <div className="tool-drawer-heading">
           <p className="card-label">Tools</p>
