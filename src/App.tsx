@@ -718,6 +718,7 @@ export default function App() {
   const [notice, setNotice] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isOptionsOpen, setIsOptionsOpen] = useState(true);
+  const [isToolDrawerOpen, setIsToolDrawerOpen] = useState(true);
   const [addingSourceId, setAddingSourceId] = useState<string | null>(null);
   const [sourceText, setSourceText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -1653,7 +1654,7 @@ ${trimmedMaterial}`;
   }
 
   return (
-    <main className="app-shell drawer-open">
+    <main className={isToolDrawerOpen ? 'app-shell drawer-open' : 'app-shell'}>
       <section className="study-tool">
         <div className="intro">
           <div>
@@ -2351,7 +2352,16 @@ ${trimmedMaterial}`;
         </div>
       )}
 
-      <aside className="tool-drawer open" aria-label="Tool menu">
+      <button
+        className={isToolDrawerOpen ? 'tool-drawer-tab open' : 'tool-drawer-tab'}
+        type="button"
+        onClick={() => setIsToolDrawerOpen(!isToolDrawerOpen)}
+        aria-label={isToolDrawerOpen ? 'Close tools menu' : 'Open tools menu'}
+        aria-expanded={isToolDrawerOpen}
+      >
+        {isToolDrawerOpen ? '<' : '>'}
+      </button>
+      <aside className={isToolDrawerOpen ? 'tool-drawer open' : 'tool-drawer'} aria-label="Tool menu">
         <div className="tool-drawer-heading">
           <p className="card-label">Tools</p>
         </div>

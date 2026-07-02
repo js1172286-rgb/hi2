@@ -364,6 +364,29 @@ select:focus {
   stroke-width: 5;
 }
 
+.tool-drawer-tab {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  z-index: 34;
+  width: 38px;
+  height: 70px;
+  display: none;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
+  background: var(--accent);
+  color: #fff;
+  font-size: 22px;
+  transform: translateY(-50%);
+}
+
+.tool-drawer-tab:hover {
+  background: var(--accent-dark);
+  transform: translateY(-50%);
+}
+
 .tool-drawer {
   position: fixed;
   left: 0;
@@ -1808,6 +1831,14 @@ select:focus {
 
   .tool-drawer {
     width: min(184px, calc(100vw - 58px));
+  }
+
+  .tool-drawer-tab {
+    display: grid;
+  }
+
+  .tool-drawer-tab.open {
+    left: min(184px, calc(100vw - 58px));
   }
 
   .study-tool {
