@@ -811,6 +811,7 @@ export default function App() {
   const [teachMessages, setTeachMessages] = useState<TeachMessage[]>([]);
   const [teachAnswer, setTeachAnswer] = useState('');
   const [teachLessonId, setTeachLessonId] = useState<string | null>(null);
+  const [isTeachPetThinking, setIsTeachPetThinking] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -1176,9 +1177,9 @@ export default function App() {
     ]);
   }
 
-  function sendTeachAnswer() {
+  async function sendTeachAnswer() {
     const answer = teachAnswer.trim();
-    if (!answer) return;
+    if (!answer || isTeachPetThinking) return;
 
     const activeLesson = savedLessons.find((lesson) => lesson.id === teachLessonId) || getWeakestLesson(savedLessons);
     const userAnswerCount = teachMessages.filter((message) => message.role === 'user').length;
@@ -1194,10 +1195,50 @@ export default function App() {
       `How would I know when to use "${focusWord}"?`,
       `Can you connect "${focusWord}" to another part of "${lessonTitle}"?`,
     ];
-    const nextQuestion = petQuestions[userAnswerCount % petQuestions.length];
+    const fallbackQuestion = petQuestions[userAnswerCount % petQuestions.length];
+    const nextMessages: TeachMessage[] = [...teachMessages, { role: 'user', text: answer }];
 
-    setTeachMessages([...teachMessages, { role: 'user', text: answer }, { role: 'pet', text: nextQuestion }]);
+    setTeachMessages(nextMessages);
     setTeachAnswer('');
+
+    if (!isSupabaseConfigured || !activeLesson) {
+      setTeachMessages([...nextMessages, { role: 'pet', text: fallbackQuestion }]);
+      return;
+    }
+
+    setIsTeachPetThinking(true);
+    const lessonMaterial = getLessonMaterial(activeLesson);
+    const recentChat = nextMessages
+      .slice(-8)
+      .map((message) => `${message.role === 'user' ? 'Student' : petName}: ${message.text}`)
+      .join('\n\n');
+
+    const { data, error: invokeError } = await supabase.functions.invoke<AiResponse>('ai', {
+      body: {
+        prompt: `The student is practicing the "Teach Somebody" study method by teaching their pet.
+
+Weakest lesson title: ${activeLesson.title}
+Weakest lesson progress: ${getLessonKnowledgePercent(activeLesson)}%
+
+Lesson material:
+${lessonMaterial}
+
+Recent chat:
+${recentChat}
+
+Student's latest explanation:
+${answer}
+
+Write exactly one short follow-up question from the pet. The question must be based on the lesson material and the student's explanation. The pet should sound confused in a cute/simple way, but it should ask an accurate question that helps the student explain the weak lesson better.`,
+        system: 'You are a study pet helping with the Teach Somebody method. Ask only one clear question. Do not answer the topic yourself. Do not mention that you are an AI. Keep it under 28 words.',
+      },
+    });
+
+    setIsTeachPetThinking(false);
+
+    const aiQuestion = data?.text?.trim();
+    const nextQuestion = invokeError || data?.error || !aiQuestion ? fallbackQuestion : aiQuestion;
+    setTeachMessages([...nextMessages, { role: 'pet', text: nextQuestion }]);
   }
 
   function formatCalculatorValue(value: number) {
@@ -3061,6 +3102,21 @@ ${trimmedMaterial}`;
                   </div>
                 </article>
               ))}
+              {isTeachPetThinking && (
+                <article className="teach-message pet">
+                  <span className={`teach-pet-avatar egg-${displayedEggColor}`} aria-hidden="true">
+                    {studyPet.petImage ? (
+                      <img src={studyPet.petImage} alt="" />
+                    ) : (
+                      <span className="teach-pet-avatar-egg" />
+                    )}
+                  </span>
+                  <div>
+                    <p className="card-label">{petName}</p>
+                    <p>Thinking of a question...</p>
+                  </div>
+                </article>
+              )}
             </div>
             <label className="teach-pet-composer">
               <textarea
@@ -3068,8 +3124,8 @@ ${trimmedMaterial}`;
                 onChange={(event) => setTeachAnswer(event.target.value)}
                 placeholder="Explain the topic to your pet..."
               />
-              <button className="generate-button" type="button" onClick={sendTeachAnswer}>
-                Send
+              <button className="generate-button" type="button" onClick={sendTeachAnswer} disabled={isTeachPetThinking}>
+                {isTeachPetThinking ? 'Thinking...' : 'Send'}
               </button>
             </label>
           </section>
