@@ -85,6 +85,14 @@ const languageKey = 'study-helper-language';
 const studyPetKey = 'study-helper-pet';
 const maxSavedLessons = 6;
 const eggWarmDays = 3;
+const emptyStudyPet: StudyPet = {
+  streak: 0,
+  lastStudyDate: '',
+  petType: null,
+  petImage: null,
+  eggColor: 'green',
+  hasChosenEggColor: false,
+};
 
 const petTypes: PetType[] = ['cat', 'dragon', 'fox', 'owl'];
 const eggColors: EggColor[] = ['green', 'gold', 'blue', 'red'];
@@ -541,10 +549,16 @@ function getYesterdayKey() {
   return date.toISOString().slice(0, 10);
 }
 
-function readStudyPet(): StudyPet {
+function getStudyPetKey(userId?: string) {
+  return userId ? `${studyPetKey}:${userId}` : studyPetKey;
+}
+
+function readStudyPet(userId?: string): StudyPet {
   try {
-    const rawPet = window.localStorage.getItem(studyPetKey);
-    if (!rawPet) return { streak: 0, lastStudyDate: '', petType: null, petImage: null, eggColor: 'green', hasChosenEggColor: false };
+    if (!userId) return emptyStudyPet;
+
+    const rawPet = window.localStorage.getItem(getStudyPetKey(userId));
+    if (!rawPet) return emptyStudyPet;
     const parsed = JSON.parse(rawPet) as StudyPet;
     return {
       streak: Number.isFinite(parsed.streak) ? parsed.streak : 0,
@@ -555,7 +569,7 @@ function readStudyPet(): StudyPet {
       hasChosenEggColor: Boolean(parsed.hasChosenEggColor),
     };
   } catch {
-    return { streak: 0, lastStudyDate: '', petType: null, petImage: null, eggColor: 'green', hasChosenEggColor: false };
+    return emptyStudyPet;
   }
 }
 
@@ -633,14 +647,7 @@ export default function App() {
   const [material, setMaterial] = useState('');
   const [savedLessons, setSavedLessons] = useState<SavedLesson[]>([]);
   const [summary, setSummary] = useState('');
-  const [studyPet, setStudyPet] = useState<StudyPet>({
-    streak: 0,
-    lastStudyDate: '',
-    petType: null,
-    petImage: null,
-    eggColor: 'green',
-    hasChosenEggColor: false,
-  });
+  const [studyPet, setStudyPet] = useState<StudyPet>(emptyStudyPet);
   const [pendingEggColor, setPendingEggColor] = useState<EggColor>('green');
   const [hatchPopup, setHatchPopup] = useState<HatchPopup | null>(null);
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
@@ -708,12 +715,16 @@ export default function App() {
   const currentFlashcard = flashcards[currentFlashcardIndex];
 
   useEffect(() => {
-    const savedPet = readStudyPet();
     setSavedLessons(readSavedLessons());
-    setStudyPet(savedPet);
-    setPendingEggColor(savedPet.eggColor);
     setLanguage(readLanguage());
   }, []);
+
+  useEffect(() => {
+    const savedPet = readStudyPet(session?.user.id);
+    setStudyPet(savedPet);
+    setPendingEggColor(savedPet.eggColor);
+    setHatchPopup(null);
+  }, [session?.user.id]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -831,7 +842,7 @@ export default function App() {
         hasChosenEggColor: currentPet.hasChosenEggColor,
       };
 
-      window.localStorage.setItem(studyPetKey, JSON.stringify(nextPet));
+      window.localStorage.setItem(getStudyPetKey(session.user.id), JSON.stringify(nextPet));
       return nextPet;
     });
   }
@@ -853,7 +864,7 @@ export default function App() {
         eggColor: pendingEggColor,
         hasChosenEggColor: true,
       };
-      window.localStorage.setItem(studyPetKey, JSON.stringify(nextPet));
+      window.localStorage.setItem(getStudyPetKey(session.user.id), JSON.stringify(nextPet));
       return nextPet;
     });
 
@@ -866,7 +877,8 @@ export default function App() {
   }
 
   function hatchEgg() {
-    if (!hatchPopup || hatchPopup.stage !== 'ready') return;
+    const userId = session?.user.id;
+    if (!userId || !hatchPopup || hatchPopup.stage !== 'ready') return;
 
     if (hatchTimerRef.current) {
       window.clearTimeout(hatchTimerRef.current);
@@ -886,7 +898,7 @@ export default function App() {
             eggColor: currentPopup.eggColor,
             hasChosenEggColor: true,
           };
-          window.localStorage.setItem(studyPetKey, JSON.stringify(nextPet));
+          window.localStorage.setItem(getStudyPetKey(userId), JSON.stringify(nextPet));
           return nextPet;
         });
 
