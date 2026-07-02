@@ -770,6 +770,35 @@ export default function App() {
     !/[A-Z]/.test(accountPassword) ? copy.passwordRuleCapital : '',
   ].filter(Boolean);
   const currentFlashcard = flashcards[currentFlashcardIndex];
+  const answeredQuizCount = quizAnswers.filter((answer) => answer.trim()).length;
+  const timerTotalSeconds = (timerMode === 'focus' ? focusMinutes : breakMinutes) * 60;
+  const tutorQuestionCount = tutorMessages.filter((message) => message.role === 'user').length;
+  const toolProgress =
+    page === 'flashcards'
+      ? {
+          label: copy.flashcards,
+          detail: flashcards.length > 0 ? `${currentFlashcardIndex + 1} / ${flashcards.length}` : `0 / 0`,
+          percent: flashcards.length > 0 ? ((currentFlashcardIndex + 1) / flashcards.length) * 100 : 0,
+        }
+      : page === 'quiz'
+        ? {
+            label: copy.quiz,
+            detail: quiz.length > 0 ? `${answeredQuizCount} / ${quiz.length}` : `0 / 0`,
+            percent: quiz.length > 0 ? (answeredQuizCount / quiz.length) * 100 : 0,
+          }
+        : page === 'tutor'
+          ? {
+              label: copy.aiTutor,
+              detail: `${tutorQuestionCount} ${tutorQuestionCount === 1 ? 'message' : 'messages'}`,
+              percent: Math.min((tutorQuestionCount / 6) * 100, 100),
+            }
+          : page === 'focusTimer'
+            ? {
+                label: 'Focus Timer',
+                detail: `${Math.round(((timerTotalSeconds - timerSecondsLeft) / timerTotalSeconds) * 100)}%`,
+                percent: timerTotalSeconds > 0 ? ((timerTotalSeconds - timerSecondsLeft) / timerTotalSeconds) * 100 : 0,
+              }
+            : null;
 
   function goToPage(nextPage: Page, replace = false) {
     setPage(nextPage);
@@ -1748,6 +1777,24 @@ ${trimmedMaterial}`;
             ) : null}
           </div>
         </div>
+
+        {toolProgress && (
+          <div className="tool-progress" aria-label={`${toolProgress.label} progress`}>
+            <div className="tool-progress-meta">
+              <span>{toolProgress.label}</span>
+              <span>{toolProgress.detail}</span>
+            </div>
+            <div
+              className="tool-progress-track"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(toolProgress.percent)}
+            >
+              <span style={{ width: `${Math.min(Math.max(toolProgress.percent, 0), 100)}%` }} />
+            </div>
+          </div>
+        )}
 
         {page === 'otherMaterials' ? (
           <section className="other-materials-page" aria-label="Other materials">

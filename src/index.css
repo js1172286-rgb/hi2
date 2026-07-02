@@ -111,6 +111,38 @@ button:disabled {
   margin-bottom: 24px;
 }
 
+.tool-progress {
+  display: grid;
+  gap: 8px;
+  margin: -8px 0 18px;
+}
+
+.tool-progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.tool-progress-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(47, 111, 115, 0.14);
+}
+
+.tool-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 220ms ease;
+}
+
 .eyebrow {
   margin-bottom: 6px;
   color: var(--accent);
@@ -1204,6 +1236,14 @@ select:focus {
 :root[data-theme='dark'] .lessons-page-heading,
 :root[data-theme='dark'] .quiz-page-body {
   background: var(--panel);
+}
+
+:root[data-theme='dark'] .tool-progress-track {
+  background: #191c1f;
+}
+
+:root[data-theme='dark'] .tool-progress-track span {
+  background: #516062;
 }
 
 :root[data-theme='dark'] .muted-button {
