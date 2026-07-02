@@ -9,10 +9,11 @@ type AiResponse = {
 };
 
 type StudyMode = 'summary' | 'flashcards' | 'quiz';
-type Page = 'study' | 'lessons' | 'otherMaterials' | 'tutor' | 'account' | 'flashcards' | 'quiz' | 'focusTimer' | 'progress';
+type Page = 'study' | 'lessons' | 'otherMaterials' | 'tutor' | 'account' | 'flashcards' | 'quiz' | 'focusTimer' | 'progress' | 'calculator';
 type Language = 'en' | 'ru' | 'kk';
 type Theme = 'light' | 'dark';
 type TimerMode = 'focus' | 'break';
+type CalculatorOperator = '+' | '-' | '*' | '/';
 
 type Flashcard = {
   front: string;
@@ -163,6 +164,7 @@ const pagePaths: Record<Page, string> = {
   quiz: '/quiz',
   focusTimer: '/focus-timer',
   progress: '/progress',
+  calculator: '/calculator',
 };
 
 function getPageFromPath(pathname = window.location.pathname): Page {
@@ -175,6 +177,7 @@ function getPageFromPath(pathname = window.location.pathname): Page {
   if (normalizedPath === pagePaths.quiz) return 'quiz';
   if (normalizedPath === pagePaths.focusTimer) return 'focusTimer';
   if (normalizedPath === pagePaths.progress) return 'progress';
+  if (normalizedPath === pagePaths.calculator) return 'calculator';
   return 'study';
 }
 
@@ -195,6 +198,7 @@ const translations = {
     aiTutor: 'AI Tutor',
     askTutor: 'Ask tutor',
     backToStudy: 'Back to study',
+    calculator: 'Calculator',
     checking: 'Checking...',
     createAccount: 'Create account',
     email: 'Email',
@@ -231,6 +235,7 @@ const translations = {
     aiTutor: 'ИИ-репетитор',
     askTutor: 'Спросить репетитора',
     backToStudy: 'Назад к учебе',
+    calculator: 'Калькулятор',
     checking: 'Проверяю...',
     createAccount: 'Создать аккаунт',
     email: 'Эл. почта',
@@ -267,6 +272,7 @@ const translations = {
     aiTutor: 'AI мұғалім',
     askTutor: 'Мұғалімнен сұрау',
     backToStudy: 'Оқуға қайту',
+    calculator: 'Калькулятор',
     checking: 'Тексерілуде...',
     createAccount: 'Аккаунт ашу',
     email: 'Эл. пошта',
@@ -733,6 +739,10 @@ export default function App() {
   const [breakMinutes, setBreakMinutes] = useState(defaultBreakMinutes);
   const [timerSecondsLeft, setTimerSecondsLeft] = useState(defaultFocusMinutes * 60);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [calculatorDisplay, setCalculatorDisplay] = useState('0');
+  const [calculatorStoredValue, setCalculatorStoredValue] = useState<number | null>(null);
+  const [calculatorOperator, setCalculatorOperator] = useState<CalculatorOperator | null>(null);
+  const [isCalculatorWaiting, setIsCalculatorWaiting] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -972,6 +982,88 @@ export default function App() {
       setTimerSecondsLeft(nextMinutes * 60);
       setIsTimerRunning(false);
     }
+  }
+
+  function formatCalculatorValue(value: number) {
+    if (!Number.isFinite(value)) return 'Error';
+    return Number.parseFloat(value.toPrecision(12)).toString();
+  }
+
+  function calculateNextValue(firstValue: number, secondValue: number, operator: CalculatorOperator) {
+    if (operator === '+') return firstValue + secondValue;
+    if (operator === '-') return firstValue - secondValue;
+    if (operator === '*') return firstValue * secondValue;
+    return secondValue === 0 ? Number.NaN : firstValue / secondValue;
+  }
+
+  function clearCalculator() {
+    setCalculatorDisplay('0');
+    setCalculatorStoredValue(null);
+    setCalculatorOperator(null);
+    setIsCalculatorWaiting(false);
+  }
+
+  function inputCalculatorDigit(digit: string) {
+    if (calculatorDisplay === 'Error' || isCalculatorWaiting) {
+      setCalculatorDisplay(digit);
+      setIsCalculatorWaiting(false);
+      return;
+    }
+
+    setCalculatorDisplay(calculatorDisplay === '0' ? digit : `${calculatorDisplay}${digit}`);
+  }
+
+  function inputCalculatorDecimal() {
+    if (calculatorDisplay === 'Error' || isCalculatorWaiting) {
+      setCalculatorDisplay('0.');
+      setIsCalculatorWaiting(false);
+      return;
+    }
+
+    if (!calculatorDisplay.includes('.')) {
+      setCalculatorDisplay(`${calculatorDisplay}.`);
+    }
+  }
+
+  function toggleCalculatorSign() {
+    if (calculatorDisplay === '0' || calculatorDisplay === 'Error') return;
+    setCalculatorDisplay(calculatorDisplay.startsWith('-') ? calculatorDisplay.slice(1) : `-${calculatorDisplay}`);
+  }
+
+  function deleteCalculatorDigit() {
+    if (isCalculatorWaiting || calculatorDisplay === 'Error' || calculatorDisplay.length <= 1) {
+      setCalculatorDisplay('0');
+      setIsCalculatorWaiting(false);
+      return;
+    }
+
+    setCalculatorDisplay(calculatorDisplay.slice(0, -1));
+  }
+
+  function chooseCalculatorOperator(nextOperator: CalculatorOperator) {
+    const inputValue = Number(calculatorDisplay);
+
+    if (calculatorStoredValue === null) {
+      setCalculatorStoredValue(inputValue);
+    } else if (calculatorOperator && !isCalculatorWaiting) {
+      const result = calculateNextValue(calculatorStoredValue, inputValue, calculatorOperator);
+      setCalculatorDisplay(formatCalculatorValue(result));
+      setCalculatorStoredValue(result);
+    }
+
+    setCalculatorOperator(nextOperator);
+    setIsCalculatorWaiting(true);
+  }
+
+  function completeCalculator() {
+    if (calculatorStoredValue === null || !calculatorOperator) return;
+
+    const inputValue = Number(calculatorDisplay);
+    const result = calculateNextValue(calculatorStoredValue, inputValue, calculatorOperator);
+    setCalculatorDisplay(formatCalculatorValue(result));
+    setCalculatorStoredValue(null);
+    setCalculatorOperator(null);
+    setIsCalculatorWaiting(true);
   }
 
   function updateSavedLessons(nextLessons: SavedLesson[]) {
@@ -1744,6 +1836,8 @@ ${trimmedMaterial}`;
                             ? 'Focus Timer'
                             : page === 'progress'
                               ? copy.progress
+                              : page === 'calculator'
+                                ? copy.calculator
                       : copy.studyHelperTitle}
             </h1>
           </div>
@@ -2406,6 +2500,62 @@ ${trimmedMaterial}`;
               </div>
             </div>
           </section>
+        ) : page === 'calculator' ? (
+          <section className="calculator-page" aria-label="Calculator">
+            <div className="calculator-panel">
+              <div className="calculator-display" aria-live="polite">
+                <span>{calculatorOperator ?? ''}</span>
+                <strong>{calculatorDisplay}</strong>
+              </div>
+              <div className="calculator-grid">
+                <button className="calculator-key muted" type="button" onClick={clearCalculator}>
+                  AC
+                </button>
+                <button className="calculator-key muted" type="button" onClick={deleteCalculatorDigit}>
+                  Del
+                </button>
+                <button className="calculator-key muted" type="button" onClick={toggleCalculatorSign}>
+                  +/-
+                </button>
+                <button className="calculator-key operator" type="button" onClick={() => chooseCalculatorOperator('/')}>
+                  ÷
+                </button>
+                {['7', '8', '9'].map((digit) => (
+                  <button className="calculator-key" key={digit} type="button" onClick={() => inputCalculatorDigit(digit)}>
+                    {digit}
+                  </button>
+                ))}
+                <button className="calculator-key operator" type="button" onClick={() => chooseCalculatorOperator('*')}>
+                  ×
+                </button>
+                {['4', '5', '6'].map((digit) => (
+                  <button className="calculator-key" key={digit} type="button" onClick={() => inputCalculatorDigit(digit)}>
+                    {digit}
+                  </button>
+                ))}
+                <button className="calculator-key operator" type="button" onClick={() => chooseCalculatorOperator('-')}>
+                  -
+                </button>
+                {['1', '2', '3'].map((digit) => (
+                  <button className="calculator-key" key={digit} type="button" onClick={() => inputCalculatorDigit(digit)}>
+                    {digit}
+                  </button>
+                ))}
+                <button className="calculator-key operator" type="button" onClick={() => chooseCalculatorOperator('+')}>
+                  +
+                </button>
+                <button className="calculator-key zero" type="button" onClick={() => inputCalculatorDigit('0')}>
+                  0
+                </button>
+                <button className="calculator-key" type="button" onClick={inputCalculatorDecimal}>
+                  .
+                </button>
+                <button className="calculator-key equals" type="button" onClick={completeCalculator}>
+                  =
+                </button>
+              </div>
+            </div>
+          </section>
         ) : (
           <>
             <div className={isOptionsOpen ? 'workspace' : 'workspace options-closed'}>
@@ -2560,6 +2710,13 @@ ${trimmedMaterial}`;
           onClick={() => goToPage('progress')}
         >
           {copy.progress}
+        </button>
+        <button
+          className="drawer-tool-button"
+          type="button"
+          onClick={() => goToPage('calculator')}
+        >
+          {copy.calculator}
         </button>
       </aside>
 

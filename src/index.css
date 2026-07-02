@@ -1243,6 +1243,7 @@ select:focus {
 :root[data-theme='dark'] .share-panel,
 :root[data-theme='dark'] .source-form,
 :root[data-theme='dark'] .lesson-item,
+:root[data-theme='dark'] .calculator-panel,
 :root[data-theme='dark'] .search-card,
 :root[data-theme='dark'] .result,
 :root[data-theme='dark'] .summary-modal,
@@ -1258,7 +1259,9 @@ select:focus {
 
 :root[data-theme='dark'] .study-options,
 :root[data-theme='dark'] .lessons-page-heading,
-:root[data-theme='dark'] .quiz-page-body {
+:root[data-theme='dark'] .quiz-page-body,
+:root[data-theme='dark'] .calculator-display,
+:root[data-theme='dark'] .calculator-key {
   background: var(--panel);
 }
 
@@ -1460,6 +1463,93 @@ select:focus {
   display: grid;
   place-items: center;
   min-height: 460px;
+}
+
+.calculator-page {
+  display: grid;
+  place-items: center;
+  min-height: 520px;
+}
+
+.calculator-panel {
+  width: min(380px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+}
+
+.calculator-display {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  min-height: 112px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.calculator-display span {
+  min-height: 18px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.calculator-display strong {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 42px;
+  font-weight: 900;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calculator-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.calculator-key {
+  min-height: 58px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.calculator-key:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.calculator-key.operator,
+.calculator-key.equals {
+  background: var(--accent);
+  color: #fff;
+}
+
+.calculator-key.operator:hover,
+.calculator-key.equals:hover {
+  background: var(--accent-dark);
+}
+
+.calculator-key.muted {
+  color: var(--muted);
+}
+
+.calculator-key.zero {
+  grid-column: span 2;
 }
 
 .progress-page {
