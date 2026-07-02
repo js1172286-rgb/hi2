@@ -1132,13 +1132,19 @@ export default function App() {
     const answer = teachAnswer.trim();
     if (!answer) return;
 
+    const usefulWords = answer
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter((word) => word.length > 4 && !['because', 'about', 'there', 'their', 'would', 'could', 'should', 'which'].includes(word));
+    const focusWord = usefulWords[0] || 'that idea';
     const petQuestions = [
-      'Wait, what does that mean in simpler words?',
-      'Can you give me a tiny example?',
-      'Why does that part matter?',
-      'I think I am confused. Can you explain the steps one by one?',
-      'How would I know when to use this?',
-      'Can you compare it to something easy?',
+      `Wait, what does "${focusWord}" mean in simpler words?`,
+      `Can you give me a tiny example of "${focusWord}"?`,
+      `Why is "${focusWord}" important?`,
+      `I am still confused. Can you explain "${focusWord}" step by step?`,
+      `How would I know when to use "${focusWord}"?`,
+      `Can you compare "${focusWord}" to something easy?`,
     ];
     const userAnswerCount = teachMessages.filter((message) => message.role === 'user').length;
     const nextQuestion = petQuestions[userAnswerCount % petQuestions.length];
@@ -2993,8 +2999,19 @@ ${trimmedMaterial}`;
             <div className="teach-pet-chat">
               {teachMessages.map((message, index) => (
                 <article className={`teach-message ${message.role}`} key={`${message.role}-${index}`}>
-                  <p className="card-label">{message.role === 'user' ? copy.you : petName}</p>
-                  <p>{message.text}</p>
+                  {message.role === 'pet' && (
+                    <span className={`teach-pet-avatar egg-${displayedEggColor}`} aria-hidden="true">
+                      {studyPet.petImage ? (
+                        <img src={studyPet.petImage} alt="" />
+                      ) : (
+                        <span className="teach-pet-avatar-egg" />
+                      )}
+                    </span>
+                  )}
+                  <div>
+                    <p className="card-label">{message.role === 'user' ? copy.you : petName}</p>
+                    <p>{message.text}</p>
+                  </div>
                 </article>
               ))}
             </div>
