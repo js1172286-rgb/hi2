@@ -609,6 +609,7 @@ select:focus {
   border: 0;
   border-radius: 50% 50% 46% 46%;
   background: var(--egg-ring);
+  animation: egg-warm-wiggle 3.2s ease-in-out infinite;
 }
 
 .pet-visual.egg-gold {
@@ -691,12 +692,76 @@ select:focus {
   height: 92px;
   border-radius: 8px;
   background: var(--accent-soft);
+  animation: pet-hatch-pop 720ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .pet-image {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  animation: pet-image-arrive 820ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes egg-warm-wiggle {
+  0%,
+  78%,
+  100% {
+    transform: rotate(0deg) translateY(0);
+  }
+
+  82% {
+    transform: rotate(-4deg) translateY(-2px);
+  }
+
+  86% {
+    transform: rotate(4deg) translateY(-2px);
+  }
+
+  90% {
+    transform: rotate(-2deg) translateY(0);
+  }
+}
+
+@keyframes pet-hatch-pop {
+  0% {
+    transform: scale(0.72) translateY(10px);
+    opacity: 0;
+    box-shadow: 0 0 0 0 rgba(47, 111, 115, 0.26);
+  }
+
+  55% {
+    transform: scale(1.08) translateY(-4px);
+    opacity: 1;
+    box-shadow: 0 0 0 14px rgba(47, 111, 115, 0);
+  }
+
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    box-shadow: none;
+  }
+}
+
+@keyframes pet-image-arrive {
+  0% {
+    transform: scale(0.82) rotate(-3deg);
+  }
+
+  58% {
+    transform: scale(1.06) rotate(2deg);
+  }
+
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pet-visual.egg,
+  .pet-visual.hatched,
+  .pet-image {
+    animation: none;
+  }
 }
 
 .pet-copy h2 {
