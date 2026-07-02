@@ -942,6 +942,94 @@ export default function App() {
   }, [flashcards.length, page]);
 
   useEffect(() => {
+    if (page !== 'calculator') return;
+
+    function handleCalculatorKeyDown(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      const isTyping = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable;
+      if (isTyping) return;
+
+      if (/^\d$/.test(event.key)) {
+        event.preventDefault();
+        inputCalculatorDigit(event.key);
+        return;
+      }
+
+      if (event.key === '.') {
+        event.preventDefault();
+        inputCalculatorDecimal();
+        return;
+      }
+
+      if (event.key === '+' || event.key === '-' || event.key === '*' || event.key === '/') {
+        event.preventDefault();
+        chooseCalculatorOperator(event.key as CalculatorOperator);
+        return;
+      }
+
+      if (event.key === '^') {
+        event.preventDefault();
+        chooseCalculatorOperator('^');
+        return;
+      }
+
+      if (event.key === 'Enter' || event.key === '=') {
+        event.preventDefault();
+        completeCalculator();
+        return;
+      }
+
+      if (event.key === 'Backspace') {
+        event.preventDefault();
+        deleteCalculatorDigit();
+        return;
+      }
+
+      if (event.key === 'Delete' || event.key === 'Escape') {
+        event.preventDefault();
+        clearCalculator();
+        return;
+      }
+
+      if (event.key === '%') {
+        event.preventDefault();
+        applyCalculatorFunction('percent');
+        return;
+      }
+
+      const shortcut = event.key.toLowerCase();
+      if (shortcut === 'r') {
+        event.preventDefault();
+        applyCalculatorFunction('sqrt');
+      } else if (shortcut === 's') {
+        event.preventDefault();
+        applyCalculatorFunction('sin');
+      } else if (shortcut === 'c') {
+        event.preventDefault();
+        applyCalculatorFunction('cos');
+      } else if (shortcut === 't') {
+        event.preventDefault();
+        applyCalculatorFunction('tan');
+      } else if (shortcut === 'l') {
+        event.preventDefault();
+        applyCalculatorFunction('log');
+      } else if (shortcut === 'n') {
+        event.preventDefault();
+        applyCalculatorFunction('ln');
+      } else if (shortcut === 'p') {
+        event.preventDefault();
+        inputCalculatorConstant(Math.PI);
+      } else if (shortcut === 'e') {
+        event.preventDefault();
+        inputCalculatorConstant(Math.E);
+      }
+    }
+
+    window.addEventListener('keydown', handleCalculatorKeyDown);
+    return () => window.removeEventListener('keydown', handleCalculatorKeyDown);
+  }, [calculatorDisplay, calculatorOperator, calculatorStoredValue, isCalculatorWaiting, page]);
+
+  useEffect(() => {
     if (!isTimerRunning) return;
 
     const timerId = window.setInterval(() => {
