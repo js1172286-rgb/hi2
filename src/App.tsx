@@ -143,6 +143,27 @@ const modes: { id: StudyMode; labelKey: 'summaryMode' | 'flashcards' | 'quizMe' 
   { id: 'quiz', labelKey: 'quizMe' },
 ];
 
+const pagePaths: Record<Page, string> = {
+  study: '/',
+  lessons: '/lessons',
+  otherMaterials: '/other-materials',
+  tutor: '/tutor',
+  account: '/account',
+  flashcards: '/flashcards',
+  quiz: '/quiz',
+};
+
+function getPageFromPath(pathname = window.location.pathname): Page {
+  const normalizedPath = pathname.replace(/\/+$/, '') || '/';
+  if (normalizedPath === pagePaths.lessons) return 'lessons';
+  if (normalizedPath === pagePaths.otherMaterials) return 'otherMaterials';
+  if (normalizedPath === pagePaths.tutor) return 'tutor';
+  if (normalizedPath === pagePaths.account) return 'account';
+  if (normalizedPath === pagePaths.flashcards) return 'flashcards';
+  if (normalizedPath === pagePaths.quiz) return 'quiz';
+  return 'study';
+}
+
 const languageLabels: Record<Language, string> = {
   en: 'English',
   ru: 'Русский',
@@ -640,7 +661,7 @@ function readSavedLessons() {
 }
 
 export default function App() {
-  const [page, setPage] = useState<Page>('study');
+  const [page, setPage] = useState<Page>(() => getPageFromPath());
   const [language, setLanguage] = useState<Language>('en');
   const [mode, setMode] = useState<StudyMode>('summary');
   const [lessonName, setLessonName] = useState('');
@@ -714,9 +735,33 @@ export default function App() {
   ].filter(Boolean);
   const currentFlashcard = flashcards[currentFlashcardIndex];
 
+  function goToPage(nextPage: Page, replace = false) {
+    setPage(nextPage);
+
+    const nextPath = pagePaths[nextPage];
+    if (window.location.pathname === nextPath) return;
+
+    if (replace) {
+      window.history.replaceState(null, '', nextPath);
+      return;
+    }
+
+    window.history.pushState(null, '', nextPath);
+  }
+
   useEffect(() => {
     setSavedLessons(readSavedLessons());
     setLanguage(readLanguage());
+  }, []);
+
+  useEffect(() => {
+    function handleRouteChange() {
+      setPage(getPageFromPath());
+    }
+
+    window.history.replaceState(null, '', pagePaths[page]);
+    window.addEventListener('popstate', handleRouteChange);
+    return () => window.removeEventListener('popstate', handleRouteChange);
   }, []);
 
   useEffect(() => {
@@ -910,7 +955,7 @@ export default function App() {
   }
 
   function goHome() {
-    setPage('study');
+    goToPage('study');
     setError('');
     setNotice('');
   }
@@ -921,7 +966,7 @@ export default function App() {
     setError('');
     setNotice('');
     setTutorError('');
-    setPage('account');
+    goToPage('account');
     return false;
   }
 
@@ -957,7 +1002,7 @@ export default function App() {
       setSharedError(copy.signInToUpload);
       setSharedNotice('');
       setAccountNotice(copy.enterAccountToUpload);
-      setPage('account');
+      goToPage('account');
       return;
     }
 
@@ -1126,7 +1171,7 @@ export default function App() {
   function useSharedMaterial(item: SharedMaterial) {
     setLessonName(item.title);
     setMaterial(item.material);
-    setPage('study');
+    goToPage('study');
     setNotice(`${copy.loaded} "${item.title}".`);
     setError('');
     clearResults();
@@ -1330,7 +1375,7 @@ ${JSON.stringify(quizToGrade, null, 2)}`,
     setMaterial(getLessonMaterial(lesson));
     setError('');
     setNotice(`${copy.loaded} "${lesson.title}".`);
-    setPage('study');
+    goToPage('study');
     clearResults();
   }
 
@@ -1484,7 +1529,7 @@ ${trimmedMaterial}`;
       setFlashcards(nextCards);
       setCurrentFlashcardIndex(0);
       setIsFlashcardFlipped(false);
-      setPage('flashcards');
+      goToPage('flashcards');
       markStudyActivity();
       return;
     }
@@ -1502,7 +1547,7 @@ ${trimmedMaterial}`;
       setShowQuizAnswers(false);
       setIsQuizSubmitted(false);
       setQuizError('');
-      setPage('quiz');
+      goToPage('quiz');
       markStudyActivity();
       return;
     }
@@ -1558,7 +1603,7 @@ ${trimmedMaterial}`;
                   onClick={() => {
                     if (!session) {
                       setAccountNotice(copy.enterAccountToUpload);
-                      setPage('account');
+                      goToPage('account');
                       return;
                     }
                     setIsUploadingSharedMaterial(true);
@@ -1582,7 +1627,7 @@ ${trimmedMaterial}`;
                 </select>
               </label>
             ) : page !== 'lessons' ? (
-              <button className="nav-button" type="button" onClick={() => setPage('lessons')}>
+              <button className="nav-button" type="button" onClick={() => goToPage('lessons')}>
                 {copy.lessons}
               </button>
             ) : null}
@@ -1950,7 +1995,7 @@ ${trimmedMaterial}`;
                 <h2>{copy.flashcards}</h2>
                 <p>{flashcards.length} {copy.cardsReady}</p>
               </div>
-              <button className="small-button" type="button" onClick={() => setPage('study')}>
+              <button className="small-button" type="button" onClick={() => goToPage('study')}>
                 {copy.backToStudy}
               </button>
             </div>
@@ -1993,7 +2038,7 @@ ${trimmedMaterial}`;
                 <h2>{copy.quiz}</h2>
                 <p>{quiz.length} {copy.questionsReady}</p>
               </div>
-              <button className="small-button" type="button" onClick={() => setPage('study')}>
+              <button className="small-button" type="button" onClick={() => goToPage('study')}>
                 {copy.backToStudy}
               </button>
             </div>
@@ -2068,7 +2113,7 @@ ${trimmedMaterial}`;
                       type="button"
                       onClick={() => {
                         if (requireSignedIn(copy.signInForTutor)) {
-                          setPage('tutor');
+                          goToPage('tutor');
                         }
                       }}
                     >
@@ -2170,7 +2215,7 @@ ${trimmedMaterial}`;
       <button
         className="bottom-icon-button search-button"
         type="button"
-        onClick={() => setPage('otherMaterials')}
+        onClick={() => goToPage('otherMaterials')}
         aria-label="Open other materials page"
       >
         <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -2181,7 +2226,7 @@ ${trimmedMaterial}`;
       <button
         className="bottom-icon-button account-button"
         type="button"
-        onClick={() => setPage('account')}
+        onClick={() => goToPage('account')}
         aria-label="Open account page"
       >
         <svg viewBox="0 0 64 64" aria-hidden="true">
