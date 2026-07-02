@@ -182,18 +182,6 @@ const petFaces: Record<PetType, string> = {
   owl: 'o,o',
 };
 
-const demoSummary = `- Study Helper turns notes into quick review tools.
-- Saved lessons let you keep a few topics and add more sources later.
-- Flashcards help you test facts one card at a time.
-- Quizzes help you practice explaining answers in your own words.
-- The streak pet grows when signed-in users keep studying.
-
-Key terms:
-Study streak, saved lessons, flashcards, quiz, AI tutor.
-
-Quick review question:
-Why can flashcards be useful before a quiz?`;
-
 const eggColorLabels: Record<EggColor, string> = {
   green: 'Green',
   gold: 'Gold',
@@ -2538,16 +2526,6 @@ ${trimmedMaterial}`;
     const trimmedMaterial = material.trim();
 
     if (mode === 'quiz' && !requireSignedIn(copy.signInForQuiz)) {
-      return;
-    }
-
-    if (mode === 'summary') {
-      setSummary(demoSummary);
-      setIsSummaryCopied(false);
-      setError('');
-      setNotice('Demo summary is showing for preview. AI summaries can be turned back on later.');
-      setFlashcards([]);
-      setQuiz([]);
       return;
     }
 
