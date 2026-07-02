@@ -10,6 +10,7 @@ type AiResponse = {
 type StudyMode = 'summary' | 'flashcards' | 'quiz';
 type Page = 'study' | 'lessons' | 'otherMaterials' | 'tutor' | 'account' | 'flashcards' | 'quiz';
 type Language = 'en' | 'ru' | 'kk';
+type Theme = 'light' | 'dark';
 
 type Flashcard = {
   front: string;
@@ -82,6 +83,7 @@ type StudyPet = {
 
 const savedLessonsKey = 'study-helper-lessons';
 const languageKey = 'study-helper-language';
+const themeKey = 'study-helper-theme';
 const studyPetKey = 'study-helper-pet';
 const maxSavedLessons = 6;
 const eggWarmDays = 3;
@@ -168,6 +170,11 @@ const languageLabels: Record<Language, string> = {
   en: 'English',
   ru: 'Русский',
   kk: 'Қазақша',
+};
+
+const themeLabels: Record<Theme, string> = {
+  light: 'Light',
+  dark: 'Dark',
 };
 
 const translations = {
@@ -560,6 +567,10 @@ function readLanguage(): Language {
   return savedLanguage === 'ru' || savedLanguage === 'kk' ? savedLanguage : 'en';
 }
 
+function readTheme(): Theme {
+  return window.localStorage.getItem(themeKey) === 'dark' ? 'dark' : 'light';
+}
+
 function getTodayKey() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -663,6 +674,7 @@ function readSavedLessons() {
 export default function App() {
   const [page, setPage] = useState<Page>(() => getPageFromPath());
   const [language, setLanguage] = useState<Language>('en');
+  const [theme, setTheme] = useState<Theme>(() => readTheme());
   const [mode, setMode] = useState<StudyMode>('summary');
   const [lessonName, setLessonName] = useState('');
   const [material, setMaterial] = useState('');
@@ -755,6 +767,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
+
+  useEffect(() => {
     function handleRouteChange() {
       setPage(getPageFromPath());
     }
@@ -843,6 +859,11 @@ export default function App() {
   function updateLanguage(nextLanguage: Language) {
     setLanguage(nextLanguage);
     window.localStorage.setItem(languageKey, nextLanguage);
+  }
+
+  function updateTheme(nextTheme: Theme) {
+    setTheme(nextTheme);
+    window.localStorage.setItem(themeKey, nextTheme);
   }
 
   function markStudyActivity() {
@@ -1616,16 +1637,28 @@ ${trimmedMaterial}`;
                 </button>
               )
             ) : page === 'account' ? (
-              <label className="language-field compact-language-field">
-                <span>{copy.language}</span>
-                <select value={language} onChange={(event) => updateLanguage(event.target.value as Language)}>
-                  {Object.entries(languageLabels).map(([id, label]) => (
-                    <option key={id} value={id}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div className="account-preferences">
+                <label className="language-field compact-language-field">
+                  <span>{copy.language}</span>
+                  <select value={language} onChange={(event) => updateLanguage(event.target.value as Language)}>
+                    {Object.entries(languageLabels).map(([id, label]) => (
+                      <option key={id} value={id}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="language-field compact-language-field">
+                  <span>Theme</span>
+                  <select value={theme} onChange={(event) => updateTheme(event.target.value as Theme)}>
+                    {Object.entries(themeLabels).map(([id, label]) => (
+                      <option key={id} value={id}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
             ) : page !== 'lessons' ? (
               <button className="nav-button" type="button" onClick={() => goToPage('lessons')}>
                 {copy.lessons}

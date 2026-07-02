@@ -14,6 +14,21 @@
   color: var(--ink);
 }
 
+:root[data-theme='dark'] {
+  --bg: #11191b;
+  --card: #172427;
+  --ink: #eef6f6;
+  --muted: #a6b7bb;
+  --accent: #78d8d3;
+  --accent-dark: #52bbb6;
+  --accent-soft: #203c40;
+  --line: #2b4448;
+  --danger: #ff8f8f;
+  --danger-dark: #d96c6c;
+  --panel: #132023;
+  color-scheme: dark;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -26,6 +41,13 @@ body {
   background:
     linear-gradient(135deg, rgba(47, 111, 115, 0.14), transparent 34%),
     linear-gradient(315deg, rgba(190, 96, 70, 0.1), transparent 32%),
+    var(--bg);
+}
+
+:root[data-theme='dark'] body {
+  background:
+    linear-gradient(135deg, rgba(120, 216, 211, 0.1), transparent 34%),
+    linear-gradient(315deg, rgba(190, 96, 70, 0.09), transparent 32%),
     var(--bg);
 }
 
@@ -73,6 +95,11 @@ button:disabled {
   border-radius: 8px;
   padding: 30px;
   box-shadow: 0 24px 70px rgba(20, 33, 38, 0.1);
+}
+
+:root[data-theme='dark'] .study-tool {
+  background: rgba(23, 36, 39, 0.94);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.26);
 }
 
 .intro {
@@ -1055,6 +1082,13 @@ select:focus {
   margin-top: 0;
 }
 
+.account-preferences {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .compact-language-field span {
   color: var(--muted);
   font-size: 12px;
@@ -1065,6 +1099,44 @@ select:focus {
   min-height: 38px;
   padding: 8px 10px;
   font-size: 14px;
+}
+
+:root[data-theme='dark'] input,
+:root[data-theme='dark'] textarea,
+:root[data-theme='dark'] select {
+  background: #101b1e;
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+:root[data-theme='dark'] .mode-card,
+:root[data-theme='dark'] .editor-panel,
+:root[data-theme='dark'] .account-page,
+:root[data-theme='dark'] .account-panel,
+:root[data-theme='dark'] .pet-panel,
+:root[data-theme='dark'] .lesson-card-large,
+:root[data-theme='dark'] .share-panel,
+:root[data-theme='dark'] .search-card,
+:root[data-theme='dark'] .result,
+:root[data-theme='dark'] .summary-modal,
+:root[data-theme='dark'] .quiz-item,
+:root[data-theme='dark'] .review-flashcard,
+:root[data-theme='dark'] .tutor-message,
+:root[data-theme='dark'] .tutor-input-panel,
+:root[data-theme='dark'] .google-auth-button {
+  background: var(--card);
+  color: var(--ink);
+}
+
+:root[data-theme='dark'] .study-options,
+:root[data-theme='dark'] .lessons-page-heading,
+:root[data-theme='dark'] .quiz-page-body {
+  background: var(--panel);
+}
+
+:root[data-theme='dark'] .muted-button {
+  background: #223135;
+  color: var(--muted);
 }
 
 .auth-tabs {
