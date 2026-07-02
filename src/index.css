@@ -86,6 +86,10 @@ button:disabled {
   align-items: center;
 }
 
+.app-shell.drawer-open {
+  padding-left: 184px;
+}
+
 .study-tool {
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid var(--line);
@@ -362,7 +366,7 @@ select:focus {
 
 .tool-drawer-tab {
   position: fixed;
-  right: 0;
+  left: 0;
   top: 50%;
   z-index: 34;
   width: 38px;
@@ -370,8 +374,8 @@ select:focus {
   display: grid;
   place-items: center;
   border: 1px solid var(--line);
-  border-right: 0;
-  border-radius: 8px 0 0 8px;
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
   background: var(--accent);
   color: #fff;
   font-size: 22px;
@@ -384,24 +388,24 @@ select:focus {
 }
 
 .tool-drawer-tab.open {
-  right: min(320px, calc(100vw - 64px));
+  left: 184px;
 }
 
 .tool-drawer {
   position: fixed;
-  right: 0;
+  left: 0;
   top: 0;
   bottom: 0;
   z-index: 33;
-  width: min(320px, calc(100vw - 64px));
+  width: 184px;
   display: grid;
   align-content: start;
-  gap: 14px;
-  padding: 22px;
-  border-left: 1px solid var(--line);
+  gap: 12px;
+  padding: 16px;
+  border-right: 1px solid var(--line);
   background: var(--card);
-  box-shadow: -18px 0 44px rgba(20, 33, 38, 0.18);
-  transform: translateX(100%);
+  box-shadow: 18px 0 44px rgba(20, 33, 38, 0.12);
+  transform: translateX(-100%);
   transition: transform 220ms ease;
 }
 
@@ -410,10 +414,8 @@ select:focus {
 }
 
 .tool-drawer-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  display: grid;
+  gap: 10px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--line);
 }
@@ -424,7 +426,7 @@ select:focus {
   border: 1px solid var(--line);
   background: var(--panel);
   color: var(--ink);
-  text-align: left;
+  text-align: center;
 }
 
 .drawer-tool-button:hover {
@@ -1244,7 +1246,7 @@ select:focus {
 }
 
 :root[data-theme='dark'] .tool-drawer {
-  box-shadow: -18px 0 44px rgba(0, 0, 0, 0.42);
+  box-shadow: 18px 0 44px rgba(0, 0, 0, 0.34);
 }
 
 :root[data-theme='dark'] .drawer-tool-button {
@@ -1717,6 +1719,18 @@ select:focus {
     width: min(100% - 24px, 1120px);
     padding: 24px 0;
     align-items: start;
+  }
+
+  .app-shell.drawer-open {
+    padding-left: 42px;
+  }
+
+  .tool-drawer {
+    width: min(184px, calc(100vw - 58px));
+  }
+
+  .tool-drawer-tab.open {
+    left: min(184px, calc(100vw - 58px));
   }
 
   .study-tool {

@@ -697,7 +697,7 @@ export default function App() {
   const [notice, setNotice] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isOptionsOpen, setIsOptionsOpen] = useState(true);
-  const [isToolDrawerOpen, setIsToolDrawerOpen] = useState(false);
+  const [isToolDrawerOpen, setIsToolDrawerOpen] = useState(true);
   const [addingSourceId, setAddingSourceId] = useState<string | null>(null);
   const [sourceText, setSourceText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -1590,7 +1590,7 @@ ${trimmedMaterial}`;
   }
 
   return (
-    <main className="app-shell">
+    <main className={isToolDrawerOpen ? 'app-shell drawer-open' : 'app-shell'}>
       <section className="study-tool">
         <div className="intro">
           <div>
