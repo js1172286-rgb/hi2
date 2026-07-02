@@ -1244,7 +1244,6 @@ select:focus {
 :root[data-theme='dark'] .source-form,
 :root[data-theme='dark'] .lesson-item,
 :root[data-theme='dark'] .calculator-panel,
-:root[data-theme='dark'] .study-method-card,
 :root[data-theme='dark'] .search-card,
 :root[data-theme='dark'] .result,
 :root[data-theme='dark'] .summary-modal,
@@ -1563,51 +1562,6 @@ select:focus {
 
 .calculator-key.zero {
   grid-column: span 2;
-}
-
-.study-methods-page {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.study-method-card {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 14px;
-  padding: 18px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--card);
-}
-
-.method-number {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-weight: 900;
-}
-
-.study-method-card h2 {
-  margin-bottom: 10px;
-  font-size: 22px;
-}
-
-.study-method-card ol {
-  display: grid;
-  gap: 7px;
-  padding-left: 20px;
-  color: var(--ink);
-  line-height: 1.45;
-}
-
-.study-method-card li::marker {
-  color: var(--accent);
-  font-weight: 900;
 }
 
 .progress-page {
@@ -2193,10 +2147,6 @@ select:focus {
   }
 
   .progress-page {
-    grid-template-columns: 1fr;
-  }
-
-  .study-methods-page {
     grid-template-columns: 1fr;
   }
 

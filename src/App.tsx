@@ -165,39 +165,6 @@ const modes: { id: StudyMode; labelKey: 'summaryMode' | 'flashcards' | 'quizMe' 
   { id: 'quiz', labelKey: 'quizMe' },
 ];
 
-const studyMethods = [
-  {
-    title: 'Active Recall',
-    bestFor: 'Remembering facts, definitions, formulas, and key ideas.',
-    steps: ['Close your notes.', 'Ask yourself questions.', 'Check what you missed.', 'Repeat the weak parts.'],
-  },
-  {
-    title: 'Spaced Repetition',
-    bestFor: 'Keeping information in memory for a long time.',
-    steps: ['Review today.', 'Review again tomorrow.', 'Review after a few days.', 'Stretch the time when it gets easy.'],
-  },
-  {
-    title: 'Feynman Method',
-    bestFor: 'Understanding confusing topics instead of memorizing words.',
-    steps: ['Explain it simply.', 'Find the confusing part.', 'Go back to the notes.', 'Explain it again cleaner.'],
-  },
-  {
-    title: 'Practice Testing',
-    bestFor: 'Preparing for exams and checking if you actually know it.',
-    steps: ['Make questions.', 'Answer without notes.', 'Grade honestly.', 'Redo missed questions.'],
-  },
-  {
-    title: 'Pomodoro Focus',
-    bestFor: 'Starting work when you feel distracted or tired.',
-    steps: ['Set a timer.', 'Study one task only.', 'Take a short break.', 'Repeat 3 or 4 times.'],
-  },
-  {
-    title: 'Interleaving',
-    bestFor: 'Math, science, languages, and topics with problem types.',
-    steps: ['Mix problem types.', 'Notice the differences.', 'Choose the right method.', 'Review mistakes.'],
-  },
-];
-
 const pagePaths: Record<Page, string> = {
   study: '/',
   lessons: '/lessons',
@@ -2755,20 +2722,7 @@ ${trimmedMaterial}`;
           </section>
         ) : page === 'studyMethods' ? (
           <section className="study-methods-page" aria-label="Study methods">
-            {studyMethods.map((method, index) => (
-              <article className="study-method-card" key={method.title}>
-                <div className="method-number">{index + 1}</div>
-                <div>
-                  <p className="card-label">{method.bestFor}</p>
-                  <h2>{method.title}</h2>
-                  <ol>
-                    {method.steps.map((step) => (
-                      <li key={step}>{step}</li>
-                    ))}
-                  </ol>
-                </div>
-              </article>
-            ))}
+            <p className="empty-state large">No study methods added yet.</p>
           </section>
         ) : (
           <>
