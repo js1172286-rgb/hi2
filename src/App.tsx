@@ -697,6 +697,7 @@ export default function App() {
   const [notice, setNotice] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isOptionsOpen, setIsOptionsOpen] = useState(true);
+  const [isToolDrawerOpen, setIsToolDrawerOpen] = useState(false);
   const [addingSourceId, setAddingSourceId] = useState<string | null>(null);
   const [sourceText, setSourceText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -2141,17 +2142,6 @@ ${trimmedMaterial}`;
                         {copy[item.labelKey]}
                       </button>
                     ))}
-                    <button
-                      className="mode-card"
-                      type="button"
-                      onClick={() => {
-                        if (requireSignedIn(copy.signInForTutor)) {
-                          goToPage('tutor');
-                        }
-                      }}
-                    >
-                      {copy.aiTutor}
-                    </button>
                   </div>
                 )}
               </aside>
@@ -2237,6 +2227,36 @@ ${trimmedMaterial}`;
           </section>
         </div>
       )}
+
+      <button
+        className={isToolDrawerOpen ? 'tool-drawer-tab open' : 'tool-drawer-tab'}
+        type="button"
+        onClick={() => setIsToolDrawerOpen(!isToolDrawerOpen)}
+        aria-label={isToolDrawerOpen ? 'Close tools menu' : 'Open tools menu'}
+        aria-expanded={isToolDrawerOpen}
+      >
+        {isToolDrawerOpen ? '<' : '>'}
+      </button>
+      <aside className={isToolDrawerOpen ? 'tool-drawer open' : 'tool-drawer'} aria-label="Tool menu">
+        <div className="tool-drawer-heading">
+          <p className="card-label">Tools</p>
+          <button className="small-button" type="button" onClick={() => setIsToolDrawerOpen(false)}>
+            Close
+          </button>
+        </div>
+        <button
+          className="drawer-tool-button"
+          type="button"
+          onClick={() => {
+            if (requireSignedIn(copy.signInForTutor)) {
+              goToPage('tutor');
+              setIsToolDrawerOpen(false);
+            }
+          }}
+        >
+          {copy.aiTutor}
+        </button>
+      </aside>
 
       <button className="home-button" type="button" onClick={goHome} aria-label="Go to study home">
         <svg viewBox="0 0 64 64" aria-hidden="true">

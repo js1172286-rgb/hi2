@@ -360,6 +360,78 @@ select:focus {
   stroke-width: 5;
 }
 
+.tool-drawer-tab {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  z-index: 34;
+  width: 38px;
+  height: 70px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-right: 0;
+  border-radius: 8px 0 0 8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 22px;
+  transform: translateY(-50%);
+}
+
+.tool-drawer-tab:hover {
+  background: var(--accent-dark);
+  transform: translateY(-50%);
+}
+
+.tool-drawer-tab.open {
+  right: min(320px, calc(100vw - 64px));
+}
+
+.tool-drawer {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 33;
+  width: min(320px, calc(100vw - 64px));
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 22px;
+  border-left: 1px solid var(--line);
+  background: var(--card);
+  box-shadow: -18px 0 44px rgba(20, 33, 38, 0.18);
+  transform: translateX(100%);
+  transition: transform 220ms ease;
+}
+
+.tool-drawer.open {
+  transform: translateX(0);
+}
+
+.tool-drawer-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.drawer-tool-button {
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  text-align: left;
+}
+
+.drawer-tool-button:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
 .message,
 .notice {
   margin-top: 14px;
@@ -1169,6 +1241,15 @@ select:focus {
 :root[data-theme='dark'] .bottom-icon-button svg,
 :root[data-theme='dark'] .home-button svg {
   stroke: #d0d6e0;
+}
+
+:root[data-theme='dark'] .tool-drawer {
+  box-shadow: -18px 0 44px rgba(0, 0, 0, 0.42);
+}
+
+:root[data-theme='dark'] .drawer-tool-button {
+  background: #141516;
+  color: var(--ink);
 }
 
 .auth-tabs {
