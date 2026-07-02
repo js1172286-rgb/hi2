@@ -880,6 +880,7 @@ export default function App() {
   const [isPomodoroSetupOpen, setIsPomodoroSetupOpen] = useState(false);
   const [pomodoroStudyMinutes, setPomodoroStudyMinutes] = useState('120');
   const [isTeachInfoOpen, setIsTeachInfoOpen] = useState(false);
+  const [isBlurtingInfoOpen, setIsBlurtingInfoOpen] = useState(false);
   const [isTeachChatOpen, setIsTeachChatOpen] = useState(false);
   const [teachMessages, setTeachMessages] = useState<TeachMessage[]>([]);
   const [teachAnswer, setTeachAnswer] = useState('');
@@ -3365,6 +3366,9 @@ ${trimmedMaterial}`;
             <button className="study-method-tile" type="button" onClick={() => setIsTeachInfoOpen(true)}>
               <strong>Teach Somebody</strong>
             </button>
+            <button className="study-method-tile" type="button" onClick={() => setIsBlurtingInfoOpen(true)}>
+              <strong>Blurting</strong>
+            </button>
           </section>
         ) : (
           <>
@@ -3643,6 +3647,43 @@ ${trimmedMaterial}`;
                 <li>Answer in detail until the idea feels clear.</li>
               </ol>
               <button className="generate-button pomodoro-use-button" type="button" onClick={startTeachPetChat}>
+                Use it
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {isBlurtingInfoOpen && (
+        <div className="summary-modal-backdrop" role="presentation">
+          <section className="summary-modal study-method-modal" role="dialog" aria-modal="true" aria-label="Blurting method">
+            <div className="summary-modal-heading">
+              <h2>Blurting</h2>
+              <button className="small-button" type="button" onClick={() => setIsBlurtingInfoOpen(false)}>
+                Close
+              </button>
+            </div>
+            <div className="study-method-modal-copy">
+              <p>
+                Blurting helps you find what you actually remember. Put your notes away, write everything you can from memory,
+                then compare it with the real notes and fix what you missed.
+              </p>
+              <ol>
+                <li>Choose a topic and hide your notes.</li>
+                <li>Write or draw everything you remember without checking.</li>
+                <li>Open your notes and mark missing or wrong ideas.</li>
+                <li>Repeat later until the gaps get smaller.</li>
+              </ol>
+              <button
+                className="generate-button pomodoro-use-button"
+                type="button"
+                onClick={() => {
+                  setIsBlurtingInfoOpen(false);
+                  startNewNote();
+                  setNoteTitle('Blurting practice');
+                  goToPage('notes');
+                }}
+              >
                 Use it
               </button>
             </div>
