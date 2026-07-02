@@ -9,7 +9,18 @@ type AiResponse = {
 };
 
 type StudyMode = 'summary' | 'flashcards' | 'quiz';
-type Page = 'study' | 'lessons' | 'otherMaterials' | 'tutor' | 'account' | 'flashcards' | 'quiz' | 'focusTimer' | 'progress' | 'calculator';
+type Page =
+  | 'study'
+  | 'lessons'
+  | 'otherMaterials'
+  | 'tutor'
+  | 'account'
+  | 'flashcards'
+  | 'quiz'
+  | 'focusTimer'
+  | 'progress'
+  | 'calculator'
+  | 'studyMethods';
 type Language = 'en' | 'ru' | 'kk';
 type Theme = 'light' | 'dark';
 type TimerMode = 'focus' | 'break';
@@ -154,6 +165,39 @@ const modes: { id: StudyMode; labelKey: 'summaryMode' | 'flashcards' | 'quizMe' 
   { id: 'quiz', labelKey: 'quizMe' },
 ];
 
+const studyMethods = [
+  {
+    title: 'Active Recall',
+    bestFor: 'Remembering facts, definitions, formulas, and key ideas.',
+    steps: ['Close your notes.', 'Ask yourself questions.', 'Check what you missed.', 'Repeat the weak parts.'],
+  },
+  {
+    title: 'Spaced Repetition',
+    bestFor: 'Keeping information in memory for a long time.',
+    steps: ['Review today.', 'Review again tomorrow.', 'Review after a few days.', 'Stretch the time when it gets easy.'],
+  },
+  {
+    title: 'Feynman Method',
+    bestFor: 'Understanding confusing topics instead of memorizing words.',
+    steps: ['Explain it simply.', 'Find the confusing part.', 'Go back to the notes.', 'Explain it again cleaner.'],
+  },
+  {
+    title: 'Practice Testing',
+    bestFor: 'Preparing for exams and checking if you actually know it.',
+    steps: ['Make questions.', 'Answer without notes.', 'Grade honestly.', 'Redo missed questions.'],
+  },
+  {
+    title: 'Pomodoro Focus',
+    bestFor: 'Starting work when you feel distracted or tired.',
+    steps: ['Set a timer.', 'Study one task only.', 'Take a short break.', 'Repeat 3 or 4 times.'],
+  },
+  {
+    title: 'Interleaving',
+    bestFor: 'Math, science, languages, and topics with problem types.',
+    steps: ['Mix problem types.', 'Notice the differences.', 'Choose the right method.', 'Review mistakes.'],
+  },
+];
+
 const pagePaths: Record<Page, string> = {
   study: '/',
   lessons: '/lessons',
@@ -165,6 +209,7 @@ const pagePaths: Record<Page, string> = {
   focusTimer: '/focus-timer',
   progress: '/progress',
   calculator: '/calculator',
+  studyMethods: '/study-methods',
 };
 
 function getPageFromPath(pathname = window.location.pathname): Page {
@@ -178,6 +223,7 @@ function getPageFromPath(pathname = window.location.pathname): Page {
   if (normalizedPath === pagePaths.focusTimer) return 'focusTimer';
   if (normalizedPath === pagePaths.progress) return 'progress';
   if (normalizedPath === pagePaths.calculator) return 'calculator';
+  if (normalizedPath === pagePaths.studyMethods) return 'studyMethods';
   return 'study';
 }
 
@@ -223,6 +269,7 @@ const translations = {
     studyHelper: 'Study helper',
     studyHelperTitle: 'Study Helper',
     studyMaterial: 'Study material',
+    studyMethods: 'Study Methods',
     studyOptions: 'Study options',
     submitAnswers: 'Submit answers',
     summarize: 'Summarize',
@@ -260,6 +307,7 @@ const translations = {
     studyHelper: 'Помощник учебы',
     studyHelperTitle: 'Помощник учебы',
     studyMaterial: 'Учебный материал',
+    studyMethods: 'Методы учебы',
     studyOptions: 'Опции учебы',
     submitAnswers: 'Отправить ответы',
     summarize: 'Сделать кратко',
@@ -297,6 +345,7 @@ const translations = {
     studyHelper: 'Оқу көмекшісі',
     studyHelperTitle: 'Оқу көмекшісі',
     studyMaterial: 'Оқу материалы',
+    studyMethods: 'Оқу әдістері',
     studyOptions: 'Оқу опциялары',
     submitAnswers: 'Жауаптарды жіберу',
     summarize: 'Қысқаша жасау',
@@ -1949,6 +1998,8 @@ ${trimmedMaterial}`;
                               ? copy.progress
                               : page === 'calculator'
                                 ? copy.calculator
+                                : page === 'studyMethods'
+                                  ? copy.studyMethods
                       : copy.studyHelperTitle}
             </h1>
           </div>
@@ -2702,6 +2753,23 @@ ${trimmedMaterial}`;
               </div>
             </div>
           </section>
+        ) : page === 'studyMethods' ? (
+          <section className="study-methods-page" aria-label="Study methods">
+            {studyMethods.map((method, index) => (
+              <article className="study-method-card" key={method.title}>
+                <div className="method-number">{index + 1}</div>
+                <div>
+                  <p className="card-label">{method.bestFor}</p>
+                  <h2>{method.title}</h2>
+                  <ol>
+                    {method.steps.map((step) => (
+                      <li key={step}>{step}</li>
+                    ))}
+                  </ol>
+                </div>
+              </article>
+            ))}
+          </section>
         ) : (
           <>
             <div className={isOptionsOpen ? 'workspace' : 'workspace options-closed'}>
@@ -2863,6 +2931,13 @@ ${trimmedMaterial}`;
           onClick={() => goToPage('calculator')}
         >
           {copy.calculator}
+        </button>
+        <button
+          className="drawer-tool-button"
+          type="button"
+          onClick={() => goToPage('studyMethods')}
+        >
+          {copy.studyMethods}
         </button>
       </aside>
 
