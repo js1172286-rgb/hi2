@@ -8,9 +8,10 @@ type AiResponse = {
 };
 
 type StudyMode = 'summary' | 'flashcards' | 'quiz';
-type Page = 'study' | 'lessons' | 'otherMaterials' | 'tutor' | 'account' | 'flashcards' | 'quiz';
+type Page = 'study' | 'lessons' | 'otherMaterials' | 'tutor' | 'account' | 'flashcards' | 'quiz' | 'focusTimer';
 type Language = 'en' | 'ru' | 'kk';
 type Theme = 'light' | 'dark';
+type TimerMode = 'focus' | 'break';
 
 type Flashcard = {
   front: string;
@@ -87,6 +88,8 @@ const themeKey = 'study-helper-theme';
 const studyPetKey = 'study-helper-pet';
 const maxSavedLessons = 6;
 const eggWarmDays = 3;
+const focusTimerSeconds = 25 * 60;
+const breakTimerSeconds = 5 * 60;
 const emptyStudyPet: StudyPet = {
   streak: 0,
   lastStudyDate: '',
@@ -153,6 +156,7 @@ const pagePaths: Record<Page, string> = {
   account: '/account',
   flashcards: '/flashcards',
   quiz: '/quiz',
+  focusTimer: '/focus-timer',
 };
 
 function getPageFromPath(pathname = window.location.pathname): Page {
@@ -163,6 +167,7 @@ function getPageFromPath(pathname = window.location.pathname): Page {
   if (normalizedPath === pagePaths.account) return 'account';
   if (normalizedPath === pagePaths.flashcards) return 'flashcards';
   if (normalizedPath === pagePaths.quiz) return 'quiz';
+  if (normalizedPath === pagePaths.focusTimer) return 'focusTimer';
   return 'study';
 }
 
@@ -660,6 +665,12 @@ function getWordCount(text: string) {
   return text.split(/\s+/).filter(Boolean).length;
 }
 
+function formatTimerTime(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+  const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+  return `${minutes}:${seconds}`;
+}
+
 function readSavedLessons() {
   try {
     const rawLessons = window.localStorage.getItem(savedLessonsKey);
@@ -693,6 +704,9 @@ export default function App() {
   const [isQuizSubmitted, setIsQuizSubmitted] = useState(false);
   const [isQuizChecking, setIsQuizChecking] = useState(false);
   const [quizError, setQuizError] = useState('');
+  const [timerMode, setTimerMode] = useState<TimerMode>('focus');
+  const [timerSecondsLeft, setTimerSecondsLeft] = useState(focusTimerSeconds);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -850,6 +864,34 @@ export default function App() {
     window.addEventListener('keydown', handleFlashcardKeyDown);
     return () => window.removeEventListener('keydown', handleFlashcardKeyDown);
   }, [flashcards.length, page]);
+
+  useEffect(() => {
+    if (!isTimerRunning) return;
+
+    const timerId = window.setInterval(() => {
+      setTimerSecondsLeft((secondsLeft) => {
+        if (secondsLeft <= 1) {
+          setIsTimerRunning(false);
+          return 0;
+        }
+
+        return secondsLeft - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(timerId);
+  }, [isTimerRunning]);
+
+  function chooseTimerMode(nextMode: TimerMode) {
+    setTimerMode(nextMode);
+    setTimerSecondsLeft(nextMode === 'focus' ? focusTimerSeconds : breakTimerSeconds);
+    setIsTimerRunning(false);
+  }
+
+  function resetTimer() {
+    setTimerSecondsLeft(timerMode === 'focus' ? focusTimerSeconds : breakTimerSeconds);
+    setIsTimerRunning(false);
+  }
 
   function updateSavedLessons(nextLessons: SavedLesson[]) {
     setSavedLessons(nextLessons);
@@ -1607,6 +1649,8 @@ ${trimmedMaterial}`;
                         ? copy.flashcards
                         : page === 'quiz'
                           ? copy.quiz
+                          : page === 'focusTimer'
+                            ? 'Focus Timer'
                       : copy.studyHelperTitle}
             </h1>
           </div>
@@ -2121,6 +2165,42 @@ ${trimmedMaterial}`;
               </div>
             )}
           </section>
+        ) : page === 'focusTimer' ? (
+          <section className="focus-timer-page" aria-label="Focus timer">
+            <div className="timer-panel">
+              <p className="card-label">Focus Timer</p>
+              <div className="timer-display" aria-live="polite">
+                {formatTimerTime(timerSecondsLeft)}
+              </div>
+              <p className="timer-hint">Use a quiet timer to stay on one task.</p>
+
+              <div className="timer-mode-row" aria-label="Timer mode">
+                <button
+                  className={timerMode === 'focus' ? 'timer-mode-button active' : 'timer-mode-button'}
+                  type="button"
+                  onClick={() => chooseTimerMode('focus')}
+                >
+                  Focus
+                </button>
+                <button
+                  className={timerMode === 'break' ? 'timer-mode-button active' : 'timer-mode-button'}
+                  type="button"
+                  onClick={() => chooseTimerMode('break')}
+                >
+                  Break
+                </button>
+              </div>
+
+              <div className="timer-actions">
+                <button className="generate-button" type="button" onClick={() => setIsTimerRunning(!isTimerRunning)}>
+                  {isTimerRunning ? 'Pause' : 'Start'}
+                </button>
+                <button className="small-button muted-button" type="button" onClick={resetTimer}>
+                  Reset
+                </button>
+              </div>
+            </div>
+          </section>
         ) : (
           <>
             <div className={isOptionsOpen ? 'workspace' : 'workspace options-closed'}>
@@ -2241,6 +2321,13 @@ ${trimmedMaterial}`;
           }}
         >
           {copy.aiTutor}
+        </button>
+        <button
+          className="drawer-tool-button"
+          type="button"
+          onClick={() => goToPage('focusTimer')}
+        >
+          Focus Timer
         </button>
       </aside>
 

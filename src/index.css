@@ -1325,6 +1325,61 @@ select:focus {
   min-height: 170px;
 }
 
+.focus-timer-page {
+  display: grid;
+  place-items: center;
+  min-height: 460px;
+}
+
+.timer-panel {
+  width: min(520px, 100%);
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  text-align: center;
+}
+
+.timer-display {
+  font-size: clamp(64px, 12vw, 116px);
+  font-weight: 900;
+  line-height: 1;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-hint {
+  max-width: 320px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.timer-mode-row,
+.timer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.timer-mode-button {
+  min-width: 104px;
+  min-height: 42px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--muted);
+}
+
+.timer-mode-button.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
 .search-page,
 .other-materials-page {
   display: grid;
