@@ -63,6 +63,13 @@ type TutorMessage = {
 type AuthMode = 'signIn' | 'signUp';
 type PetType = 'cat' | 'dragon' | 'fox' | 'owl';
 type EggColor = 'green' | 'gold' | 'blue' | 'red';
+type HatchStage = 'ready' | 'cracked' | 'open';
+
+type HatchPopup = {
+  eggColor: EggColor;
+  petImage: string;
+  stage: HatchStage;
+};
 
 type StudyPet = {
   streak: number;
@@ -635,6 +642,7 @@ export default function App() {
     hasChosenEggColor: false,
   });
   const [pendingEggColor, setPendingEggColor] = useState<EggColor>('green');
+  const [hatchPopup, setHatchPopup] = useState<HatchPopup | null>(null);
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [currentFlashcardIndex, setCurrentFlashcardIndex] = useState(0);
   const [isFlashcardFlipped, setIsFlashcardFlipped] = useState(false);
@@ -678,6 +686,7 @@ export default function App() {
   const [tutorError, setTutorError] = useState('');
   const [isTutorLoading, setIsTutorLoading] = useState(false);
   const materialTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const hatchTimerRef = useRef<number | null>(null);
 
   const searchedSharedMaterials = sharedMaterials.filter((item) => {
     const query = searchQuery.trim().toLowerCase();
@@ -727,21 +736,20 @@ export default function App() {
   }, [page]);
 
   useEffect(() => {
-    if (!session || studyPet.eggColor !== 'green' || !studyPet.hasChosenEggColor || isPetHatched) return;
+    if (!session || studyPet.eggColor !== 'green' || !studyPet.hasChosenEggColor || isPetHatched || hatchPopup) return;
 
-    setStudyPet((currentPet) => {
-      if (currentPet.eggColor !== 'green' || !currentPet.hasChosenEggColor || currentPet.petType || currentPet.petImage) {
-        return currentPet;
+    const petImage = getRandomEggPetImage('green');
+    if (!petImage) return;
+    setHatchPopup({ eggColor: 'green', petImage, stage: 'ready' });
+  }, [hatchPopup, isPetHatched, session, studyPet.eggColor, studyPet.hasChosenEggColor]);
+
+  useEffect(() => {
+    return () => {
+      if (hatchTimerRef.current) {
+        window.clearTimeout(hatchTimerRef.current);
       }
-
-      const nextPet = {
-        ...currentPet,
-        petImage: getRandomEggPetImage('green'),
-      };
-      window.localStorage.setItem(studyPetKey, JSON.stringify(nextPet));
-      return nextPet;
-    });
-  }, [isPetHatched, session, studyPet.eggColor, studyPet.hasChosenEggColor]);
+    };
+  }, []);
 
   useEffect(() => {
     const textarea = materialTextareaRef.current;
@@ -837,18 +845,58 @@ export default function App() {
     if (!session || isPetHatched || studyPet.hasChosenEggColor) return;
 
     setStudyPet((currentPet) => {
-      const nextPetImage = pendingEggColor === 'green' ? getRandomEggPetImage('green') : null;
       const nextPet = {
         ...currentPet,
         streak: 0,
         lastStudyDate: '',
-        petImage: nextPetImage,
+        petImage: null,
         eggColor: pendingEggColor,
         hasChosenEggColor: true,
       };
       window.localStorage.setItem(studyPetKey, JSON.stringify(nextPet));
       return nextPet;
     });
+
+    if (pendingEggColor === 'green') {
+      const petImage = getRandomEggPetImage('green');
+      if (petImage) {
+        setHatchPopup({ eggColor: 'green', petImage, stage: 'ready' });
+      }
+    }
+  }
+
+  function hatchEgg() {
+    if (!hatchPopup || hatchPopup.stage !== 'ready') return;
+
+    if (hatchTimerRef.current) {
+      window.clearTimeout(hatchTimerRef.current);
+    }
+
+    setHatchPopup((currentPopup) => currentPopup ? { ...currentPopup, stage: 'cracked' } : currentPopup);
+
+    hatchTimerRef.current = window.setTimeout(() => {
+      setHatchPopup((currentPopup) => {
+        if (!currentPopup) return currentPopup;
+
+        setStudyPet((currentPet) => {
+          const nextPet = {
+            ...currentPet,
+            petType: null,
+            petImage: currentPopup.petImage,
+            eggColor: currentPopup.eggColor,
+            hasChosenEggColor: true,
+          };
+          window.localStorage.setItem(studyPetKey, JSON.stringify(nextPet));
+          return nextPet;
+        });
+
+        return { ...currentPopup, stage: 'open' };
+      });
+
+      hatchTimerRef.current = window.setTimeout(() => {
+        setHatchPopup(null);
+      }, 1300);
+    }, 850);
   }
 
   function clearResults() {
@@ -2085,6 +2133,33 @@ ${trimmedMaterial}`;
             <button className="generate-button summary-copy-button" type="button" onClick={copySummaryToClipboard}>
               Copy
             </button>
+          </section>
+        </div>
+      )}
+
+      {hatchPopup && (
+        <div className="hatch-modal-backdrop" role="presentation">
+          <section className="hatch-modal" role="dialog" aria-modal="true" aria-label="Egg hatching">
+            <button
+              className={`hatch-egg hatch-${hatchPopup.stage} egg-${hatchPopup.eggColor}`}
+              type="button"
+              onClick={hatchEgg}
+              aria-label={hatchPopup.stage === 'ready' ? 'Tap egg to hatch' : 'Egg is hatching'}
+            >
+              <span className="hatch-egg-piece hatch-egg-top">
+                <span className="hatch-egg-spot spot-one" />
+                <span className="hatch-egg-spot spot-four" />
+              </span>
+              <span className="hatch-egg-piece hatch-egg-bottom">
+                <span className="hatch-egg-spot spot-two" />
+                <span className="hatch-egg-spot spot-three" />
+                <span className="hatch-egg-spot spot-five" />
+              </span>
+              {hatchPopup.stage === 'open' && (
+                <img className="hatch-pet-image" src={hatchPopup.petImage} alt="" />
+              )}
+            </button>
+            <p>{hatchPopup.stage === 'ready' ? 'Tap the egg to hatch it.' : hatchPopup.stage === 'cracked' ? 'Crack...' : 'Your pet hatched!'}</p>
           </section>
         </div>
       )}
