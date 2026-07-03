@@ -1170,6 +1170,13 @@ export default function App() {
   const displayedEggColor = studyPet.hasChosenEggColor ? studyPet.eggColor : pendingEggColor;
   const warmDaysShown = Math.min(studyPet.streak, eggWarmDays);
   const warmDaysLeft = Math.max(0, eggWarmDays - studyPet.streak);
+  const streakCount = session ? studyPet.streak : 0;
+  const isStreakWarmToday = Boolean(session && studyPet.streak > 0 && studyPet.lastStudyDate === getTodayKey());
+  const streakFlameSrc = isStreakWarmToday
+    ? '/pets/streak-active.png'
+    : theme === 'dark'
+      ? '/pets/streak-cold-dark.png'
+      : '/pets/streak-cold-light.png';
   const passwordErrors = [
     accountPassword.length < 8 ? copy.passwordRule8 : '',
     !/\d/.test(accountPassword) ? copy.passwordRuleNumber : '',
@@ -3038,6 +3045,17 @@ ${trimmedMaterial}`;
             </h1>
           </div>
           <div className="header-actions">
+            <div
+              className={isStreakWarmToday ? 'streak-chip active' : 'streak-chip cold'}
+              aria-label={`${copy.streak}: ${streakCount}`}
+              title={isStreakWarmToday ? 'Streak warmed today' : 'Study today to warm your streak'}
+            >
+              <img src={streakFlameSrc} alt="" />
+              <span>
+                <strong>{streakCount}</strong>
+                <small>{copy.streak}</small>
+              </span>
+            </div>
             {page === 'starter' ? null : page === 'study' ? (
               <>
                 <button className="nav-button" type="button" onClick={() => setIsOptionsOpen(!isOptionsOpen)}>

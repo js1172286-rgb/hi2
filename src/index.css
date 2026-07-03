@@ -170,7 +170,56 @@ h1 {
 
 .header-actions {
   display: flex;
+  align-items: center;
   gap: 10px;
+}
+
+.streak-chip {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.streak-chip img {
+  width: 34px;
+  height: 38px;
+  object-fit: contain;
+  transform: scale(1.45);
+  transform-origin: center;
+}
+
+.streak-chip span {
+  display: grid;
+  gap: 1px;
+  line-height: 1;
+}
+
+.streak-chip strong {
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.streak-chip small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.streak-chip.active {
+  border-color: rgba(190, 96, 70, 0.34);
+  background: rgba(190, 96, 70, 0.1);
+}
+
+.streak-chip.cold {
+  background: rgba(99, 114, 118, 0.1);
 }
 
 .starter-page {
@@ -1614,6 +1663,16 @@ select:focus {
 :root[data-theme='dark'] .drawer-tool-button {
   background: #141516;
   color: var(--ink);
+}
+
+:root[data-theme='dark'] .streak-chip {
+  background: #141516;
+  border-color: #34343a;
+}
+
+:root[data-theme='dark'] .streak-chip.active {
+  background: rgba(190, 96, 70, 0.16);
+  border-color: rgba(190, 96, 70, 0.32);
 }
 
 .auth-tabs {
@@ -3622,6 +3681,11 @@ select:focus {
   .header-actions {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .streak-chip {
+    justify-content: center;
+    width: 100%;
   }
 
   .calendar-heading,
