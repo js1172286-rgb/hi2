@@ -3674,8 +3674,9 @@ ${trimmedMaterial}`;
             <button className="study-method-tile" type="button" onClick={() => setIsBlurtingInfoOpen(true)}>
               <strong>Blurting</strong>
             </button>
-            <button className="study-method-tile" type="button" onClick={() => setIsIntervalingInfoOpen(true)}>
+            <button className="study-method-tile intervaling-tile" type="button" onClick={() => setIsIntervalingInfoOpen(true)}>
               <strong>Intervaling</strong>
+              <span className="method-subtitle">1 day study, 1 day off</span>
             </button>
           </section>
         ) : (
@@ -4021,26 +4022,42 @@ ${trimmedMaterial}`;
                 Intervaling helps you remember material by reviewing it in spaced sessions instead of cramming every day.
                 You study, rest for a day, then review again so your brain has to recall the topic.
               </p>
-              <ol>
-                <li>First time reviewing: study the full material for 1 hour.</li>
-                <li>Take 1 day off from that material.</li>
-                <li>Next review: spend 30 minutes reviewing everything.</li>
-                <li>Take 1 day off again.</li>
-                <li>After that, review for 10-15 minutes every other day, only practicing the parts you forgot.</li>
-              </ol>
-              <div className="intervaling-plan" aria-label="Intervaling schedule">
-                <div>
-                  <strong>60 min</strong>
-                  <span>first review</span>
-                </div>
-                <div>
-                  <strong>30 min</strong>
-                  <span>next review</span>
-                </div>
-                <div>
-                  <strong>10-15 min</strong>
-                  <span>weak parts</span>
-                </div>
+              <div className="intervaling-timeline" aria-label="Intervaling schedule">
+                <article className="intervaling-step study-day">
+                  <span>Day 1</span>
+                  <div>
+                    <strong>60 minutes</strong>
+                    <p>Study the full material for the first review.</p>
+                  </div>
+                </article>
+                <article className="intervaling-step rest-day">
+                  <span>Day 2</span>
+                  <div>
+                    <strong>Rest</strong>
+                    <p>Take one day off from this material.</p>
+                  </div>
+                </article>
+                <article className="intervaling-step study-day">
+                  <span>Day 3</span>
+                  <div>
+                    <strong>30 minutes</strong>
+                    <p>Review everything and mark what you forgot.</p>
+                  </div>
+                </article>
+                <article className="intervaling-step rest-day">
+                  <span>Day 4</span>
+                  <div>
+                    <strong>Rest</strong>
+                    <p>Take one day off again.</p>
+                  </div>
+                </article>
+                <article className="intervaling-step study-day">
+                  <span>After</span>
+                  <div>
+                    <strong>10-15 minutes</strong>
+                    <p>Every other day, practice only the parts you forgot.</p>
+                  </div>
+                </article>
               </div>
               <button className="generate-button pomodoro-use-button" type="button" onClick={startIntervalingPlan}>
                 Start 1 hour timer

@@ -1850,6 +1850,7 @@ select:focus {
   min-height: 118px;
   display: grid;
   align-content: center;
+  gap: 12px;
   padding: 24px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -1868,14 +1869,26 @@ select:focus {
   line-height: 0.95;
 }
 
-.study-method-tile span {
+.study-method-tile strong > span {
   font-size: 28px;
   line-height: 1;
+}
+
+.method-subtitle {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.35;
+  text-transform: uppercase;
 }
 
 .study-method-tile:hover {
   border-color: var(--accent);
   background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.study-method-tile:hover .method-subtitle {
   color: var(--accent);
 }
 
@@ -2107,12 +2120,6 @@ select:focus {
   gap: 10px;
 }
 
-.intervaling-plan {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-
 .pomodoro-plan div {
   display: grid;
   gap: 4px;
@@ -2123,14 +2130,50 @@ select:focus {
   text-align: center;
 }
 
-.intervaling-plan div {
+.intervaling-timeline {
   display: grid;
-  gap: 4px;
+  gap: 8px;
+}
+
+.intervaling-step {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
-  text-align: center;
+}
+
+.intervaling-step > span {
+  width: fit-content;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.intervaling-step strong {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1.15;
+}
+
+.intervaling-step p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.intervaling-step.rest-day > span {
+  background: rgba(114, 128, 132, 0.14);
+  color: var(--muted);
 }
 
 .pomodoro-plan strong {
@@ -2139,20 +2182,7 @@ select:focus {
   line-height: 1;
 }
 
-.intervaling-plan strong {
-  color: var(--accent);
-  font-size: 24px;
-  line-height: 1;
-}
-
 .pomodoro-plan span {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.intervaling-plan span {
   color: var(--muted);
   font-size: 12px;
   font-weight: 900;
@@ -3348,6 +3378,10 @@ select:focus {
   }
 
   .pomodoro-plan {
+    grid-template-columns: 1fr;
+  }
+
+  .intervaling-step {
     grid-template-columns: 1fr;
   }
 
