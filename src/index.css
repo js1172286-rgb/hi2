@@ -1879,6 +1879,13 @@ select:focus {
   gap: 8px;
 }
 
+.calendar-add-button {
+  min-width: 42px;
+  padding-inline: 12px;
+  font-size: 22px;
+  line-height: 1;
+}
+
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -1974,6 +1981,11 @@ select:focus {
   background: #be6046;
 }
 
+.calendar-dot.custom,
+.calendar-event-type.custom {
+  background: #7a5bd8;
+}
+
 .calendar-detail-panel h3 {
   color: var(--ink);
   font-size: 24px;
@@ -2027,6 +2039,24 @@ select:focus {
   min-height: 28px;
   padding: 5px 9px;
   font-size: 12px;
+}
+
+.calendar-event-modal {
+  width: min(520px, 100%);
+}
+
+.calendar-event-form {
+  display: grid;
+  gap: 12px;
+}
+
+.calendar-event-form .generate-button {
+  justify-self: start;
+  min-width: 130px;
+}
+
+.calendar-event-note {
+  min-height: 96px;
 }
 
 .study-methods-page {

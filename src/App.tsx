@@ -108,14 +108,23 @@ type CalendarEvent = {
   dateKey: string;
   label: string;
   detail: string;
-  type: 'lesson' | 'note' | 'quiz' | 'study' | 'intervaling';
+  type: 'lesson' | 'note' | 'quiz' | 'study' | 'intervaling' | 'custom';
   planId?: string;
+  customEventId?: string;
 };
 
 type IntervalingPlan = {
   id: string;
   title: string;
   startDate: string;
+  createdAt: string;
+};
+
+type CustomCalendarEvent = {
+  id: string;
+  title: string;
+  dateKey: string;
+  note: string;
   createdAt: string;
 };
 
@@ -166,12 +175,14 @@ const savedLessonsKey = 'study-helper-lessons';
 const savedNotesKey = 'study-helper-notes';
 const knowledgeStatsKey = 'study-helper-knowledge-stats';
 const intervalingPlansKey = 'study-helper-intervaling-plans';
+const customCalendarEventsKey = 'study-helper-calendar-events';
 const languageKey = 'study-helper-language';
 const themeKey = 'study-helper-theme';
 const studyPetKey = 'study-helper-pet';
 const maxSavedLessons = 6;
 const maxSavedNotes = 20;
 const maxIntervalingPlans = 8;
+const maxCustomCalendarEvents = 120;
 const noteCanvasWidth = 1200;
 const noteCanvasHeight = 720;
 const eggWarmDays = 3;
@@ -724,6 +735,10 @@ function getIntervalingPlansKey(userId?: string) {
   return userId ? `${intervalingPlansKey}:${userId}` : intervalingPlansKey;
 }
 
+function getCustomCalendarEventsKey(userId?: string) {
+  return userId ? `${customCalendarEventsKey}:${userId}` : customCalendarEventsKey;
+}
+
 function readStudyPet(userId?: string): StudyPet {
   try {
     if (!userId) return emptyStudyPet;
@@ -998,6 +1013,19 @@ function readIntervalingPlans(userId?: string) {
   }
 }
 
+function readCustomCalendarEvents(userId?: string) {
+  try {
+    const rawEvents = window.localStorage.getItem(getCustomCalendarEventsKey(userId));
+    if (!rawEvents) return [];
+    const parsed = JSON.parse(rawEvents) as CustomCalendarEvent[];
+    return Array.isArray(parsed)
+      ? parsed.filter((event) => event.id && event.title && getCalendarDateKeyFromValue(event.dateKey))
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 function getIntervalingPlanEvents(plan: IntervalingPlan): CalendarEvent[] {
   const schedule = [
     { offset: 0, label: 'Intervaling', detail: 'Day 1: 60 minute first review' },
@@ -1067,6 +1095,12 @@ export default function App() {
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(() => getCalendarDateKey(new Date()));
   const [intervalingPlans, setIntervalingPlans] = useState<IntervalingPlan[]>([]);
+  const [customCalendarEvents, setCustomCalendarEvents] = useState<CustomCalendarEvent[]>([]);
+  const [isCalendarEventFormOpen, setIsCalendarEventFormOpen] = useState(false);
+  const [calendarEventTitle, setCalendarEventTitle] = useState('');
+  const [calendarEventDate, setCalendarEventDate] = useState(() => getCalendarDateKey(new Date()));
+  const [calendarEventNote, setCalendarEventNote] = useState('');
+  const [calendarEventError, setCalendarEventError] = useState('');
   const [isPomodoroInfoOpen, setIsPomodoroInfoOpen] = useState(false);
   const [isPomodoroSetupOpen, setIsPomodoroSetupOpen] = useState(false);
   const [pomodoroStudyMinutes, setPomodoroStudyMinutes] = useState('120');
@@ -1216,6 +1250,16 @@ export default function App() {
     calendarEvents.push(...getIntervalingPlanEvents(plan));
   });
 
+  customCalendarEvents.forEach((event) => {
+    calendarEvents.push({
+      dateKey: event.dateKey,
+      label: 'Event',
+      detail: event.note.trim() ? `${event.title}: ${event.note.trim()}` : event.title,
+      type: 'custom',
+      customEventId: event.id,
+    });
+  });
+
   const calendarEventsByDate = new Map<string, CalendarEvent[]>();
   calendarEvents.forEach((event) => {
     calendarEventsByDate.set(event.dateKey, [...(calendarEventsByDate.get(event.dateKey) ?? []), event]);
@@ -1299,6 +1343,7 @@ export default function App() {
     setSavedLessons(readSavedLessons());
     setSavedNotes(readSavedNotes());
     setIntervalingPlans(readIntervalingPlans());
+    setCustomCalendarEvents(readCustomCalendarEvents());
     setLanguage(readLanguage());
   }, []);
 
@@ -1323,6 +1368,7 @@ export default function App() {
     setHatchPopup(null);
     setKnowledgeStats(readKnowledgeStats(session?.user.id));
     setIntervalingPlans(readIntervalingPlans(session?.user.id));
+    setCustomCalendarEvents(readCustomCalendarEvents(session?.user.id));
   }, [session?.user.id]);
 
   useEffect(() => {
@@ -1881,8 +1927,58 @@ Write exactly one short follow-up question from the pet. The question must be ba
     window.localStorage.setItem(getIntervalingPlansKey(session?.user.id), JSON.stringify(nextPlans));
   }
 
+  function updateCustomCalendarEvents(nextEvents: CustomCalendarEvent[]) {
+    setCustomCalendarEvents(nextEvents);
+    window.localStorage.setItem(getCustomCalendarEventsKey(session?.user.id), JSON.stringify(nextEvents));
+  }
+
   function deleteIntervalingPlan(planId: string) {
     updateIntervalingPlans(intervalingPlans.filter((plan) => plan.id !== planId));
+  }
+
+  function openCalendarEventForm() {
+    setCalendarEventDate(selectedCalendarDate);
+    setCalendarEventTitle('');
+    setCalendarEventNote('');
+    setCalendarEventError('');
+    setIsCalendarEventFormOpen(true);
+  }
+
+  function saveCustomCalendarEvent() {
+    const title = calendarEventTitle.trim();
+    const dateKey = getCalendarDateKeyFromValue(calendarEventDate);
+
+    if (!title) {
+      setCalendarEventError('Add an event title first.');
+      return;
+    }
+
+    if (!dateKey) {
+      setCalendarEventError('Choose a date for the event.');
+      return;
+    }
+
+    const nextEvent: CustomCalendarEvent = {
+      id: crypto.randomUUID(),
+      title,
+      dateKey,
+      note: calendarEventNote.trim(),
+      createdAt: new Date().toISOString(),
+    };
+    const nextEvents = [nextEvent, ...customCalendarEvents]
+      .sort((a, b) => a.dateKey.localeCompare(b.dateKey))
+      .slice(0, maxCustomCalendarEvents);
+    const eventDate = new Date(`${dateKey}T00:00:00`);
+
+    updateCustomCalendarEvents(nextEvents);
+    setSelectedCalendarDate(dateKey);
+    setCalendarMonth(new Date(eventDate.getFullYear(), eventDate.getMonth(), 1));
+    setIsCalendarEventFormOpen(false);
+    setCalendarEventError('');
+  }
+
+  function deleteCustomCalendarEvent(eventId: string) {
+    updateCustomCalendarEvents(customCalendarEvents.filter((event) => event.id !== eventId));
   }
 
   function recordQuizKnowledgeStats(grades: QuizGrade[]) {
@@ -3874,6 +3970,9 @@ ${trimmedMaterial}`;
                   <h2>{getCalendarMonthLabel(calendarMonth)}</h2>
                 </div>
                 <div className="calendar-actions">
+                  <button className="small-button calendar-add-button" type="button" onClick={openCalendarEventForm} aria-label="Add calendar event">
+                    +
+                  </button>
                   <button className="small-button muted-button" type="button" onClick={() => moveCalendarMonth(-1)}>
                     Prev
                   </button>
@@ -3945,6 +4044,15 @@ ${trimmedMaterial}`;
                             className="small-button muted-button calendar-delete-button"
                             type="button"
                             onClick={() => deleteIntervalingPlan(event.planId ?? '')}
+                          >
+                            Delete
+                          </button>
+                        )}
+                        {event.type === 'custom' && event.customEventId && (
+                          <button
+                            className="small-button muted-button calendar-delete-button"
+                            type="button"
+                            onClick={() => deleteCustomCalendarEvent(event.customEventId ?? '')}
                           >
                             Delete
                           </button>
@@ -4139,6 +4247,56 @@ ${trimmedMaterial}`;
                 ))}
               </div>
             )}
+          </section>
+        </div>
+      )}
+
+      {isCalendarEventFormOpen && (
+        <div className="summary-modal-backdrop" role="presentation">
+          <section className="summary-modal calendar-event-modal" role="dialog" aria-modal="true" aria-label="Add calendar event">
+            <div className="summary-modal-heading">
+              <h2>Add event</h2>
+              <button className="small-button" type="button" onClick={() => setIsCalendarEventFormOpen(false)}>
+                Close
+              </button>
+            </div>
+            <div className="calendar-event-form">
+              <label className="field">
+                <span>Date</span>
+                <input
+                  type="date"
+                  value={calendarEventDate}
+                  onChange={(event) => {
+                    setCalendarEventDate(event.target.value);
+                    setCalendarEventError('');
+                  }}
+                />
+              </label>
+              <label className="field">
+                <span>Title</span>
+                <input
+                  value={calendarEventTitle}
+                  onChange={(event) => {
+                    setCalendarEventTitle(event.target.value);
+                    setCalendarEventError('');
+                  }}
+                  placeholder="Study biology chapter"
+                />
+              </label>
+              <label className="field">
+                <span>Note</span>
+                <textarea
+                  className="calendar-event-note"
+                  value={calendarEventNote}
+                  onChange={(event) => setCalendarEventNote(event.target.value)}
+                  placeholder="Optional details..."
+                />
+              </label>
+              <button className="generate-button" type="button" onClick={saveCustomCalendarEvent}>
+                Save event
+              </button>
+              {calendarEventError && <p className="message">{calendarEventError}</p>}
+            </div>
           </section>
         </div>
       )}
