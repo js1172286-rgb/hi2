@@ -1969,6 +1969,11 @@ select:focus {
   background: #298357;
 }
 
+.calendar-dot.intervaling,
+.calendar-event-type.intervaling {
+  background: #be6046;
+}
+
 .calendar-detail-panel h3 {
   color: var(--ink);
   font-size: 24px;

@@ -108,7 +108,14 @@ type CalendarEvent = {
   dateKey: string;
   label: string;
   detail: string;
-  type: 'lesson' | 'note' | 'quiz' | 'study';
+  type: 'lesson' | 'note' | 'quiz' | 'study' | 'intervaling';
+};
+
+type IntervalingPlan = {
+  id: string;
+  title: string;
+  startDate: string;
+  createdAt: string;
 };
 
 type SharedMaterial = {
@@ -157,11 +164,13 @@ type LessonRingStyle = CSSProperties & {
 const savedLessonsKey = 'study-helper-lessons';
 const savedNotesKey = 'study-helper-notes';
 const knowledgeStatsKey = 'study-helper-knowledge-stats';
+const intervalingPlansKey = 'study-helper-intervaling-plans';
 const languageKey = 'study-helper-language';
 const themeKey = 'study-helper-theme';
 const studyPetKey = 'study-helper-pet';
 const maxSavedLessons = 6;
 const maxSavedNotes = 20;
+const maxIntervalingPlans = 8;
 const noteCanvasWidth = 1200;
 const noteCanvasHeight = 720;
 const eggWarmDays = 3;
@@ -696,12 +705,22 @@ function getCalendarMonthLabel(date: Date) {
   return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 }
 
+function addDaysToDateKey(dateKey: string, days: number) {
+  const date = new Date(`${dateKey}T00:00:00`);
+  date.setDate(date.getDate() + days);
+  return getCalendarDateKey(date);
+}
+
 function getStudyPetKey(userId?: string) {
   return userId ? `${studyPetKey}:${userId}` : studyPetKey;
 }
 
 function getKnowledgeStatsKey(userId?: string) {
   return userId ? `${knowledgeStatsKey}:${userId}` : knowledgeStatsKey;
+}
+
+function getIntervalingPlansKey(userId?: string) {
+  return userId ? `${intervalingPlansKey}:${userId}` : intervalingPlansKey;
 }
 
 function readStudyPet(userId?: string): StudyPet {
@@ -967,6 +986,42 @@ function readSavedNotes() {
   }
 }
 
+function readIntervalingPlans(userId?: string) {
+  try {
+    const rawPlans = window.localStorage.getItem(getIntervalingPlansKey(userId));
+    if (!rawPlans) return [];
+    const parsed = JSON.parse(rawPlans) as IntervalingPlan[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function getIntervalingPlanEvents(plan: IntervalingPlan): CalendarEvent[] {
+  const schedule = [
+    { offset: 0, label: 'Intervaling', detail: 'Day 1: 60 minute first review' },
+    { offset: 1, label: 'Intervaling rest', detail: 'Day 2: rest from this material' },
+    { offset: 2, label: 'Intervaling', detail: 'Day 3: 30 minute full review' },
+    { offset: 3, label: 'Intervaling rest', detail: 'Day 4: rest from this material' },
+    { offset: 4, label: 'Intervaling', detail: 'Day 5: 10-15 minute weak-parts review' },
+    { offset: 5, label: 'Intervaling rest', detail: 'Day 6: rest from this material' },
+    { offset: 6, label: 'Intervaling', detail: 'Day 7: 10-15 minute weak-parts review' },
+    { offset: 7, label: 'Intervaling rest', detail: 'Day 8: rest from this material' },
+    { offset: 8, label: 'Intervaling', detail: 'Day 9: 10-15 minute weak-parts review' },
+    { offset: 9, label: 'Intervaling rest', detail: 'Day 10: rest from this material' },
+    { offset: 10, label: 'Intervaling', detail: 'Day 11: 10-15 minute weak-parts review' },
+    { offset: 11, label: 'Intervaling rest', detail: 'Day 12: rest from this material' },
+    { offset: 12, label: 'Intervaling', detail: 'Day 13: 10-15 minute weak-parts review' },
+  ];
+
+  return schedule.map((item) => ({
+    dateKey: addDaysToDateKey(plan.startDate, item.offset),
+    label: item.label,
+    detail: `${plan.title}: ${item.detail}`,
+    type: 'intervaling',
+  }));
+}
+
 export default function App() {
   const [page, setPage] = useState<Page>(() => getPageFromPath());
   const [language, setLanguage] = useState<Language>('en');
@@ -1015,6 +1070,7 @@ export default function App() {
   const [isCalculatorWaiting, setIsCalculatorWaiting] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(() => getCalendarDateKey(new Date()));
+  const [intervalingPlans, setIntervalingPlans] = useState<IntervalingPlan[]>([]);
   const [isPomodoroInfoOpen, setIsPomodoroInfoOpen] = useState(false);
   const [isPomodoroSetupOpen, setIsPomodoroSetupOpen] = useState(false);
   const [pomodoroStudyMinutes, setPomodoroStudyMinutes] = useState('120');
@@ -1160,6 +1216,10 @@ export default function App() {
     });
   }
 
+  intervalingPlans.forEach((plan) => {
+    calendarEvents.push(...getIntervalingPlanEvents(plan));
+  });
+
   const calendarEventsByDate = new Map<string, CalendarEvent[]>();
   calendarEvents.forEach((event) => {
     calendarEventsByDate.set(event.dateKey, [...(calendarEventsByDate.get(event.dateKey) ?? []), event]);
@@ -1242,6 +1302,7 @@ export default function App() {
   useEffect(() => {
     setSavedLessons(readSavedLessons());
     setSavedNotes(readSavedNotes());
+    setIntervalingPlans(readIntervalingPlans());
     setLanguage(readLanguage());
   }, []);
 
@@ -1265,6 +1326,7 @@ export default function App() {
     setPendingEggColor(savedPet.eggColor);
     setHatchPopup(null);
     setKnowledgeStats(readKnowledgeStats(session?.user.id));
+    setIntervalingPlans(readIntervalingPlans(session?.user.id));
   }, [session?.user.id]);
 
   useEffect(() => {
@@ -1482,6 +1544,21 @@ export default function App() {
   }
 
   function startIntervalingPlan() {
+    const startDate = getCalendarDateKey(new Date());
+    const weakestLesson = getWeakestLesson(savedLessons);
+    const planTitle = lessonName.trim() || weakestLesson?.title || 'Intervaling review';
+    const nextPlan: IntervalingPlan = {
+      id: crypto.randomUUID(),
+      title: planTitle,
+      startDate,
+      createdAt: new Date().toISOString(),
+    };
+    const nextPlans = [nextPlan, ...intervalingPlans].slice(0, maxIntervalingPlans);
+
+    updateIntervalingPlans(nextPlans);
+    const today = new Date();
+    setCalendarMonth(new Date(today.getFullYear(), today.getMonth(), 1));
+    setSelectedCalendarDate(startDate);
     setFocusMinutes(60);
     setBreakMinutes(10);
     setTimerMode('focus');
@@ -1801,6 +1878,11 @@ Write exactly one short follow-up question from the pet. The question must be ba
   function updateKnowledgeStats(nextStats: KnowledgeAreaStat[]) {
     setKnowledgeStats(nextStats);
     window.localStorage.setItem(getKnowledgeStatsKey(session?.user.id), JSON.stringify(nextStats));
+  }
+
+  function updateIntervalingPlans(nextPlans: IntervalingPlan[]) {
+    setIntervalingPlans(nextPlans);
+    window.localStorage.setItem(getIntervalingPlansKey(session?.user.id), JSON.stringify(nextPlans));
   }
 
   function recordQuizKnowledgeStats(grades: QuizGrade[]) {
@@ -4263,7 +4345,7 @@ ${trimmedMaterial}`;
                 </article>
               </div>
               <button className="generate-button pomodoro-use-button" type="button" onClick={startIntervalingPlan}>
-                Start 1 hour timer
+                Start and add to calendar
               </button>
             </div>
           </section>
