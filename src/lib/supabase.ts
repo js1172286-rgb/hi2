@@ -8,4 +8,12 @@ export const isSupabaseConfigured = Boolean(url && anonKey);
 export const supabase = createClient(
   url ?? 'https://missing-project.supabase.co',
   anonKey ?? 'missing-anon-key',
+  {
+    auth: {
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      persistSession: true,
+      storageKey: 'study-helper-auth-session',
+    },
+  },
 );
