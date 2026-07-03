@@ -23,6 +23,7 @@ type Page =
   | 'notes'
   | 'calculator'
   | 'calendar'
+  | 'leaderboard'
   | 'studyMethods';
 type Language = 'en' | 'ru' | 'kk';
 type Theme = 'light' | 'dark';
@@ -137,6 +138,14 @@ type SharedMaterial = {
   user_id: string | null;
 };
 
+type LeaderboardProfile = {
+  user_id: string;
+  display_name: string;
+  streak: number;
+  last_study_date: string | null;
+  updated_at: string;
+};
+
 type TutorMessage = {
   role: 'user' | 'tutor';
   text: string;
@@ -248,6 +257,7 @@ const pagePaths: Record<Page, string> = {
   notes: '/notes',
   calculator: '/calculator',
   calendar: '/calendar',
+  leaderboard: '/leaderboard',
   studyMethods: '/study-methods',
 };
 
@@ -264,6 +274,7 @@ function getPageFromPath(pathname = window.location.pathname): Page {
   if (normalizedPath === pagePaths.notes) return 'notes';
   if (normalizedPath === pagePaths.calculator) return 'calculator';
   if (normalizedPath === pagePaths.calendar) return 'calendar';
+  if (normalizedPath === pagePaths.leaderboard) return 'leaderboard';
   if (normalizedPath === pagePaths.studyMethods) return 'studyMethods';
   if (normalizedPath === pagePaths.study) return 'study';
   return 'starter';
@@ -294,6 +305,7 @@ const translations = {
     flashcards: 'Flashcards',
     hide: 'Hide',
     language: 'Language',
+    leaderboard: 'Leaderboard',
     lessonName: 'Lesson name',
     lessons: 'Lessons',
     makeFlashcards: 'Make flashcards',
@@ -334,6 +346,7 @@ const translations = {
     flashcards: 'Карточки',
     hide: 'Скрыть',
     language: 'Язык',
+    leaderboard: 'Рейтинг',
     lessonName: 'Название урока',
     lessons: 'Уроки',
     makeFlashcards: 'Сделать карточки',
@@ -374,6 +387,7 @@ const translations = {
     flashcards: 'Карточкалар',
     hide: 'Жасыру',
     language: 'Тіл',
+    leaderboard: 'Рейтинг',
     lessonName: 'Сабақ атауы',
     lessons: 'Сабақтар',
     makeFlashcards: 'Карточка жасау',
@@ -1133,6 +1147,9 @@ export default function App() {
   const [sharedNotice, setSharedNotice] = useState('');
   const [isSharedLoading, setIsSharedLoading] = useState(false);
   const [isUploadingSharedMaterial, setIsUploadingSharedMaterial] = useState(false);
+  const [leaderboardRows, setLeaderboardRows] = useState<LeaderboardProfile[]>([]);
+  const [leaderboardError, setLeaderboardError] = useState('');
+  const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [authMode, setAuthMode] = useState<AuthMode>('signIn');
   const [accountNameInput, setAccountNameInput] = useState('');
@@ -1164,6 +1181,10 @@ export default function App() {
   });
   const copy = fullTranslations[language];
   const currentAccountName = session?.user.user_metadata.display_name || session?.user.email || '';
+  const currentLeaderboardName = session?.user.user_metadata.display_name || session?.user.email?.split('@')[0] || 'Student';
+  const currentLeaderboardRank = session
+    ? leaderboardRows.findIndex((row) => row.user_id === session.user.id) + 1
+    : 0;
   const isPetHatched = Boolean(studyPet.petType || studyPet.petImage);
   const isPetFrozen = Boolean(session && studyPet.hasChosenEggColor && studyPet.lastStudyDate !== getTodayKey());
   const petName = getPetName(studyPet.petType, studyPet.petImage, copy);
@@ -1397,6 +1418,17 @@ export default function App() {
       loadSharedMaterials();
     }
   }, [page]);
+
+  useEffect(() => {
+    if (!session || !isSupabaseConfigured) return;
+    void syncLeaderboardProfile(studyPet);
+  }, [session?.user.id, currentLeaderboardName, studyPet.streak, studyPet.lastStudyDate]);
+
+  useEffect(() => {
+    if (page === 'leaderboard') {
+      void refreshLeaderboard();
+    }
+  }, [page, session?.user.id, studyPet.streak, studyPet.lastStudyDate]);
 
   useEffect(() => {
     return () => {
@@ -2384,6 +2416,62 @@ Write exactly one short follow-up question from the pet. The question must be ba
     setSharedMaterials(data ?? []);
   }
 
+  async function syncLeaderboardProfile(nextPet = studyPet) {
+    if (!isSupabaseConfigured || !session) return false;
+
+    const { error: syncError } = await supabase.from('leaderboard_profiles').upsert(
+      {
+        user_id: session.user.id,
+        display_name: currentLeaderboardName.slice(0, 50),
+        streak: Math.max(0, nextPet.streak),
+        last_study_date: nextPet.lastStudyDate || null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id' },
+    );
+
+    if (syncError) {
+      if (page === 'leaderboard') {
+        setLeaderboardError(syncError.message);
+      }
+      return false;
+    }
+
+    return true;
+  }
+
+  async function loadLeaderboard() {
+    setLeaderboardError('');
+
+    if (!isSupabaseConfigured) {
+      setLeaderboardError('Connect Supabase first so the leaderboard can load.');
+      return;
+    }
+
+    setIsLeaderboardLoading(true);
+    const { data, error: loadError } = await supabase
+      .from('leaderboard_profiles')
+      .select('user_id, display_name, streak, last_study_date, updated_at')
+      .order('streak', { ascending: false })
+      .order('last_study_date', { ascending: false })
+      .limit(20);
+    setIsLeaderboardLoading(false);
+
+    if (loadError) {
+      setLeaderboardError(loadError.message);
+      return;
+    }
+
+    setLeaderboardRows(data ?? []);
+  }
+
+  async function refreshLeaderboard() {
+    if (session) {
+      await syncLeaderboardProfile(studyPet);
+    }
+    await loadLeaderboard();
+  }
+
   async function uploadSharedMaterial() {
     const subject = sharedSubject.trim();
     const title = sharedTitle.trim();
@@ -3039,8 +3127,10 @@ ${trimmedMaterial}`;
                                   ? copy.calculator
                                   : page === 'calendar'
                                     ? copy.calendar
-                                    : page === 'studyMethods'
-                                      ? copy.studyMethods
+                                    : page === 'leaderboard'
+                                      ? copy.leaderboard
+                                      : page === 'studyMethods'
+                                        ? copy.studyMethods
                       : copy.studyHelperTitle}
             </h1>
           </div>
@@ -3651,6 +3741,57 @@ ${trimmedMaterial}`;
                 </button>
               </div>
             )}
+          </section>
+        ) : page === 'leaderboard' ? (
+          <section className="leaderboard-page" aria-label="Leaderboard page">
+            <article className="leaderboard-hero">
+              <div>
+                <p className="card-label">{copy.leaderboard}</p>
+                <h2>Top study streaks</h2>
+                <p>Compare streaks with other students and keep your flame alive.</p>
+              </div>
+              <div className="leaderboard-current-rank">
+                <img src={streakFlameSrc} alt="" />
+                <div>
+                  <span>Your rank</span>
+                  <strong>{currentLeaderboardRank > 0 ? `#${currentLeaderboardRank}` : '-'}</strong>
+                </div>
+              </div>
+              <button className="small-button" type="button" onClick={() => void refreshLeaderboard()} disabled={isLeaderboardLoading}>
+                {isLeaderboardLoading ? 'Loading...' : 'Refresh'}
+              </button>
+            </article>
+
+            {leaderboardError && <p className="message">{leaderboardError}</p>}
+            {!session && <p className="notice">Sign in and study to appear on the leaderboard.</p>}
+
+            <div className="leaderboard-list">
+              {leaderboardRows.length === 0 && !isLeaderboardLoading ? (
+                <p className="empty-state large">No leaderboard entries yet.</p>
+              ) : (
+                leaderboardRows.map((row, index) => {
+                  const isCurrentUser = row.user_id === session?.user.id;
+                  const lastStudyLabel = row.last_study_date
+                    ? new Date(`${row.last_study_date}T00:00:00`).toLocaleDateString()
+                    : 'No study date';
+
+                  return (
+                    <article className={isCurrentUser ? 'leaderboard-row current-user' : 'leaderboard-row'} key={row.user_id}>
+                      <span className="leaderboard-rank">#{index + 1}</span>
+                      <div className="leaderboard-student">
+                        <strong>{row.display_name}</strong>
+                        <span>{lastStudyLabel}</span>
+                      </div>
+                      <div className="leaderboard-streak">
+                        <img src={row.last_study_date === getTodayKey() ? '/pets/streak-active.png' : streakFlameSrc} alt="" />
+                        <strong>{row.streak}</strong>
+                        <span>{row.streak === 1 ? 'day' : 'days'}</span>
+                      </div>
+                    </article>
+                  );
+                })
+              )}
+            </div>
           </section>
         ) : page === 'progress' ? (
           <section className="progress-page" aria-label="Progress page">
@@ -4733,6 +4874,13 @@ ${trimmedMaterial}`;
               onClick={() => goToPage('progress')}
             >
               {copy.progress}
+            </button>
+            <button
+              className="drawer-tool-button"
+              type="button"
+              onClick={() => goToPage('leaderboard')}
+            >
+              {copy.leaderboard}
             </button>
             <button
               className="drawer-tool-button"
