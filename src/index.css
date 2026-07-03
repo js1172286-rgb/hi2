@@ -1493,6 +1493,8 @@ select:focus {
 :root[data-theme='dark'] .calendar-event-item,
 :root[data-theme='dark'] .leaderboard-hero,
 :root[data-theme='dark'] .leaderboard-row,
+:root[data-theme='dark'] .xp-task-panel,
+:root[data-theme='dark'] .xp-task,
 :root[data-theme='dark'] .study-method-tile,
 :root[data-theme='dark'] .search-card,
 :root[data-theme='dark'] .result,
@@ -2611,7 +2613,7 @@ select:focus {
 
 .leaderboard-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   gap: 16px;
   align-items: center;
   padding: 18px;
@@ -2643,6 +2645,10 @@ select:focus {
   background: var(--panel);
 }
 
+.leaderboard-current-rank.xp-rank {
+  min-width: 108px;
+}
+
 .leaderboard-current-rank img {
   width: 32px;
   height: 38px;
@@ -2671,6 +2677,108 @@ select:focus {
 .leaderboard-list {
   display: grid;
   gap: 8px;
+}
+
+.xp-task-panel {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+}
+
+.xp-task-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.xp-task-heading h3 {
+  color: var(--ink);
+  font-size: 26px;
+  line-height: 1.1;
+}
+
+.xp-task-heading p:not(.card-label) {
+  margin-top: 5px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.xp-task-total {
+  min-width: 112px;
+  display: grid;
+  gap: 3px;
+  justify-items: end;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.xp-task-total span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.xp-task-total strong {
+  color: var(--ink);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.xp-task-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.xp-task {
+  display: grid;
+  gap: 9px;
+  align-content: start;
+  min-height: 132px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.xp-task.complete {
+  border-color: rgba(47, 111, 115, 0.4);
+  background: rgba(47, 111, 115, 0.1);
+}
+
+.xp-task-pill {
+  width: fit-content;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.xp-task.complete .xp-task-pill {
+  background: rgba(47, 111, 115, 0.16);
+}
+
+.xp-task strong {
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.xp-task p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
 }
 
 .leaderboard-row {
@@ -2747,6 +2855,33 @@ select:focus {
   font-size: 12px;
   font-weight: 900;
   text-transform: uppercase;
+}
+
+.leaderboard-score {
+  min-width: 116px;
+  display: grid;
+  gap: 2px;
+  justify-items: end;
+}
+
+.leaderboard-score strong {
+  color: var(--ink);
+  font-size: 30px;
+  line-height: 0.95;
+}
+
+.leaderboard-score span {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.leaderboard-score small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-align: right;
 }
 
 .progress-page {
@@ -3678,6 +3813,19 @@ select:focus {
     grid-template-columns: 1fr;
   }
 
+  .xp-task-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .xp-task-total {
+    justify-items: start;
+  }
+
+  .xp-task-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .calendar-page {
     grid-template-columns: 1fr;
   }
@@ -3845,6 +3993,18 @@ select:focus {
 
   .leaderboard-streak {
     justify-content: start;
+  }
+
+  .leaderboard-score {
+    justify-items: start;
+  }
+
+  .leaderboard-score small {
+    text-align: left;
+  }
+
+  .xp-task-grid {
+    grid-template-columns: 1fr;
   }
 
   .streak-chip {

@@ -66,6 +66,30 @@ type KnowledgeAreaStat = {
   lastPracticed: string;
 };
 
+type LearningTaskId =
+  | 'saveLesson'
+  | 'summary'
+  | 'makeFlashcards'
+  | 'reviewFlashcards'
+  | 'finishQuiz'
+  | 'saveNote'
+  | 'focusSession'
+  | 'teachPet'
+  | 'blurtingReview';
+
+type LearningTaskDefinition = {
+  id: LearningTaskId;
+  title: string;
+  detail: string;
+  xp: number;
+};
+
+type LearningXpState = {
+  totalXp: number;
+  completedTaskKeys: string[];
+  updatedAt: string;
+};
+
 type BlurtingHighlightCategory = 'good' | 'needsWork' | 'wrong';
 
 type BlurtingHighlight = {
@@ -141,6 +165,8 @@ type SharedMaterial = {
 type LeaderboardProfile = {
   user_id: string;
   display_name: string;
+  xp: number;
+  completed_tasks: number;
   streak: number;
   last_study_date: string | null;
   updated_at: string;
@@ -185,6 +211,7 @@ const savedNotesKey = 'study-helper-notes';
 const knowledgeStatsKey = 'study-helper-knowledge-stats';
 const intervalingPlansKey = 'study-helper-intervaling-plans';
 const customCalendarEventsKey = 'study-helper-calendar-events';
+const learningXpKey = 'study-helper-learning-xp';
 const languageKey = 'study-helper-language';
 const themeKey = 'study-helper-theme';
 const studyPetKey = 'study-helper-pet';
@@ -205,6 +232,69 @@ const emptyStudyPet: StudyPet = {
   eggColor: 'green',
   hasChosenEggColor: false,
 };
+
+const emptyLearningXp: LearningXpState = {
+  totalXp: 0,
+  completedTaskKeys: [],
+  updatedAt: '',
+};
+
+const learningTaskDefinitions: LearningTaskDefinition[] = [
+  {
+    id: 'saveLesson',
+    title: 'Save a real lesson',
+    detail: 'Name and save useful study material.',
+    xp: 40,
+  },
+  {
+    id: 'summary',
+    title: 'Make a summary',
+    detail: 'Use the summary tool on your notes.',
+    xp: 10,
+  },
+  {
+    id: 'makeFlashcards',
+    title: 'Create flashcards',
+    detail: 'Turn notes into review cards.',
+    xp: 30,
+  },
+  {
+    id: 'reviewFlashcards',
+    title: 'Review a card deck',
+    detail: 'Go through the cards until the deck loops.',
+    xp: 35,
+  },
+  {
+    id: 'finishQuiz',
+    title: 'Submit a quiz',
+    detail: 'Answer and check quiz questions.',
+    xp: 60,
+  },
+  {
+    id: 'saveNote',
+    title: 'Save freehand notes',
+    detail: 'Write or draw notes and save them.',
+    xp: 25,
+  },
+  {
+    id: 'focusSession',
+    title: 'Finish a focus timer',
+    detail: 'Complete one focus session.',
+    xp: 45,
+  },
+  {
+    id: 'teachPet',
+    title: 'Teach your pet',
+    detail: 'Explain a topic in the teach method chat.',
+    xp: 35,
+  },
+  {
+    id: 'blurtingReview',
+    title: 'Do blurting practice',
+    detail: 'Write from memory and check it.',
+    xp: 50,
+  },
+];
 
 const petTypes: PetType[] = ['cat', 'dragon', 'fox', 'owl'];
 const eggColors: EggColor[] = ['green', 'gold', 'blue', 'red'];
@@ -753,6 +843,14 @@ function getCustomCalendarEventsKey(userId?: string) {
   return userId ? `${customCalendarEventsKey}:${userId}` : customCalendarEventsKey;
 }
 
+function getLearningXpKey(userId?: string) {
+  return userId ? `${learningXpKey}:${userId}` : learningXpKey;
+}
+
+function getLearningTaskKey(taskId: LearningTaskId, dateKey = getTodayKey()) {
+  return `${dateKey}:${taskId}`;
+}
+
 function readStudyPet(userId?: string): StudyPet {
   try {
     if (!userId) return emptyStudyPet;
@@ -1040,6 +1138,27 @@ function readCustomCalendarEvents(userId?: string) {
   }
 }
 
+function readLearningXp(userId?: string): LearningXpState {
+  try {
+    if (!userId) return emptyLearningXp;
+
+    const rawXp = window.localStorage.getItem(getLearningXpKey(userId));
+    if (!rawXp) return emptyLearningXp;
+    const parsed = JSON.parse(rawXp) as LearningXpState;
+    const completedTaskKeys = Array.isArray(parsed.completedTaskKeys)
+      ? parsed.completedTaskKeys.filter((taskKey) => typeof taskKey === 'string')
+      : [];
+
+    return {
+      totalXp: Number.isFinite(parsed.totalXp) ? Math.max(0, Math.round(parsed.totalXp)) : 0,
+      completedTaskKeys,
+      updatedAt: parsed.updatedAt || '',
+    };
+  } catch {
+    return emptyLearningXp;
+  }
+}
+
 function getIntervalingPlanEvents(plan: IntervalingPlan): CalendarEvent[] {
   const schedule = [
     { offset: 0, label: 'Intervaling', detail: 'Day 1: 60 minute first review' },
@@ -1150,6 +1269,7 @@ export default function App() {
   const [leaderboardRows, setLeaderboardRows] = useState<LeaderboardProfile[]>([]);
   const [leaderboardError, setLeaderboardError] = useState('');
   const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(false);
+  const [learningXp, setLearningXp] = useState<LearningXpState>(emptyLearningXp);
   const [session, setSession] = useState<Session | null>(null);
   const [authMode, setAuthMode] = useState<AuthMode>('signIn');
   const [accountNameInput, setAccountNameInput] = useState('');
@@ -1185,6 +1305,15 @@ export default function App() {
   const currentLeaderboardRank = session
     ? leaderboardRows.findIndex((row) => row.user_id === session.user.id) + 1
     : 0;
+  const todayTaskKeyPrefix = `${getTodayKey()}:`;
+  const todayCompletedTaskKeys = learningXp.completedTaskKeys.filter((taskKey) => taskKey.startsWith(todayTaskKeyPrefix));
+  const completedTaskKeySet = new Set(learningXp.completedTaskKeys);
+  const todayCompletedTaskSet = new Set(todayCompletedTaskKeys);
+  const dailyTaskXp = learningTaskDefinitions.reduce(
+    (total, task) => total + (todayCompletedTaskSet.has(getLearningTaskKey(task.id)) ? task.xp : 0),
+    0,
+  );
+  const dailyTaskPercent = (todayCompletedTaskKeys.length / learningTaskDefinitions.length) * 100;
   const isPetHatched = Boolean(studyPet.petType || studyPet.petImage);
   const isPetFrozen = Boolean(session && studyPet.hasChosenEggColor && studyPet.lastStudyDate !== getTodayKey());
   const petName = getPetName(studyPet.petType, studyPet.petImage, copy);
@@ -1337,7 +1466,13 @@ export default function App() {
                     detail: `${calendarMonthEventDays} active ${calendarMonthEventDays === 1 ? 'day' : 'days'}`,
                     percent: calendarMonthPercent,
                   }
-                : null;
+                : page === 'leaderboard'
+                  ? {
+                      label: copy.leaderboard,
+                      detail: `${learningXp.totalXp} XP`,
+                      percent: Math.min(Math.max(dailyTaskPercent, 0), 100),
+                    }
+                  : null;
 
   function goToPage(nextPage: Page, replace = false) {
     setPage(nextPage);
@@ -1397,6 +1532,7 @@ export default function App() {
     setKnowledgeStats(readKnowledgeStats(session?.user.id));
     setIntervalingPlans(readIntervalingPlans(session?.user.id));
     setCustomCalendarEvents(readCustomCalendarEvents(session?.user.id));
+    setLearningXp(readLearningXp(session?.user.id));
   }, [session?.user.id]);
 
   useEffect(() => {
@@ -1422,13 +1558,13 @@ export default function App() {
   useEffect(() => {
     if (!session || !isSupabaseConfigured) return;
     void syncLeaderboardProfile(studyPet);
-  }, [session?.user.id, currentLeaderboardName, studyPet.streak, studyPet.lastStudyDate]);
+  }, [session?.user.id, currentLeaderboardName, studyPet.streak, studyPet.lastStudyDate, learningXp.totalXp, learningXp.completedTaskKeys.length]);
 
   useEffect(() => {
     if (page === 'leaderboard') {
       void refreshLeaderboard();
     }
-  }, [page, session?.user.id, studyPet.streak, studyPet.lastStudyDate]);
+  }, [page, session?.user.id, studyPet.streak, studyPet.lastStudyDate, learningXp.totalXp, learningXp.completedTaskKeys.length]);
 
   useEffect(() => {
     return () => {
@@ -1577,6 +1713,9 @@ export default function App() {
       setTimerSecondsLeft((secondsLeft) => {
         if (secondsLeft <= 1) {
           setIsTimerRunning(false);
+          if (timerMode === 'focus') {
+            completeLearningTask('focusSession');
+          }
           return 0;
         }
 
@@ -1585,7 +1724,7 @@ export default function App() {
     }, 1000);
 
     return () => window.clearInterval(timerId);
-  }, [isTimerRunning]);
+  }, [isTimerRunning, timerMode, session?.user.id, studyPet.hasChosenEggColor, learningXp.completedTaskKeys.length]);
 
   function chooseTimerMode(nextMode: TimerMode) {
     setTimerMode(nextMode);
@@ -1770,7 +1909,7 @@ ${studentNotes}`,
       wrong: parsed.wrong ?? [],
       review: parsed.review ?? '',
     });
-    markStudyActivity();
+    completeLearningTask('blurtingReview');
   }
 
   async function sendTeachAnswer() {
@@ -1796,6 +1935,7 @@ ${studentNotes}`,
 
     setTeachMessages(nextMessages);
     setTeachAnswer('');
+    completeLearningTask('teachPet');
 
     if (!isSupabaseConfigured || !activeLesson) {
       setTeachMessages([...nextMessages, { role: 'pet', text: fallbackQuestion }]);
@@ -1969,6 +2109,30 @@ Write exactly one short follow-up question from the pet. The question must be ba
   function updateCustomCalendarEvents(nextEvents: CustomCalendarEvent[]) {
     setCustomCalendarEvents(nextEvents);
     window.localStorage.setItem(getCustomCalendarEventsKey(session?.user.id), JSON.stringify(nextEvents));
+  }
+
+  function completeLearningTask(taskId: LearningTaskId) {
+    if (!session) return;
+
+    const task = learningTaskDefinitions.find((item) => item.id === taskId);
+    if (!task) return;
+
+    const taskKey = getLearningTaskKey(taskId);
+
+    setLearningXp((currentXp) => {
+      if (currentXp.completedTaskKeys.includes(taskKey)) return currentXp;
+
+      const nextXp = {
+        totalXp: currentXp.totalXp + task.xp,
+        completedTaskKeys: [taskKey, ...currentXp.completedTaskKeys].slice(0, 600),
+        updatedAt: new Date().toISOString(),
+      };
+
+      window.localStorage.setItem(getLearningXpKey(session.user.id), JSON.stringify(nextXp));
+      return nextXp;
+    });
+
+    markStudyActivity();
   }
 
   function deleteIntervalingPlan(planId: string) {
@@ -2232,6 +2396,7 @@ Write exactly one short follow-up question from the pet. The question must be ba
     setIsNoteDirty(false);
     setNotesError('');
     setNotesNotice('Freehand note saved.');
+    completeLearningTask('saveNote');
   }
 
   function openStudyNote(note: StudyNote) {
@@ -2423,6 +2588,8 @@ Write exactly one short follow-up question from the pet. The question must be ba
       {
         user_id: session.user.id,
         display_name: currentLeaderboardName.slice(0, 50),
+        xp: Math.max(0, learningXp.totalXp),
+        completed_tasks: learningXp.completedTaskKeys.length,
         streak: Math.max(0, nextPet.streak),
         last_study_date: nextPet.lastStudyDate || null,
         updated_at: new Date().toISOString(),
@@ -2451,7 +2618,8 @@ Write exactly one short follow-up question from the pet. The question must be ba
     setIsLeaderboardLoading(true);
     const { data, error: loadError } = await supabase
       .from('leaderboard_profiles')
-      .select('user_id, display_name, streak, last_study_date, updated_at')
+      .select('user_id, display_name, xp, completed_tasks, streak, last_study_date, updated_at')
+      .order('xp', { ascending: false })
       .order('streak', { ascending: false })
       .order('last_study_date', { ascending: false })
       .limit(20);
@@ -2756,6 +2924,9 @@ ${question}`,
   }
 
   function showNextFlashcard() {
+    if (flashcards.length > 0 && currentFlashcardIndex === flashcards.length - 1) {
+      completeLearningTask('reviewFlashcards');
+    }
     setCurrentFlashcardIndex((index) => (index + 1) % flashcards.length);
     setIsFlashcardFlipped(false);
   }
@@ -2822,7 +2993,7 @@ ${JSON.stringify(quizToGrade, null, 2)}`,
     if (shouldRecordStats) {
       recordQuizKnowledgeStats(nextGrades);
     }
-    markStudyActivity();
+    completeLearningTask('finishQuiz');
   }
 
   function saveLesson() {
@@ -2856,7 +3027,7 @@ ${JSON.stringify(quizToGrade, null, 2)}`,
     updateSavedLessons([nextLesson, ...savedLessons].slice(0, maxSavedLessons));
     setError('');
     setNotice(copy.lessonSaved);
-    markStudyActivity();
+    completeLearningTask('saveLesson');
   }
 
   function loadLesson(lesson: SavedLesson) {
@@ -3011,7 +3182,7 @@ ${trimmedMaterial}`;
       setCurrentFlashcardIndex(0);
       setIsFlashcardFlipped(false);
       goToPage('flashcards');
-      markStudyActivity();
+      completeLearningTask('makeFlashcards');
       return;
     }
 
@@ -3034,7 +3205,7 @@ ${trimmedMaterial}`;
     }
 
     setSummary(text || copy.noSummaryReturned);
-    markStudyActivity();
+    completeLearningTask('summary');
   }
 
   async function generateStudyHelp() {
@@ -3747,14 +3918,20 @@ ${trimmedMaterial}`;
             <article className="leaderboard-hero">
               <div>
                 <p className="card-label">{copy.leaderboard}</p>
-                <h2>Top study streaks</h2>
-                <p>Compare streaks with other students and keep your flame alive.</p>
+                <h2>Top XP learners</h2>
+                <p>XP comes from real learning tasks, so deeper studying ranks higher than quick streak farming.</p>
               </div>
               <div className="leaderboard-current-rank">
                 <img src={streakFlameSrc} alt="" />
                 <div>
                   <span>Your rank</span>
                   <strong>{currentLeaderboardRank > 0 ? `#${currentLeaderboardRank}` : '-'}</strong>
+                </div>
+              </div>
+              <div className="leaderboard-current-rank xp-rank">
+                <div>
+                  <span>Your XP</span>
+                  <strong>{learningXp.totalXp}</strong>
                 </div>
               </div>
               <button className="small-button" type="button" onClick={() => void refreshLeaderboard()} disabled={isLeaderboardLoading}>
@@ -3764,6 +3941,36 @@ ${trimmedMaterial}`;
 
             {leaderboardError && <p className="message">{leaderboardError}</p>}
             {!session && <p className="notice">Sign in and study to appear on the leaderboard.</p>}
+
+            <section className="xp-task-panel" aria-label="Daily XP tasks">
+              <div className="xp-task-heading">
+                <div>
+                  <p className="card-label">Daily XP tasks</p>
+                  <h3>{todayCompletedTaskKeys.length} / {learningTaskDefinitions.length} complete</h3>
+                  <p>{dailyTaskXp} XP earned today. Tasks reset tomorrow, total XP stays.</p>
+                </div>
+                <div className="xp-task-total">
+                  <span>Total XP</span>
+                  <strong>{learningXp.totalXp}</strong>
+                </div>
+              </div>
+
+              <div className="xp-task-grid">
+                {learningTaskDefinitions.map((task) => {
+                  const isComplete = completedTaskKeySet.has(getLearningTaskKey(task.id));
+
+                  return (
+                    <article className={isComplete ? 'xp-task complete' : 'xp-task'} key={task.id}>
+                      <span className="xp-task-pill">{isComplete ? 'Done' : `+${task.xp} XP`}</span>
+                      <div>
+                        <strong>{task.title}</strong>
+                        <p>{task.detail}</p>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
 
             <div className="leaderboard-list">
               {leaderboardRows.length === 0 && !isLeaderboardLoading ? (
@@ -3780,12 +3987,12 @@ ${trimmedMaterial}`;
                       <span className="leaderboard-rank">#{index + 1}</span>
                       <div className="leaderboard-student">
                         <strong>{row.display_name}</strong>
-                        <span>{lastStudyLabel}</span>
+                        <span>{lastStudyLabel} - {row.completed_tasks ?? 0} tasks completed</span>
                       </div>
-                      <div className="leaderboard-streak">
-                        <img src={row.last_study_date === getTodayKey() ? '/pets/streak-active.png' : streakFlameSrc} alt="" />
-                        <strong>{row.streak}</strong>
-                        <span>{row.streak === 1 ? 'day' : 'days'}</span>
+                      <div className="leaderboard-score">
+                        <strong>{row.xp ?? 0}</strong>
+                        <span>XP</span>
+                        <small>{row.streak} {row.streak === 1 ? 'day' : 'days'} streak</small>
                       </div>
                     </article>
                   );
