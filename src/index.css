@@ -1438,6 +1438,10 @@ select:focus {
 :root[data-theme='dark'] .notes-editor-panel,
 :root[data-theme='dark'] .note-card,
 :root[data-theme='dark'] .calculator-panel,
+:root[data-theme='dark'] .calendar-panel,
+:root[data-theme='dark'] .calendar-detail-panel,
+:root[data-theme='dark'] .calendar-day,
+:root[data-theme='dark'] .calendar-event-item,
 :root[data-theme='dark'] .study-method-tile,
 :root[data-theme='dark'] .search-card,
 :root[data-theme='dark'] .result,
@@ -1838,6 +1842,173 @@ select:focus {
 
 .calculator-key.zero {
   grid-column: span 2;
+}
+
+.calendar-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 320px);
+  gap: 14px;
+  align-items: start;
+}
+
+.calendar-panel,
+.calendar-detail-panel {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+}
+
+.calendar-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.calendar-heading h2 {
+  color: var(--ink);
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.calendar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.calendar-weekday {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.calendar-empty-day,
+.calendar-day {
+  min-height: 74px;
+  border-radius: 8px;
+}
+
+.calendar-day {
+  display: grid;
+  align-content: space-between;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  text-align: left;
+}
+
+.calendar-day:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.calendar-day > span:first-child {
+  width: fit-content;
+  min-width: 24px;
+  min-height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.calendar-day.today > span:first-child {
+  background: var(--accent);
+  color: #fff;
+}
+
+.calendar-day.selected {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.calendar-event-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.calendar-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.calendar-dot.lesson,
+.calendar-event-type.lesson {
+  background: #2f6f73;
+}
+
+.calendar-dot.note,
+.calendar-event-type.note {
+  background: #5e6ad2;
+}
+
+.calendar-dot.quiz,
+.calendar-event-type.quiz {
+  background: #b38318;
+}
+
+.calendar-dot.study,
+.calendar-event-type.study {
+  background: #298357;
+}
+
+.calendar-detail-panel h3 {
+  color: var(--ink);
+  font-size: 24px;
+  line-height: 1.15;
+}
+
+.calendar-detail-panel p {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.calendar-event-list {
+  display: grid;
+  gap: 8px;
+}
+
+.calendar-event-item {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.calendar-event-type {
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.calendar-event-item strong {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.35;
 }
 
 .study-methods-page {
@@ -3249,6 +3420,10 @@ select:focus {
     grid-template-columns: 1fr;
   }
 
+  .calendar-page {
+    grid-template-columns: 1fr;
+  }
+
   .blurting-feedback-grid {
     grid-template-columns: 1fr;
   }
@@ -3399,6 +3574,38 @@ select:focus {
   .header-actions {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .calendar-heading,
+  .calendar-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .calendar-actions .small-button {
+    width: 100%;
+  }
+
+  .calendar-panel,
+  .calendar-detail-panel {
+    padding: 14px;
+  }
+
+  .calendar-grid {
+    gap: 4px;
+  }
+
+  .calendar-weekday {
+    font-size: 10px;
+  }
+
+  .calendar-empty-day,
+  .calendar-day {
+    min-height: 58px;
+  }
+
+  .calendar-day {
+    padding: 7px;
   }
 
   .pomodoro-plan {

@@ -22,6 +22,7 @@ type Page =
   | 'progress'
   | 'notes'
   | 'calculator'
+  | 'calendar'
   | 'studyMethods';
 type Language = 'en' | 'ru' | 'kk';
 type Theme = 'light' | 'dark';
@@ -101,6 +102,13 @@ type StudyNote = {
   body?: string;
   imageData?: string;
   updatedAt: string;
+};
+
+type CalendarEvent = {
+  dateKey: string;
+  label: string;
+  detail: string;
+  type: 'lesson' | 'note' | 'quiz' | 'study';
 };
 
 type SharedMaterial = {
@@ -218,6 +226,7 @@ const pagePaths: Record<Page, string> = {
   progress: '/progress',
   notes: '/notes',
   calculator: '/calculator',
+  calendar: '/calendar',
   studyMethods: '/study-methods',
 };
 
@@ -233,6 +242,7 @@ function getPageFromPath(pathname = window.location.pathname): Page {
   if (normalizedPath === pagePaths.progress) return 'progress';
   if (normalizedPath === pagePaths.notes) return 'notes';
   if (normalizedPath === pagePaths.calculator) return 'calculator';
+  if (normalizedPath === pagePaths.calendar) return 'calendar';
   if (normalizedPath === pagePaths.studyMethods) return 'studyMethods';
   if (normalizedPath === pagePaths.study) return 'study';
   return 'starter';
@@ -255,6 +265,7 @@ const translations = {
     aiTutor: 'AI Tutor',
     askTutor: 'Ask tutor',
     backToStudy: 'Back to study',
+    calendar: 'Calendar',
     calculator: 'Calculator',
     checking: 'Checking...',
     createAccount: 'Create account',
@@ -294,6 +305,7 @@ const translations = {
     aiTutor: 'ИИ-репетитор',
     askTutor: 'Спросить репетитора',
     backToStudy: 'Назад к учебе',
+    calendar: 'Календарь',
     calculator: 'Калькулятор',
     checking: 'Проверяю...',
     createAccount: 'Создать аккаунт',
@@ -333,6 +345,7 @@ const translations = {
     aiTutor: 'AI мұғалім',
     askTutor: 'Мұғалімнен сұрау',
     backToStudy: 'Оқуға қайту',
+    calendar: 'Күнтізбе',
     calculator: 'Калькулятор',
     checking: 'Тексерілуде...',
     createAccount: 'Аккаунт ашу',
@@ -665,6 +678,24 @@ function getYesterdayKey() {
   return date.toISOString().slice(0, 10);
 }
 
+function getCalendarDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getCalendarDateKeyFromValue(value: string) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return getCalendarDateKey(date);
+}
+
+function getCalendarMonthLabel(date: Date) {
+  return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+}
+
 function getStudyPetKey(userId?: string) {
   return userId ? `${studyPetKey}:${userId}` : studyPetKey;
 }
@@ -982,6 +1013,8 @@ export default function App() {
   const [calculatorStoredValue, setCalculatorStoredValue] = useState<number | null>(null);
   const [calculatorOperator, setCalculatorOperator] = useState<CalculatorOperator | null>(null);
   const [isCalculatorWaiting, setIsCalculatorWaiting] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date());
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState(() => getCalendarDateKey(new Date()));
   const [isPomodoroInfoOpen, setIsPomodoroInfoOpen] = useState(false);
   const [isPomodoroSetupOpen, setIsPomodoroSetupOpen] = useState(false);
   const [pomodoroStudyMinutes, setPomodoroStudyMinutes] = useState('120');
@@ -1072,6 +1105,73 @@ export default function App() {
   const quizPercent = quiz.length > 0 ? (answeredQuizCount / quiz.length) * 100 : 0;
   const notePaperColor = theme === 'dark' ? '#151719' : '#fffdf5';
   const streakPercent = Math.min((studyPet.streak / eggWarmDays) * 100, 100);
+  const calendarTodayKey = getCalendarDateKey(new Date());
+  const calendarYear = calendarMonth.getFullYear();
+  const calendarMonthIndex = calendarMonth.getMonth();
+  const calendarMonthKey = `${calendarYear}-${`${calendarMonthIndex + 1}`.padStart(2, '0')}`;
+  const calendarDaysInMonth = new Date(calendarYear, calendarMonthIndex + 1, 0).getDate();
+  const calendarFirstWeekday = new Date(calendarYear, calendarMonthIndex, 1).getDay();
+  const calendarCells = Array.from({ length: 42 }, (_, index) => {
+    const dayNumber = index - calendarFirstWeekday + 1;
+    if (dayNumber < 1 || dayNumber > calendarDaysInMonth) return null;
+    return new Date(calendarYear, calendarMonthIndex, dayNumber);
+  });
+  const calendarEvents: CalendarEvent[] = [];
+
+  savedLessons.forEach((lesson) => {
+    const dateKey = getCalendarDateKeyFromValue(lesson.savedAt);
+    if (!dateKey) return;
+    calendarEvents.push({
+      dateKey,
+      label: 'Lesson saved',
+      detail: lesson.title,
+      type: 'lesson',
+    });
+  });
+
+  savedNotes.forEach((note) => {
+    const dateKey = getCalendarDateKeyFromValue(note.updatedAt);
+    if (!dateKey) return;
+    calendarEvents.push({
+      dateKey,
+      label: 'Note updated',
+      detail: note.title,
+      type: 'note',
+    });
+  });
+
+  knowledgeStats.forEach((stat) => {
+    const dateKey = getCalendarDateKeyFromValue(stat.lastPracticed);
+    if (!dateKey) return;
+    calendarEvents.push({
+      dateKey,
+      label: 'Quiz practice',
+      detail: `${stat.area}: ${stat.correct}/${stat.attempts} correct`,
+      type: 'quiz',
+    });
+  });
+
+  if (studyPet.lastStudyDate) {
+    calendarEvents.push({
+      dateKey: studyPet.lastStudyDate,
+      label: 'Study streak',
+      detail: `${studyPet.streak} ${studyPet.streak === 1 ? 'day' : 'days'}`,
+      type: 'study',
+    });
+  }
+
+  const calendarEventsByDate = new Map<string, CalendarEvent[]>();
+  calendarEvents.forEach((event) => {
+    calendarEventsByDate.set(event.dateKey, [...(calendarEventsByDate.get(event.dateKey) ?? []), event]);
+  });
+  const selectedCalendarEvents = calendarEventsByDate.get(selectedCalendarDate) ?? [];
+  const selectedCalendarDateLabel = new Date(`${selectedCalendarDate}T00:00:00`).toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+  const calendarMonthEventDays = Array.from(calendarEventsByDate.keys()).filter((dateKey) => dateKey.startsWith(calendarMonthKey)).length;
+  const calendarMonthPercent = Math.min((calendarMonthEventDays / calendarDaysInMonth) * 100, 100);
   const toolProgress =
     page === 'flashcards'
       ? {
@@ -1103,7 +1203,13 @@ export default function App() {
                   detail: `${savedNotes.length} / ${maxSavedNotes} saved`,
                   percent: Math.min((savedNotes.length / maxSavedNotes) * 100, 100),
                 }
-            : null;
+              : page === 'calendar'
+                ? {
+                    label: copy.calendar,
+                    detail: `${calendarMonthEventDays} active ${calendarMonthEventDays === 1 ? 'day' : 'days'}`,
+                    percent: calendarMonthPercent,
+                  }
+                : null;
 
   function goToPage(nextPage: Page, replace = false) {
     setPage(nextPage);
@@ -1117,6 +1223,20 @@ export default function App() {
     }
 
     window.history.pushState(null, '', nextPath);
+  }
+
+  function moveCalendarMonth(offset: number) {
+    setCalendarMonth((currentMonth) => {
+      const nextMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1);
+      setSelectedCalendarDate(getCalendarDateKey(nextMonth));
+      return nextMonth;
+    });
+  }
+
+  function showCalendarToday() {
+    const today = new Date();
+    setCalendarMonth(new Date(today.getFullYear(), today.getMonth(), 1));
+    setSelectedCalendarDate(getCalendarDateKey(today));
   }
 
   useEffect(() => {
@@ -2730,8 +2850,10 @@ ${trimmedMaterial}`;
                                 ? copy.notes
                                 : page === 'calculator'
                                   ? copy.calculator
-                                  : page === 'studyMethods'
-                                    ? copy.studyMethods
+                                  : page === 'calendar'
+                                    ? copy.calendar
+                                    : page === 'studyMethods'
+                                      ? copy.studyMethods
                       : copy.studyHelperTitle}
             </h1>
           </div>
@@ -3661,6 +3783,87 @@ ${trimmedMaterial}`;
               </div>
             </div>
           </section>
+        ) : page === 'calendar' ? (
+          <section className="calendar-page" aria-label={copy.calendar}>
+            <div className="calendar-panel">
+              <div className="calendar-heading">
+                <div>
+                  <p className="card-label">{copy.calendar}</p>
+                  <h2>{getCalendarMonthLabel(calendarMonth)}</h2>
+                </div>
+                <div className="calendar-actions">
+                  <button className="small-button muted-button" type="button" onClick={() => moveCalendarMonth(-1)}>
+                    Prev
+                  </button>
+                  <button className="small-button" type="button" onClick={showCalendarToday}>
+                    Today
+                  </button>
+                  <button className="small-button muted-button" type="button" onClick={() => moveCalendarMonth(1)}>
+                    Next
+                  </button>
+                </div>
+              </div>
+
+              <div className="calendar-grid" aria-label={`${getCalendarMonthLabel(calendarMonth)} calendar`}>
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((dayName) => (
+                  <span className="calendar-weekday" key={dayName}>
+                    {dayName}
+                  </span>
+                ))}
+                {calendarCells.map((date, index) => {
+                  if (!date) {
+                    return <span className="calendar-empty-day" key={`empty-${index}`} />;
+                  }
+
+                  const dateKey = getCalendarDateKey(date);
+                  const dayEvents = calendarEventsByDate.get(dateKey) ?? [];
+                  const isToday = dateKey === calendarTodayKey;
+                  const isSelected = dateKey === selectedCalendarDate;
+
+                  return (
+                    <button
+                      className={[
+                        'calendar-day',
+                        isToday ? 'today' : '',
+                        isSelected ? 'selected' : '',
+                        dayEvents.length ? 'has-events' : '',
+                      ].filter(Boolean).join(' ')}
+                      key={dateKey}
+                      type="button"
+                      onClick={() => setSelectedCalendarDate(dateKey)}
+                      aria-label={`${date.toLocaleDateString()}${dayEvents.length ? `, ${dayEvents.length} activity items` : ''}`}
+                    >
+                      <span>{date.getDate()}</span>
+                      {dayEvents.length > 0 && (
+                        <span className="calendar-event-dots" aria-hidden="true">
+                          {dayEvents.slice(0, 4).map((event, eventIndex) => (
+                            <i className={`calendar-dot ${event.type}`} key={`${event.type}-${eventIndex}`} />
+                          ))}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <aside className="calendar-detail-panel">
+              <p className="card-label">Selected day</p>
+              <h3>{selectedCalendarDateLabel}</h3>
+              {selectedCalendarEvents.length === 0 ? (
+                <p>No study activity saved for this day.</p>
+              ) : (
+                <div className="calendar-event-list">
+                  {selectedCalendarEvents.map((event, index) => (
+                    <article className="calendar-event-item" key={`${event.type}-${event.detail}-${index}`}>
+                      <span className={`calendar-event-type ${event.type}`}>{event.label}</span>
+                      <strong>{event.detail}</strong>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </aside>
+          </section>
         ) : page === 'studyMethods' ? (
           <section className="study-methods-page" aria-label="Study methods">
             <button className="study-method-tile" type="button" onClick={() => setIsPomodoroInfoOpen(true)}>
@@ -4291,6 +4494,13 @@ ${trimmedMaterial}`;
               onClick={() => goToPage('calculator')}
             >
               {copy.calculator}
+            </button>
+            <button
+              className="drawer-tool-button"
+              type="button"
+              onClick={() => goToPage('calendar')}
+            >
+              {copy.calendar}
             </button>
             <button
               className="drawer-tool-button"
