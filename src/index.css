@@ -1999,6 +1999,13 @@ select:focus {
   background: var(--panel);
 }
 
+.calendar-event-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .calendar-event-type {
   width: fit-content;
   padding: 4px 8px;
@@ -2014,6 +2021,12 @@ select:focus {
   color: var(--ink);
   font-size: 15px;
   line-height: 1.35;
+}
+
+.calendar-delete-button {
+  min-height: 28px;
+  padding: 5px 9px;
+  font-size: 12px;
 }
 
 .study-methods-page {

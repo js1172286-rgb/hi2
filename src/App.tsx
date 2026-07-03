@@ -109,6 +109,7 @@ type CalendarEvent = {
   label: string;
   detail: string;
   type: 'lesson' | 'note' | 'quiz' | 'study' | 'intervaling';
+  planId?: string;
 };
 
 type IntervalingPlan = {
@@ -1000,17 +1001,11 @@ function readIntervalingPlans(userId?: string) {
 function getIntervalingPlanEvents(plan: IntervalingPlan): CalendarEvent[] {
   const schedule = [
     { offset: 0, label: 'Intervaling', detail: 'Day 1: 60 minute first review' },
-    { offset: 1, label: 'Intervaling rest', detail: 'Day 2: rest from this material' },
     { offset: 2, label: 'Intervaling', detail: 'Day 3: 30 minute full review' },
-    { offset: 3, label: 'Intervaling rest', detail: 'Day 4: rest from this material' },
     { offset: 4, label: 'Intervaling', detail: 'Day 5: 10-15 minute weak-parts review' },
-    { offset: 5, label: 'Intervaling rest', detail: 'Day 6: rest from this material' },
     { offset: 6, label: 'Intervaling', detail: 'Day 7: 10-15 minute weak-parts review' },
-    { offset: 7, label: 'Intervaling rest', detail: 'Day 8: rest from this material' },
     { offset: 8, label: 'Intervaling', detail: 'Day 9: 10-15 minute weak-parts review' },
-    { offset: 9, label: 'Intervaling rest', detail: 'Day 10: rest from this material' },
     { offset: 10, label: 'Intervaling', detail: 'Day 11: 10-15 minute weak-parts review' },
-    { offset: 11, label: 'Intervaling rest', detail: 'Day 12: rest from this material' },
     { offset: 12, label: 'Intervaling', detail: 'Day 13: 10-15 minute weak-parts review' },
   ];
 
@@ -1019,6 +1014,7 @@ function getIntervalingPlanEvents(plan: IntervalingPlan): CalendarEvent[] {
     label: item.label,
     detail: `${plan.title}: ${item.detail}`,
     type: 'intervaling',
+    planId: plan.id,
   }));
 }
 
@@ -1883,6 +1879,10 @@ Write exactly one short follow-up question from the pet. The question must be ba
   function updateIntervalingPlans(nextPlans: IntervalingPlan[]) {
     setIntervalingPlans(nextPlans);
     window.localStorage.setItem(getIntervalingPlansKey(session?.user.id), JSON.stringify(nextPlans));
+  }
+
+  function deleteIntervalingPlan(planId: string) {
+    updateIntervalingPlans(intervalingPlans.filter((plan) => plan.id !== planId));
   }
 
   function recordQuizKnowledgeStats(grades: QuizGrade[]) {
@@ -3938,7 +3938,18 @@ ${trimmedMaterial}`;
                 <div className="calendar-event-list">
                   {selectedCalendarEvents.map((event, index) => (
                     <article className="calendar-event-item" key={`${event.type}-${event.detail}-${index}`}>
-                      <span className={`calendar-event-type ${event.type}`}>{event.label}</span>
+                      <div className="calendar-event-top">
+                        <span className={`calendar-event-type ${event.type}`}>{event.label}</span>
+                        {event.type === 'intervaling' && event.planId && (
+                          <button
+                            className="small-button muted-button calendar-delete-button"
+                            type="button"
+                            onClick={() => deleteIntervalingPlan(event.planId ?? '')}
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
                       <strong>{event.detail}</strong>
                     </article>
                   ))}
