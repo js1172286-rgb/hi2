@@ -986,6 +986,7 @@ export default function App() {
   const [isPomodoroSetupOpen, setIsPomodoroSetupOpen] = useState(false);
   const [pomodoroStudyMinutes, setPomodoroStudyMinutes] = useState('120');
   const [isTeachInfoOpen, setIsTeachInfoOpen] = useState(false);
+  const [isIntervalingInfoOpen, setIsIntervalingInfoOpen] = useState(false);
   const [isBlurtingInfoOpen, setIsBlurtingInfoOpen] = useState(false);
   const [isBlurtingPracticeOpen, setIsBlurtingPracticeOpen] = useState(false);
   const [blurtingNotes, setBlurtingNotes] = useState('');
@@ -1357,6 +1358,16 @@ export default function App() {
     setIsTimerRunning(false);
     setIsPomodoroInfoOpen(false);
     setIsPomodoroSetupOpen(false);
+    goToPage('focusTimer');
+  }
+
+  function startIntervalingPlan() {
+    setFocusMinutes(60);
+    setBreakMinutes(10);
+    setTimerMode('focus');
+    setTimerSecondsLeft(60 * 60);
+    setIsTimerRunning(false);
+    setIsIntervalingInfoOpen(false);
     goToPage('focusTimer');
   }
 
@@ -3663,6 +3674,9 @@ ${trimmedMaterial}`;
             <button className="study-method-tile" type="button" onClick={() => setIsBlurtingInfoOpen(true)}>
               <strong>Blurting</strong>
             </button>
+            <button className="study-method-tile" type="button" onClick={() => setIsIntervalingInfoOpen(true)}>
+              <strong>Intervaling</strong>
+            </button>
           </section>
         ) : (
           <>
@@ -3987,6 +4001,49 @@ ${trimmedMaterial}`;
                 onClick={startBlurtingPractice}
               >
                 Use it
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {isIntervalingInfoOpen && (
+        <div className="summary-modal-backdrop" role="presentation">
+          <section className="summary-modal study-method-modal" role="dialog" aria-modal="true" aria-label="Intervaling method">
+            <div className="summary-modal-heading">
+              <h2>Intervaling</h2>
+              <button className="small-button" type="button" onClick={() => setIsIntervalingInfoOpen(false)}>
+                Close
+              </button>
+            </div>
+            <div className="study-method-modal-copy">
+              <p>
+                Intervaling helps you remember material by reviewing it in spaced sessions instead of cramming every day.
+                You study, rest for a day, then review again so your brain has to recall the topic.
+              </p>
+              <ol>
+                <li>First time reviewing: study the full material for 1 hour.</li>
+                <li>Take 1 day off from that material.</li>
+                <li>Next review: spend 30 minutes reviewing everything.</li>
+                <li>Take 1 day off again.</li>
+                <li>After that, review for 10-15 minutes every other day, only practicing the parts you forgot.</li>
+              </ol>
+              <div className="intervaling-plan" aria-label="Intervaling schedule">
+                <div>
+                  <strong>60 min</strong>
+                  <span>first review</span>
+                </div>
+                <div>
+                  <strong>30 min</strong>
+                  <span>next review</span>
+                </div>
+                <div>
+                  <strong>10-15 min</strong>
+                  <span>weak parts</span>
+                </div>
+              </div>
+              <button className="generate-button pomodoro-use-button" type="button" onClick={startIntervalingPlan}>
+                Start 1 hour timer
               </button>
             </div>
           </section>
