@@ -2114,6 +2114,24 @@ select:focus {
   justify-self: start;
 }
 
+.intervaling-modal {
+  width: min(820px, calc(100vw - 28px));
+  max-height: min(84vh, 680px);
+  gap: 12px;
+  padding: 18px;
+}
+
+.intervaling-modal .summary-modal-heading h2 {
+  font-size: 28px;
+}
+
+.intervaling-intro {
+  max-width: 680px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
 .pomodoro-plan {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2132,14 +2150,15 @@ select:focus {
 
 .intervaling-timeline {
   display: grid;
-  gap: 8px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .intervaling-step {
   display: grid;
-  grid-template-columns: 86px minmax(0, 1fr);
-  gap: 12px;
-  align-items: start;
+  align-content: start;
+  gap: 8px;
+  min-height: 146px;
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -2160,15 +2179,15 @@ select:focus {
   display: block;
   margin-bottom: 3px;
   color: var(--ink);
-  font-size: 18px;
+  font-size: 17px;
   line-height: 1.15;
 }
 
 .intervaling-step p {
   margin: 0;
   color: var(--muted);
-  font-size: 14px;
-  line-height: 1.4;
+  font-size: 13px;
+  line-height: 1.35;
 }
 
 .intervaling-step.rest-day > span {
@@ -2972,6 +2991,7 @@ select:focus {
   border-radius: 8px;
   background: #fff;
   box-shadow: 0 20px 70px rgba(20, 33, 38, 0.24);
+  overflow: auto;
 }
 
 .summary-modal-heading {
@@ -3237,6 +3257,10 @@ select:focus {
     grid-template-columns: 1fr;
   }
 
+  .intervaling-timeline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .lesson-ring-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -3381,8 +3405,13 @@ select:focus {
     grid-template-columns: 1fr;
   }
 
+  .intervaling-timeline {
+    grid-template-columns: 1fr;
+  }
+
   .intervaling-step {
     grid-template-columns: 1fr;
+    min-height: 0;
   }
 
   .teach-pet-composer {

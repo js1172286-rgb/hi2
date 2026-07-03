@@ -4010,7 +4010,7 @@ ${trimmedMaterial}`;
 
       {isIntervalingInfoOpen && (
         <div className="summary-modal-backdrop" role="presentation">
-          <section className="summary-modal study-method-modal" role="dialog" aria-modal="true" aria-label="Intervaling method">
+          <section className="summary-modal study-method-modal intervaling-modal" role="dialog" aria-modal="true" aria-label="Intervaling method">
             <div className="summary-modal-heading">
               <h2>Intervaling</h2>
               <button className="small-button" type="button" onClick={() => setIsIntervalingInfoOpen(false)}>
@@ -4018,7 +4018,7 @@ ${trimmedMaterial}`;
               </button>
             </div>
             <div className="study-method-modal-copy">
-              <p>
+              <p className="intervaling-intro">
                 Intervaling helps you remember material by reviewing it in spaced sessions instead of cramming every day.
                 You study, rest for a day, then review again so your brain has to recall the topic.
               </p>
