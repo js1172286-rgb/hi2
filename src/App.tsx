@@ -2823,7 +2823,9 @@ ${JSON.stringify(quizToGrade, null, 2)}`,
     quizKeyboardLanguage?: string,
   ) {
     if (mode === 'flashcards') {
-      return `Turn these study notes into 6 useful flashcards.
+      return `Turn these study notes into flashcards for every important word, term, concept, formula, and definition that should be memorized.
+Create as many flashcards as the material needs. Do not stop at a fixed number.
+Make one flashcard per idea, with the front as a term or short question and the back as the clear definition or answer.
 
 Return only valid JSON in this exact shape:
 {
