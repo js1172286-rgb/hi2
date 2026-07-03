@@ -4712,24 +4712,6 @@ ${trimmedMaterial}`;
             <button
               className="drawer-tool-button"
               type="button"
-              onClick={() => {
-                if (requireSignedIn(copy.signInForTutor)) {
-                  goToPage('tutor');
-                }
-              }}
-            >
-              {copy.aiTutor}
-            </button>
-            <button
-              className="drawer-tool-button"
-              type="button"
-              onClick={() => goToPage('focusTimer')}
-            >
-              Focus Timer
-            </button>
-            <button
-              className="drawer-tool-button"
-              type="button"
               onClick={() => goToPage('progress')}
             >
               {copy.progress}
@@ -4737,16 +4719,13 @@ ${trimmedMaterial}`;
             <button
               className="drawer-tool-button"
               type="button"
-              onClick={() => goToPage('notes')}
+              onClick={() => {
+                if (requireSignedIn(copy.signInForTutor)) {
+                  goToPage('tutor');
+                }
+              }}
             >
-              {copy.notes}
-            </button>
-            <button
-              className="drawer-tool-button"
-              type="button"
-              onClick={() => goToPage('calculator')}
-            >
-              {copy.calculator}
+              {copy.aiTutor}
             </button>
             <button
               className="drawer-tool-button"
@@ -4761,6 +4740,20 @@ ${trimmedMaterial}`;
               onClick={() => goToPage('studyMethods')}
             >
               {copy.studyMethods}
+            </button>
+            <button
+              className="drawer-tool-button"
+              type="button"
+              onClick={() => goToPage('notes')}
+            >
+              {copy.notes}
+            </button>
+            <button
+              className="drawer-tool-button"
+              type="button"
+              onClick={() => goToPage('calculator')}
+            >
+              {copy.calculator}
             </button>
           </aside>
 
