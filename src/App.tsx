@@ -153,6 +153,28 @@ type CustomCalendarEvent = {
   createdAt: string;
 };
 
+type UserAppState = {
+  savedLessons: SavedLesson[];
+  savedNotes: StudyNote[];
+  studyPet: StudyPet;
+  knowledgeStats: KnowledgeAreaStat[];
+  intervalingPlans: IntervalingPlan[];
+  customCalendarEvents: CustomCalendarEvent[];
+  learningXp: LearningXpState;
+};
+
+type UserAppStateRow = {
+  user_id: string;
+  saved_lessons: unknown;
+  saved_notes: unknown;
+  study_pet: unknown;
+  knowledge_stats: unknown;
+  intervaling_plans: unknown;
+  custom_calendar_events: unknown;
+  learning_xp: unknown;
+  updated_at: string | null;
+};
+
 type SharedMaterial = {
   id: string;
   subject: string;
@@ -837,6 +859,14 @@ function getStudyPetKey(userId?: string) {
   return userId ? `${studyPetKey}:${userId}` : studyPetKey;
 }
 
+function getSavedLessonsKey(userId?: string) {
+  return userId ? `${savedLessonsKey}:${userId}` : savedLessonsKey;
+}
+
+function getSavedNotesKey(userId?: string) {
+  return userId ? `${savedNotesKey}:${userId}` : savedNotesKey;
+}
+
 function getKnowledgeStatsKey(userId?: string) {
   return userId ? `${knowledgeStatsKey}:${userId}` : knowledgeStatsKey;
 }
@@ -857,21 +887,156 @@ function getLearningTaskKey(taskId: LearningTaskId, dateKey = getTodayKey()) {
   return `${dateKey}:${taskId}`;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function toFiniteNumber(value: unknown, fallback = 0) {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : fallback;
+}
+
+function normalizeSavedLessons(value: unknown): SavedLesson[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter(isRecord)
+    .map((lesson) => {
+      const material = typeof lesson.material === 'string' ? lesson.material : '';
+      const sources = Array.isArray(lesson.sources)
+        ? lesson.sources.filter((source): source is string => typeof source === 'string' && source.trim().length > 0)
+        : material
+          ? [material]
+          : [];
+
+      return {
+        id: typeof lesson.id === 'string' && lesson.id ? lesson.id : crypto.randomUUID(),
+        title: typeof lesson.title === 'string' && lesson.title.trim() ? lesson.title.slice(0, 60) : 'Untitled lesson',
+        material: material || sources.join('\n\n'),
+        sources,
+        savedAt: typeof lesson.savedAt === 'string' && lesson.savedAt ? lesson.savedAt : new Date().toISOString(),
+      };
+    })
+    .filter((lesson) => lesson.material.trim().length > 0)
+    .sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime())
+    .slice(0, maxSavedLessons);
+}
+
+function normalizeSavedNotes(value: unknown): StudyNote[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter(isRecord)
+    .map((note) => ({
+      id: typeof note.id === 'string' && note.id ? note.id : crypto.randomUUID(),
+      title: typeof note.title === 'string' && note.title.trim() ? note.title.slice(0, 70) : 'Untitled note',
+      body: typeof note.body === 'string' ? note.body : '',
+      imageData: typeof note.imageData === 'string' ? note.imageData : '',
+      updatedAt: typeof note.updatedAt === 'string' && note.updatedAt ? note.updatedAt : new Date().toISOString(),
+    }))
+    .filter((note) => Boolean(note.imageData || note.body))
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    .slice(0, maxSavedNotes);
+}
+
+function normalizeStudyPet(value: unknown): StudyPet {
+  if (!isRecord(value)) return emptyStudyPet;
+
+  return {
+    streak: Math.max(0, Math.round(toFiniteNumber(value.streak))),
+    lastStudyDate: typeof value.lastStudyDate === 'string' ? value.lastStudyDate : '',
+    petType: petTypes.includes(value.petType as PetType) ? value.petType as PetType : null,
+    petImage: typeof value.petImage === 'string' && value.petImage ? value.petImage : null,
+    eggColor: eggColors.includes(value.eggColor as EggColor) ? value.eggColor as EggColor : 'green',
+    hasChosenEggColor: Boolean(value.hasChosenEggColor),
+  };
+}
+
+function normalizeKnowledgeStats(value: unknown): KnowledgeAreaStat[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter(isRecord)
+    .map((stat) => ({
+      area: typeof stat.area === 'string' && stat.area.trim() ? stat.area.slice(0, 48) : 'General',
+      attempts: Math.max(0, Math.round(toFiniteNumber(stat.attempts))),
+      correct: Math.max(0, Math.round(toFiniteNumber(stat.correct))),
+      mistakes: Math.max(0, Math.round(toFiniteNumber(stat.mistakes))),
+      lastPracticed: typeof stat.lastPracticed === 'string' && stat.lastPracticed ? stat.lastPracticed : new Date().toISOString(),
+    }))
+    .filter((stat) => stat.attempts > 0 || stat.correct > 0 || stat.mistakes > 0)
+    .slice(0, 30);
+}
+
+function normalizeIntervalingPlans(value: unknown): IntervalingPlan[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter(isRecord)
+    .map((plan) => ({
+      id: typeof plan.id === 'string' && plan.id ? plan.id : crypto.randomUUID(),
+      title: typeof plan.title === 'string' && plan.title.trim() ? plan.title.slice(0, 70) : 'Intervaling review',
+      startDate: typeof plan.startDate === 'string' && getCalendarDateKeyFromValue(plan.startDate)
+        ? getCalendarDateKeyFromValue(plan.startDate)
+        : getTodayKey(),
+      createdAt: typeof plan.createdAt === 'string' && plan.createdAt ? plan.createdAt : new Date().toISOString(),
+    }))
+    .slice(0, maxIntervalingPlans);
+}
+
+function normalizeCustomCalendarEvents(value: unknown): CustomCalendarEvent[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter(isRecord)
+    .map((event) => ({
+      id: typeof event.id === 'string' && event.id ? event.id : crypto.randomUUID(),
+      title: typeof event.title === 'string' && event.title.trim() ? event.title.slice(0, 80) : '',
+      dateKey: typeof event.dateKey === 'string' ? getCalendarDateKeyFromValue(event.dateKey) : '',
+      note: typeof event.note === 'string' ? event.note : '',
+      createdAt: typeof event.createdAt === 'string' && event.createdAt ? event.createdAt : new Date().toISOString(),
+    }))
+    .filter((event) => event.title && event.dateKey)
+    .sort((a, b) => a.dateKey.localeCompare(b.dateKey))
+    .slice(0, maxCustomCalendarEvents);
+}
+
+function normalizeLearningXp(value: unknown): LearningXpState {
+  if (!isRecord(value)) return emptyLearningXp;
+
+  const completedTaskKeys = Array.isArray(value.completedTaskKeys)
+    ? value.completedTaskKeys.filter((taskKey): taskKey is string => typeof taskKey === 'string')
+    : [];
+  const totalXp = Math.max(0, Math.round(toFiniteNumber(value.totalXp)));
+  const taskXpFromKeys = getLearningXpFromTaskKeys(completedTaskKeys);
+
+  return {
+    totalXp: Math.max(totalXp, taskXpFromKeys),
+    completedTaskKeys: Array.from(new Set(completedTaskKeys)).slice(0, 600),
+    updatedAt: typeof value.updatedAt === 'string' ? value.updatedAt : '',
+  };
+}
+
+function getLearningXpFromTaskKeys(taskKeys: string[]) {
+  return taskKeys.reduce((total, taskKey) => {
+    const taskId = taskKey.split(':').pop() as LearningTaskId | undefined;
+    const task = learningTaskDefinitions.find((item) => item.id === taskId);
+    return total + (task?.xp ?? 0);
+  }, 0);
+}
+
+function getDateTime(value: string) {
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
+
 function readStudyPet(userId?: string): StudyPet {
   try {
     if (!userId) return emptyStudyPet;
 
     const rawPet = window.localStorage.getItem(getStudyPetKey(userId));
     if (!rawPet) return emptyStudyPet;
-    const parsed = JSON.parse(rawPet) as StudyPet;
-    return {
-      streak: Number.isFinite(parsed.streak) ? parsed.streak : 0,
-      lastStudyDate: parsed.lastStudyDate || '',
-      petType: petTypes.includes(parsed.petType as PetType) ? parsed.petType : null,
-      petImage: typeof parsed.petImage === 'string' && parsed.petImage ? parsed.petImage : null,
-      eggColor: eggColors.includes(parsed.eggColor as EggColor) ? parsed.eggColor : 'green',
-      hasChosenEggColor: Boolean(parsed.hasChosenEggColor),
-    };
+    return normalizeStudyPet(JSON.parse(rawPet));
   } catch {
     return emptyStudyPet;
   }
@@ -1046,8 +1211,7 @@ function readKnowledgeStats(userId?: string) {
   try {
     const rawStats = window.localStorage.getItem(getKnowledgeStatsKey(userId));
     if (!rawStats) return [];
-    const parsed = JSON.parse(rawStats) as KnowledgeAreaStat[];
-    return Array.isArray(parsed) ? parsed : [];
+    return normalizeKnowledgeStats(JSON.parse(rawStats));
   } catch {
     return [];
   }
@@ -1098,23 +1262,21 @@ function detectQuizKeyboardLanguage(text: string) {
   return '';
 }
 
-function readSavedLessons() {
+function readSavedLessons(userId?: string) {
   try {
-    const rawLessons = window.localStorage.getItem(savedLessonsKey);
+    const rawLessons = window.localStorage.getItem(getSavedLessonsKey(userId)) ?? (userId ? window.localStorage.getItem(savedLessonsKey) : null);
     if (!rawLessons) return [];
-    const parsed = JSON.parse(rawLessons) as SavedLesson[];
-    return Array.isArray(parsed) ? parsed : [];
+    return normalizeSavedLessons(JSON.parse(rawLessons));
   } catch {
     return [];
   }
 }
 
-function readSavedNotes() {
+function readSavedNotes(userId?: string) {
   try {
-    const rawNotes = window.localStorage.getItem(savedNotesKey);
+    const rawNotes = window.localStorage.getItem(getSavedNotesKey(userId)) ?? (userId ? window.localStorage.getItem(savedNotesKey) : null);
     if (!rawNotes) return [];
-    const parsed = JSON.parse(rawNotes) as StudyNote[];
-    return Array.isArray(parsed) ? parsed : [];
+    return normalizeSavedNotes(JSON.parse(rawNotes));
   } catch {
     return [];
   }
@@ -1124,8 +1286,7 @@ function readIntervalingPlans(userId?: string) {
   try {
     const rawPlans = window.localStorage.getItem(getIntervalingPlansKey(userId));
     if (!rawPlans) return [];
-    const parsed = JSON.parse(rawPlans) as IntervalingPlan[];
-    return Array.isArray(parsed) ? parsed : [];
+    return normalizeIntervalingPlans(JSON.parse(rawPlans));
   } catch {
     return [];
   }
@@ -1135,10 +1296,7 @@ function readCustomCalendarEvents(userId?: string) {
   try {
     const rawEvents = window.localStorage.getItem(getCustomCalendarEventsKey(userId));
     if (!rawEvents) return [];
-    const parsed = JSON.parse(rawEvents) as CustomCalendarEvent[];
-    return Array.isArray(parsed)
-      ? parsed.filter((event) => event.id && event.title && getCalendarDateKeyFromValue(event.dateKey))
-      : [];
+    return normalizeCustomCalendarEvents(JSON.parse(rawEvents));
   } catch {
     return [];
   }
@@ -1150,19 +1308,179 @@ function readLearningXp(userId?: string): LearningXpState {
 
     const rawXp = window.localStorage.getItem(getLearningXpKey(userId));
     if (!rawXp) return emptyLearningXp;
-    const parsed = JSON.parse(rawXp) as LearningXpState;
-    const completedTaskKeys = Array.isArray(parsed.completedTaskKeys)
-      ? parsed.completedTaskKeys.filter((taskKey) => typeof taskKey === 'string')
-      : [];
-
-    return {
-      totalXp: Number.isFinite(parsed.totalXp) ? Math.max(0, Math.round(parsed.totalXp)) : 0,
-      completedTaskKeys,
-      updatedAt: parsed.updatedAt || '',
-    };
+    return normalizeLearningXp(JSON.parse(rawXp));
   } catch {
     return emptyLearningXp;
   }
+}
+
+function getLocalUserAppState(userId?: string): UserAppState {
+  return {
+    savedLessons: readSavedLessons(userId),
+    savedNotes: readSavedNotes(userId),
+    studyPet: readStudyPet(userId),
+    knowledgeStats: readKnowledgeStats(userId),
+    intervalingPlans: readIntervalingPlans(userId),
+    customCalendarEvents: readCustomCalendarEvents(userId),
+    learningXp: readLearningXp(userId),
+  };
+}
+
+function persistUserAppStateLocally(userId: string | undefined, state: UserAppState) {
+  window.localStorage.setItem(getSavedLessonsKey(userId), JSON.stringify(state.savedLessons));
+  window.localStorage.setItem(getSavedNotesKey(userId), JSON.stringify(state.savedNotes));
+  if (userId) {
+    window.localStorage.setItem(getStudyPetKey(userId), JSON.stringify(state.studyPet));
+    window.localStorage.setItem(getKnowledgeStatsKey(userId), JSON.stringify(state.knowledgeStats));
+    window.localStorage.setItem(getIntervalingPlansKey(userId), JSON.stringify(state.intervalingPlans));
+    window.localStorage.setItem(getCustomCalendarEventsKey(userId), JSON.stringify(state.customCalendarEvents));
+    window.localStorage.setItem(getLearningXpKey(userId), JSON.stringify(state.learningXp));
+  }
+}
+
+function normalizeUserAppStateRow(row: UserAppStateRow): UserAppState {
+  return {
+    savedLessons: normalizeSavedLessons(row.saved_lessons),
+    savedNotes: normalizeSavedNotes(row.saved_notes),
+    studyPet: normalizeStudyPet(row.study_pet),
+    knowledgeStats: normalizeKnowledgeStats(row.knowledge_stats),
+    intervalingPlans: normalizeIntervalingPlans(row.intervaling_plans),
+    customCalendarEvents: normalizeCustomCalendarEvents(row.custom_calendar_events),
+    learningXp: normalizeLearningXp(row.learning_xp),
+  };
+}
+
+function hasUserAppStateContent(state: UserAppState) {
+  return (
+    state.savedLessons.length > 0 ||
+    state.savedNotes.length > 0 ||
+    state.knowledgeStats.length > 0 ||
+    state.intervalingPlans.length > 0 ||
+    state.customCalendarEvents.length > 0 ||
+    state.learningXp.totalXp > 0 ||
+    state.learningXp.completedTaskKeys.length > 0 ||
+    state.studyPet.streak > 0 ||
+    state.studyPet.hasChosenEggColor ||
+    Boolean(state.studyPet.petImage || state.studyPet.petType)
+  );
+}
+
+function mergeSavedLessons(remoteLessons: SavedLesson[], localLessons: SavedLesson[]) {
+  const lessonsById = new Map<string, SavedLesson>();
+  [...remoteLessons, ...localLessons].forEach((lesson) => {
+    const existing = lessonsById.get(lesson.id);
+    if (!existing || getDateTime(lesson.savedAt) >= getDateTime(existing.savedAt)) {
+      lessonsById.set(lesson.id, lesson);
+    }
+  });
+
+  return Array.from(lessonsById.values())
+    .sort((a, b) => getDateTime(b.savedAt) - getDateTime(a.savedAt))
+    .slice(0, maxSavedLessons);
+}
+
+function mergeSavedNotes(remoteNotes: StudyNote[], localNotes: StudyNote[]) {
+  const notesById = new Map<string, StudyNote>();
+  [...remoteNotes, ...localNotes].forEach((note) => {
+    const existing = notesById.get(note.id);
+    if (!existing || getDateTime(note.updatedAt) >= getDateTime(existing.updatedAt)) {
+      notesById.set(note.id, note);
+    }
+  });
+
+  return Array.from(notesById.values())
+    .sort((a, b) => getDateTime(b.updatedAt) - getDateTime(a.updatedAt))
+    .slice(0, maxSavedNotes);
+}
+
+function getStudyPetScore(pet: StudyPet) {
+  const lastStudyScore = pet.lastStudyDate ? getDateTime(`${pet.lastStudyDate}T00:00:00`) / 100000000000 : 0;
+  return (
+    (pet.hasChosenEggColor ? 20 : 0) +
+    (pet.petImage || pet.petType ? 40 : 0) +
+    pet.streak * 8 +
+    lastStudyScore
+  );
+}
+
+function mergeStudyPet(remotePet: StudyPet, localPet: StudyPet) {
+  return getStudyPetScore(localPet) > getStudyPetScore(remotePet) ? localPet : remotePet;
+}
+
+function mergeKnowledgeStats(remoteStats: KnowledgeAreaStat[], localStats: KnowledgeAreaStat[]) {
+  const statsByArea = new Map<string, KnowledgeAreaStat>();
+  [...remoteStats, ...localStats].forEach((stat) => {
+    const key = stat.area.toLowerCase();
+    const existing = statsByArea.get(key);
+    if (!existing) {
+      statsByArea.set(key, stat);
+      return;
+    }
+
+    statsByArea.set(key, {
+      area: existing.area,
+      attempts: Math.max(existing.attempts, stat.attempts),
+      correct: Math.max(existing.correct, stat.correct),
+      mistakes: Math.max(existing.mistakes, stat.mistakes),
+      lastPracticed: getDateTime(stat.lastPracticed) > getDateTime(existing.lastPracticed) ? stat.lastPracticed : existing.lastPracticed,
+    });
+  });
+
+  return Array.from(statsByArea.values())
+    .sort((a, b) => b.mistakes - a.mistakes || b.attempts - a.attempts)
+    .slice(0, 30);
+}
+
+function mergeByIdAndDate<T extends { id: string }>(
+  remoteItems: T[],
+  localItems: T[],
+  getItemDate: (item: T) => string,
+  maxItems: number,
+) {
+  const itemsById = new Map<string, T>();
+  [...remoteItems, ...localItems].forEach((item) => {
+    const existing = itemsById.get(item.id);
+    if (!existing || getDateTime(getItemDate(item)) >= getDateTime(getItemDate(existing))) {
+      itemsById.set(item.id, item);
+    }
+  });
+
+  return Array.from(itemsById.values())
+    .sort((a, b) => getDateTime(getItemDate(b)) - getDateTime(getItemDate(a)))
+    .slice(0, maxItems);
+}
+
+function mergeLearningXp(remoteXp: LearningXpState, localXp: LearningXpState) {
+  const completedTaskKeys = Array.from(new Set([...remoteXp.completedTaskKeys, ...localXp.completedTaskKeys])).slice(0, 600);
+  const taskXp = getLearningXpFromTaskKeys(completedTaskKeys);
+
+  return {
+    totalXp: Math.max(remoteXp.totalXp, localXp.totalXp, taskXp),
+    completedTaskKeys,
+    updatedAt: getDateTime(localXp.updatedAt) > getDateTime(remoteXp.updatedAt) ? localXp.updatedAt : remoteXp.updatedAt,
+  };
+}
+
+function mergeUserAppState(remoteState: UserAppState, localState: UserAppState): UserAppState {
+  return {
+    savedLessons: mergeSavedLessons(remoteState.savedLessons, localState.savedLessons),
+    savedNotes: mergeSavedNotes(remoteState.savedNotes, localState.savedNotes),
+    studyPet: mergeStudyPet(remoteState.studyPet, localState.studyPet),
+    knowledgeStats: mergeKnowledgeStats(remoteState.knowledgeStats, localState.knowledgeStats),
+    intervalingPlans: mergeByIdAndDate(
+      remoteState.intervalingPlans,
+      localState.intervalingPlans,
+      (plan) => plan.createdAt,
+      maxIntervalingPlans,
+    ),
+    customCalendarEvents: mergeByIdAndDate(
+      remoteState.customCalendarEvents,
+      localState.customCalendarEvents,
+      (event) => event.createdAt,
+      maxCustomCalendarEvents,
+    ).sort((a, b) => a.dateKey.localeCompare(b.dateKey)),
+    learningXp: mergeLearningXp(remoteState.learningXp, localState.learningXp),
+  };
 }
 
 function getIntervalingPlanEvents(plan: IntervalingPlan): CalendarEvent[] {
@@ -1299,6 +1617,8 @@ export default function App() {
   const lastNotePointRef = useRef<{ x: number; y: number } | null>(null);
   const hatchTimerRef = useRef<number | null>(null);
   const summaryCopyTimerRef = useRef<number | null>(null);
+  const accountStateLoadedUserRef = useRef<string | null>(null);
+  const accountStateSaveTimerRef = useRef<number | null>(null);
 
   const searchedSharedMaterials = sharedMaterials.filter((item) => {
     const query = searchQuery.trim().toLowerCase();
@@ -1531,14 +1851,14 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const savedPet = readStudyPet(session?.user.id);
-    setStudyPet(savedPet);
-    setPendingEggColor(savedPet.eggColor);
-    setHatchPopup(null);
-    setKnowledgeStats(readKnowledgeStats(session?.user.id));
-    setIntervalingPlans(readIntervalingPlans(session?.user.id));
-    setCustomCalendarEvents(readCustomCalendarEvents(session?.user.id));
-    setLearningXp(readLearningXp(session?.user.id));
+    accountStateLoadedUserRef.current = null;
+    const userId = session?.user.id;
+    const localState = getLocalUserAppState(userId);
+    applyUserAppState(localState, userId);
+
+    if (userId) {
+      void loadAccountAppState(userId, localState);
+    }
   }, [session?.user.id]);
 
   useEffect(() => {
@@ -1573,12 +1893,42 @@ export default function App() {
   }, [page, session?.user.id, studyPet.streak, studyPet.lastStudyDate, learningXp.totalXp, learningXp.completedTaskKeys.length]);
 
   useEffect(() => {
+    if (!session || !isSupabaseConfigured || accountStateLoadedUserRef.current !== session.user.id) return;
+
+    if (accountStateSaveTimerRef.current) {
+      window.clearTimeout(accountStateSaveTimerRef.current);
+    }
+
+    accountStateSaveTimerRef.current = window.setTimeout(() => {
+      void saveAccountAppState();
+    }, 800);
+
+    return () => {
+      if (accountStateSaveTimerRef.current) {
+        window.clearTimeout(accountStateSaveTimerRef.current);
+      }
+    };
+  }, [
+    session?.user.id,
+    savedLessons,
+    savedNotes,
+    studyPet,
+    knowledgeStats,
+    intervalingPlans,
+    customCalendarEvents,
+    learningXp,
+  ]);
+
+  useEffect(() => {
     return () => {
       if (hatchTimerRef.current) {
         window.clearTimeout(hatchTimerRef.current);
       }
       if (summaryCopyTimerRef.current) {
         window.clearTimeout(summaryCopyTimerRef.current);
+      }
+      if (accountStateSaveTimerRef.current) {
+        window.clearTimeout(accountStateSaveTimerRef.current);
       }
     };
   }, []);
@@ -2092,14 +2442,95 @@ Write exactly one short follow-up question from the pet. The question must be ba
     setIsCalculatorWaiting(true);
   }
 
+  function getCurrentUserAppState(): UserAppState {
+    return {
+      savedLessons,
+      savedNotes,
+      studyPet,
+      knowledgeStats,
+      intervalingPlans,
+      customCalendarEvents,
+      learningXp,
+    };
+  }
+
+  function applyUserAppState(nextState: UserAppState, userId?: string) {
+    setSavedLessons(nextState.savedLessons);
+    setSavedNotes(nextState.savedNotes);
+    setStudyPet(nextState.studyPet);
+    setPendingEggColor(nextState.studyPet.eggColor);
+    setHatchPopup(null);
+    setKnowledgeStats(nextState.knowledgeStats);
+    setIntervalingPlans(nextState.intervalingPlans);
+    setCustomCalendarEvents(nextState.customCalendarEvents);
+    setLearningXp(nextState.learningXp);
+    persistUserAppStateLocally(userId, nextState);
+  }
+
+  async function saveUserAppStateForUser(userId: string, nextState: UserAppState) {
+    if (!isSupabaseConfigured) return false;
+
+    const { error: saveError } = await supabase.from('user_app_state').upsert(
+      {
+        user_id: userId,
+        saved_lessons: nextState.savedLessons,
+        saved_notes: nextState.savedNotes,
+        study_pet: nextState.studyPet,
+        knowledge_stats: nextState.knowledgeStats,
+        intervaling_plans: nextState.intervalingPlans,
+        custom_calendar_events: nextState.customCalendarEvents,
+        learning_xp: nextState.learningXp,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id' },
+    );
+
+    return !saveError;
+  }
+
+  async function saveAccountAppState() {
+    if (!session || accountStateLoadedUserRef.current !== session.user.id) return false;
+    const currentState = getCurrentUserAppState();
+    persistUserAppStateLocally(session.user.id, currentState);
+    return saveUserAppStateForUser(session.user.id, currentState);
+  }
+
+  async function loadAccountAppState(userId: string, localState = getLocalUserAppState(userId)) {
+    if (!isSupabaseConfigured) {
+      accountStateLoadedUserRef.current = userId;
+      return;
+    }
+
+    const { data, error: loadError } = await supabase
+      .from('user_app_state')
+      .select('user_id, saved_lessons, saved_notes, study_pet, knowledge_stats, intervaling_plans, custom_calendar_events, learning_xp, updated_at')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (loadError) {
+      accountStateLoadedUserRef.current = userId;
+      return;
+    }
+
+    const remoteState = data ? normalizeUserAppStateRow(data as UserAppStateRow) : null;
+    const mergedState = remoteState ? mergeUserAppState(remoteState, localState) : localState;
+
+    applyUserAppState(mergedState, userId);
+    accountStateLoadedUserRef.current = userId;
+
+    if (!remoteState || hasUserAppStateContent(localState)) {
+      await saveUserAppStateForUser(userId, mergedState);
+    }
+  }
+
   function updateSavedLessons(nextLessons: SavedLesson[]) {
     setSavedLessons(nextLessons);
-    window.localStorage.setItem(savedLessonsKey, JSON.stringify(nextLessons));
+    window.localStorage.setItem(getSavedLessonsKey(session?.user.id), JSON.stringify(nextLessons));
   }
 
   function updateSavedNotes(nextNotes: StudyNote[]) {
     setSavedNotes(nextNotes);
-    window.localStorage.setItem(savedNotesKey, JSON.stringify(nextNotes));
+    window.localStorage.setItem(getSavedNotesKey(session?.user.id), JSON.stringify(nextNotes));
   }
 
   function updateKnowledgeStats(nextStats: KnowledgeAreaStat[]) {
