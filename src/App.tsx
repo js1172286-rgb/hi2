@@ -339,6 +339,12 @@ const eggPetImages: Partial<Record<EggColor, string[]>> = {
     '/pets/red/pet-3.png',
     '/pets/red/pet-4.png',
   ],
+  blue: [
+    '/pets/blue/pet-1.png',
+    '/pets/blue/pet-2.png',
+    '/pets/blue/pet-3.png',
+    '/pets/blue/pet-4.png',
+  ],
 };
 
 const petFaces: Record<PetType, string> = {
