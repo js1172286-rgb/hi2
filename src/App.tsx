@@ -495,6 +495,7 @@ const translations = {
     createAccount: 'Create account',
     email: 'Email',
     flashcards: 'Flashcards',
+    focusTimer: 'Focus Timer',
     hide: 'Hide',
     language: 'Language',
     leaderboard: 'Leaderboard',
@@ -537,6 +538,7 @@ const translations = {
     createAccount: 'Создать аккаунт',
     email: 'Эл. почта',
     flashcards: 'Карточки',
+    focusTimer: 'Фокус-таймер',
     hide: 'Скрыть',
     language: 'Язык',
     leaderboard: 'Рейтинг',
@@ -579,6 +581,7 @@ const translations = {
     createAccount: 'Аккаунт ашу',
     email: 'Эл. пошта',
     flashcards: 'Карточкалар',
+    focusTimer: 'Фокус таймер',
     hide: 'Жасыру',
     language: 'Тіл',
     leaderboard: 'Рейтинг',
@@ -2021,7 +2024,7 @@ export default function App() {
             }
           : page === 'focusTimer'
             ? {
-                label: 'Focus Timer',
+                label: copy.focusTimer,
                 detail: `${Math.round(timerPercent)}%`,
                 percent: timerPercent,
               }
@@ -4097,7 +4100,7 @@ ${trimmedMaterial}`;
                         : page === 'quiz'
                           ? copy.quiz
                           : page === 'focusTimer'
-                            ? 'Focus Timer'
+                            ? copy.focusTimer
                             : page === 'progress'
                               ? copy.progress
                               : page === 'notes'
@@ -4909,7 +4912,7 @@ ${trimmedMaterial}`;
             </article>
 
             <article className="progress-card">
-              <p className="card-label">Focus Timer</p>
+              <p className="card-label">{copy.focusTimer}</p>
               <h3>{Math.round(timerPercent)}%</h3>
               <p>{timerMode === 'focus' ? 'Focus session' : 'Break session'}</p>
               <div className="progress-card-track" aria-hidden="true">
@@ -5005,7 +5008,7 @@ ${trimmedMaterial}`;
         ) : page === 'focusTimer' ? (
           <section className="focus-timer-page" aria-label="Focus timer">
             <div className="timer-panel">
-              <p className="card-label">Focus Timer</p>
+              <p className="card-label">{copy.focusTimer}</p>
               <div className="timer-display" aria-live="polite">
                 {formatTimerTime(timerSecondsLeft)}
               </div>
@@ -5676,7 +5679,7 @@ ${trimmedMaterial}`;
                     and {pomodoroLongBreaks} long breaks of 15 minutes. Total break time: {pomodoroBreakMinutes} minutes.
                   </p>
                   <button className="generate-button pomodoro-use-button" type="button" onClick={startPomodoroPlan}>
-                    Start with Focus Timer
+                    Start with {copy.focusTimer}
                   </button>
                 </>
               )}
@@ -6025,6 +6028,13 @@ ${trimmedMaterial}`;
               onClick={() => goToPage('calendar')}
             >
               {copy.calendar}
+            </button>
+            <button
+              className="drawer-tool-button"
+              type="button"
+              onClick={() => goToPage('focusTimer')}
+            >
+              {copy.focusTimer}
             </button>
             <button
               className="drawer-tool-button"
