@@ -4786,8 +4786,12 @@ ${trimmedMaterial}`;
                   const isComplete = completedTaskKeySet.has(getLearningTaskKey(task.id));
 
                   return (
-                    <article className={isComplete ? 'xp-task complete' : 'xp-task'} key={task.id}>
-                      <span className="xp-task-pill">{isComplete ? 'Done' : `+${task.xp} XP`}</span>
+                    <article
+                      className={isComplete ? 'xp-task complete' : 'xp-task'}
+                      key={task.id}
+                      aria-label={isComplete ? `${task.title} completed` : `${task.title}, ${task.xp} XP`}
+                    >
+                      <span className="xp-task-pill">{isComplete ? 'Completed' : `+${task.xp} XP`}</span>
                       <div>
                         <strong>{task.title}</strong>
                         <p>{task.detail}</p>

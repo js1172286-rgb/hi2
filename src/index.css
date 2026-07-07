@@ -2747,6 +2747,7 @@ select:focus {
 }
 
 .xp-task {
+  position: relative;
   display: grid;
   gap: 9px;
   align-content: start;
@@ -2755,11 +2756,33 @@ select:focus {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
+  overflow: hidden;
 }
 
 .xp-task.complete {
-  border-color: rgba(47, 111, 115, 0.4);
-  background: rgba(47, 111, 115, 0.1);
+  border-color: var(--accent);
+  background:
+    linear-gradient(135deg, rgba(47, 111, 115, 0.2), transparent 62%),
+    var(--panel);
+  box-shadow:
+    inset 0 0 0 2px rgba(47, 111, 115, 0.14),
+    0 10px 24px rgba(47, 111, 115, 0.14);
+}
+
+.xp-task.complete::after {
+  content: '✓';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 900;
 }
 
 .xp-task-pill {
@@ -2774,7 +2797,26 @@ select:focus {
 }
 
 .xp-task.complete .xp-task-pill {
-  background: rgba(47, 111, 115, 0.16);
+  padding-right: 12px;
+  background: var(--accent);
+  color: #fff;
+}
+
+.xp-task.complete strong {
+  color: var(--accent-dark);
+}
+
+:root[data-theme='dark'] .xp-task.complete {
+  background:
+    linear-gradient(135deg, rgba(94, 106, 210, 0.24), transparent 62%),
+    var(--panel);
+  box-shadow:
+    inset 0 0 0 2px rgba(94, 106, 210, 0.18),
+    0 10px 24px rgba(0, 0, 0, 0.28);
+}
+
+:root[data-theme='dark'] .xp-task.complete strong {
+  color: #f7f8f8;
 }
 
 .xp-task strong {
