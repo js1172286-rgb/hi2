@@ -249,7 +249,7 @@ const knowledgeStatsKey = 'study-helper-knowledge-stats';
 const intervalingPlansKey = 'study-helper-intervaling-plans';
 const customCalendarEventsKey = 'study-helper-calendar-events';
 const learningXpKey = 'study-helper-learning-xp';
-const tutorialSeenKey = 'study-helper-tutorial-seen';
+const tutorialSeenKey = 'study-helper-tutorial-seen-v2';
 const languageKey = 'study-helper-language';
 const themeKey = 'study-helper-theme';
 const studyPetKey = 'study-helper-pet';
@@ -3421,6 +3421,17 @@ Write exactly one short follow-up question from the pet. The question must be ba
     goToPage(tutorialSteps[0].page);
   }
 
+  function openTutorial() {
+    const userId = session?.user.id ?? null;
+
+    markTutorialPromptAnswered(userId ?? undefined);
+    setTutorialUserId(userId);
+    setIsTutorialPromptOpen(false);
+    setIsTutorialTourOpen(true);
+    setTutorialStepIndex(0);
+    goToPage(tutorialSteps[0].page);
+  }
+
   function closeTutorial() {
     setIsTutorialPromptOpen(false);
     setIsTutorialTourOpen(false);
@@ -4304,6 +4315,9 @@ ${trimmedMaterial}`;
               <div>
                 <h2>{copy.yourAccount}</h2>
                 <p>{session ? `${copy.signedInAs} ${currentAccountName}.` : copy.signInAccountText}</p>
+                <button className="small-button tutorial-launch-button" type="button" onClick={openTutorial}>
+                  Show tutorial
+                </button>
                 {session ? (
                   <div className="account-form">
                     {accountNotice && <p className="notice">{accountNotice}</p>}
