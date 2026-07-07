@@ -512,6 +512,7 @@ const translations = {
     quizMe: 'Quiz me',
     saveLesson: 'Save lesson',
     show: 'Show',
+    showTutorial: 'Show tutorial',
     signIn: 'Sign in',
     signOut: 'Sign out',
     studyHelper: 'Study helper',
@@ -553,6 +554,7 @@ const translations = {
     quizMe: 'Проверь меня',
     saveLesson: 'Сохранить урок',
     show: 'Показать',
+    showTutorial: 'Показать обучение',
     signIn: 'Войти',
     signOut: 'Выйти',
     studyHelper: 'Помощник учебы',
@@ -594,6 +596,7 @@ const translations = {
     quizMe: 'Мені тексер',
     saveLesson: 'Сабақты сақтау',
     show: 'Көрсету',
+    showTutorial: 'Оқытуды көрсету',
     signIn: 'Кіру',
     signOut: 'Шығу',
     studyHelper: 'Оқу көмекшісі',
@@ -4316,7 +4319,7 @@ ${trimmedMaterial}`;
                 <h2>{copy.yourAccount}</h2>
                 <p>{session ? `${copy.signedInAs} ${currentAccountName}.` : copy.signInAccountText}</p>
                 <button className="small-button tutorial-launch-button" type="button" onClick={openTutorial}>
-                  Show tutorial
+                  {copy.showTutorial}
                 </button>
                 {session ? (
                   <div className="account-form">
