@@ -927,6 +927,17 @@ function getButtonLabel(mode: StudyMode, isLoading: boolean, copy: typeof fullTr
   return copy.summarize;
 }
 
+function ImageUploadIcon() {
+  return (
+    <svg className="image-upload-icon" viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="8" y="10" width="48" height="42" rx="5" />
+      <rect x="15" y="18" width="34" height="26" rx="2" />
+      <circle cx="43" cy="24" r="5" />
+      <path d="M16 43l13-14 10 12 8-9 9 11" />
+    </svg>
+  );
+}
+
 function readLanguage(): Language {
   const savedLanguage = window.localStorage.getItem(languageKey);
   return savedLanguage === 'ru' || savedLanguage === 'kk' ? savedLanguage : 'en';
@@ -4782,9 +4793,13 @@ ${trimmedMaterial}`;
                 </div>
                 <div className="tutor-submit-stack">
                   <div className="image-upload-row compact tutor-image-row">
-                    <label className={isTutorLoading ? 'image-upload-button disabled' : 'image-upload-button'}>
+                    <label
+                      className={isTutorLoading ? 'image-upload-button icon-button disabled' : 'image-upload-button icon-button'}
+                      aria-label={copy.attachImage}
+                      title={copy.attachImage}
+                    >
                       <input type="file" accept="image/*" onChange={attachTutorImage} disabled={isTutorLoading} />
-                      {copy.attachImage}
+                      <ImageUploadIcon />
                     </label>
                     {tutorImage && (
                       <button className="image-remove-button" type="button" onClick={() => setTutorImage(null)}>
@@ -5506,14 +5521,18 @@ ${trimmedMaterial}`;
                   <button className="generate-button" type="button" onClick={generateStudyHelp} disabled={isLoading}>
                     {getButtonLabel(mode, isLoading, copy)}
                   </button>
-                  <label className={isReadingMaterialImage ? 'image-upload-button action-image-button disabled' : 'image-upload-button action-image-button'}>
+                  <label
+                    className={isReadingMaterialImage ? 'image-upload-button action-image-button icon-button disabled' : 'image-upload-button action-image-button icon-button'}
+                    aria-label={isReadingMaterialImage ? copy.readingImage : copy.readTextFromImage}
+                    title={isReadingMaterialImage ? copy.readingImage : copy.readTextFromImage}
+                  >
                     <input
                       type="file"
                       accept="image/*"
                       onChange={readStudyMaterialImage}
                       disabled={isReadingMaterialImage || isLoading}
                     />
-                    {isReadingMaterialImage ? copy.readingImage : copy.readTextFromImage}
+                    <ImageUploadIcon />
                   </label>
                   <button className="save-button" type="button" onClick={saveLesson}>
                     {copy.saveLesson}
