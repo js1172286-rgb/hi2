@@ -1,5 +1,5 @@
 // AI-функция на бесплатном ключе Google Gemini.
-// Вызов с фронта: supabase.functions.invoke('ai', { body: { prompt, system } })
+// Вызов с фронта: supabase.functions.invoke('ai', { body: { prompt, system, image } })
 //
 // Запуск (один раз):
 //   1) Возьми бесплатный ключ: https://aistudio.google.com/apikey
@@ -10,6 +10,11 @@
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
 const MODEL = 'gemini-3.1-flash-lite';
+
+type AiImage = {
+  mimeType?: string;
+  data?: string;
+};
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -23,8 +28,20 @@ Deno.serve(async (req) => {
     if (!GEMINI_API_KEY) {
       throw new Error('Нет GEMINI_API_KEY. Поставь секрет: npm run ai:secret -- GEMINI_API_KEY=...');
     }
-    const { prompt, system } = await req.json();
+    const { prompt, system, image, images } = await req.json();
     if (!prompt) throw new Error('Нужно поле prompt');
+
+    const imageList: AiImage[] = [
+      ...(image ? [image] : []),
+      ...(Array.isArray(images) ? images : []),
+    ].filter((item): item is AiImage => Boolean(item?.data));
+
+    const imageParts = imageList.map((item) => ({
+      inlineData: {
+        mimeType: item.mimeType || 'image/png',
+        data: String(item.data).includes(',') ? (String(item.data).split(',').pop() ?? '') : String(item.data),
+      },
+    }));
 
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`,
@@ -33,7 +50,7 @@ Deno.serve(async (req) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           systemInstruction: system ? { parts: [{ text: system }] } : undefined,
-          contents: [{ parts: [{ text: prompt }] }],
+          contents: [{ parts: [{ text: prompt }, ...imageParts] }],
         }),
       },
     );

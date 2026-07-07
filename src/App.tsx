@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
+import type { ChangeEvent, CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 
 type AiResponse = {
   text?: string;
   error?: string;
+};
+
+type AiImage = {
+  mimeType: string;
+  data: string;
+  fileName?: string;
 };
 
 type StudyMode = 'summary' | 'flashcards' | 'quiz';
@@ -212,6 +218,7 @@ type LeaderboardProfile = {
 type TutorMessage = {
   role: 'user' | 'tutor';
   text: string;
+  imageName?: string;
 };
 
 type TeachMessage = {
@@ -259,6 +266,7 @@ const maxIntervalingPlans = 8;
 const maxCustomCalendarEvents = 120;
 const noteCanvasWidth = 1200;
 const noteCanvasHeight = 720;
+const maxAiImageBytes = 6 * 1024 * 1024;
 const eggWarmDays = 3;
 const defaultFocusMinutes = 25;
 const defaultBreakMinutes = 5;
@@ -627,6 +635,7 @@ const fullTranslations = {
     addYourNameEmailPassword: 'Add your name, email, and password.',
     answerPlaceholder: 'Type your answer...',
     askTutorPlaceholder: 'Ask about your notes, a confusing idea, or what to study next...',
+    attachImage: 'Attach image',
     back: 'Back',
     cancel: 'Cancel',
     cardsReady: 'cards ready to review',
@@ -642,6 +651,10 @@ const fullTranslations = {
     lessonSaved: 'Lesson saved.',
     load: 'Load',
     loaded: 'Loaded',
+    imageAttached: 'Image attached',
+    imageTextAdded: 'Text from the image was added.',
+    imageTextEmpty: 'I could not read text from that image. Try a clearer photo.',
+    imageTooLarge: 'Use an image smaller than 6 MB.',
     material: 'Material',
     materialDeleted: 'Material deleted.',
     materialPlaceholder: 'Paste the material you want to share...',
@@ -664,6 +677,9 @@ const fullTranslations = {
     pasteSourcePlaceholder: 'Paste another source for this topic...',
     questionsReady: 'questions ready to answer',
     quickSummary: 'Quick summary',
+    readingImage: 'Reading image...',
+    readTextFromImage: 'Read text from image',
+    removeImage: 'Remove image',
     savedLessonsUsed: 'lesson slots used',
     searchPlaceholder: 'Search by subject, title, or text...',
     shareNotes: 'Share notes by subject so other students can find them.',
@@ -700,6 +716,7 @@ const fullTranslations = {
     typeTutorQuestion: 'Type a question for the tutor first.',
     typeName: 'Your name',
     uploadMaterial: 'Upload material',
+    uploadTextbookPhoto: 'Upload textbook photo',
     uploading: 'Uploading...',
     useMaterial: 'Use material',
     words: 'words',
@@ -716,6 +733,7 @@ const fullTranslations = {
     addYourNameEmailPassword: 'Добавьте имя, email и пароль.',
     answerPlaceholder: 'Введите ответ...',
     askTutorPlaceholder: 'Спросите о конспектах, сложной теме или о том, что учить дальше...',
+    attachImage: 'Прикрепить изображение',
     back: 'Обратная сторона',
     cancel: 'Отмена',
     cardsReady: 'карточек готово',
@@ -731,6 +749,10 @@ const fullTranslations = {
     lessonSaved: 'Урок сохранен.',
     load: 'Загрузить',
     loaded: 'Загружено',
+    imageAttached: 'Изображение прикреплено',
+    imageTextAdded: 'Текст с изображения добавлен.',
+    imageTextEmpty: 'Не удалось прочитать текст с изображения. Попробуйте более четкое фото.',
+    imageTooLarge: 'Используйте изображение меньше 6 МБ.',
     material: 'Материал',
     materialDeleted: 'Материал удален.',
     materialPlaceholder: 'Вставьте материал, которым хотите поделиться...',
@@ -753,6 +775,9 @@ const fullTranslations = {
     pasteSourcePlaceholder: 'Вставьте еще один источник по этой теме...',
     questionsReady: 'вопросов готово',
     quickSummary: 'Краткое резюме',
+    readingImage: 'Читаю изображение...',
+    readTextFromImage: 'Прочитать текст с изображения',
+    removeImage: 'Убрать изображение',
     savedLessonsUsed: 'ячеек уроков использовано',
     searchPlaceholder: 'Искать по предмету, названию или тексту...',
     shareNotes: 'Делитесь конспектами по предметам, чтобы другие ученики могли их найти.',
@@ -789,6 +814,7 @@ const fullTranslations = {
     typeTutorQuestion: 'Сначала введите вопрос для репетитора.',
     typeName: 'Ваше имя',
     uploadMaterial: 'Загрузить материал',
+    uploadTextbookPhoto: 'Загрузить фото учебника',
     uploading: 'Загрузка...',
     useMaterial: 'Использовать',
     words: 'слов',
@@ -805,6 +831,7 @@ const fullTranslations = {
     addYourNameEmailPassword: 'Атыңызды, email және құпия сөз қосыңыз.',
     answerPlaceholder: 'Жауабыңызды жазыңыз...',
     askTutorPlaceholder: 'Жазбаларыңыз, түсініксіз тақырып немесе келесі қадам туралы сұраңыз...',
+    attachImage: 'Сурет тіркеу',
     back: 'Артқы бет',
     cancel: 'Болдырмау',
     cardsReady: 'карточка дайын',
@@ -820,6 +847,10 @@ const fullTranslations = {
     lessonSaved: 'Сабақ сақталды.',
     load: 'Жүктеу',
     loaded: 'Жүктелді',
+    imageAttached: 'Сурет тіркелді',
+    imageTextAdded: 'Суреттегі мәтін қосылды.',
+    imageTextEmpty: 'Бұл суреттен мәтін оқылмады. Анығырақ фото қолданып көріңіз.',
+    imageTooLarge: '6 МБ-тан кіші сурет қолданыңыз.',
     material: 'Материал',
     materialDeleted: 'Материал жойылды.',
     materialPlaceholder: 'Бөліскіңіз келетін материалды қойыңыз...',
@@ -842,6 +873,9 @@ const fullTranslations = {
     pasteSourcePlaceholder: 'Осы тақырыпқа тағы дереккөз қойыңыз...',
     questionsReady: 'сұрақ дайын',
     quickSummary: 'Қысқаша мазмұн',
+    readingImage: 'Сурет оқылып жатыр...',
+    readTextFromImage: 'Суреттен мәтін оқу',
+    removeImage: 'Суретті алып тастау',
     savedLessonsUsed: 'сабақ орны қолданылды',
     searchPlaceholder: 'Пән, атау немесе мәтін бойынша іздеу...',
     shareNotes: 'Басқа оқушылар табуы үшін конспекттерді пән бойынша бөлісіңіз.',
@@ -878,6 +912,7 @@ const fullTranslations = {
     typeTutorQuestion: 'Алдымен мұғалімге сұрақ жазыңыз.',
     typeName: 'Атыңыз',
     uploadMaterial: 'Материал жүктеу',
+    uploadTextbookPhoto: 'Оқулық фотосын жүктеу',
     uploading: 'Жүктелуде...',
     useMaterial: 'Қолдану',
     words: 'сөз',
@@ -899,6 +934,31 @@ function readLanguage(): Language {
 
 function readTheme(): Theme {
   return window.localStorage.getItem(themeKey) === 'dark' ? 'dark' : 'light';
+}
+
+function readImageFileAsAiImage(file: File): Promise<AiImage> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onerror = () => reject(new Error('Could not read image file.'));
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      const data = result.includes(',') ? result.split(',')[1] : result;
+
+      if (!data) {
+        reject(new Error('Could not read image file.'));
+        return;
+      }
+
+      resolve({
+        mimeType: file.type || 'image/png',
+        data,
+        fileName: file.name,
+      });
+    };
+
+    reader.readAsDataURL(file);
+  });
 }
 
 function getTodayKey() {
@@ -1763,6 +1823,7 @@ export default function App() {
   const [notesError, setNotesError] = useState('');
   const [summary, setSummary] = useState('');
   const [isSummaryCopied, setIsSummaryCopied] = useState(false);
+  const [isReadingMaterialImage, setIsReadingMaterialImage] = useState(false);
   const [studyPet, setStudyPet] = useState<StudyPet>(emptyStudyPet);
   const [pendingEggColor, setPendingEggColor] = useState<EggColor>('green');
   const [hatchPopup, setHatchPopup] = useState<HatchPopup | null>(null);
@@ -1856,6 +1917,7 @@ export default function App() {
   const [tutorQuestion, setTutorQuestion] = useState('');
   const [tutorError, setTutorError] = useState('');
   const [isTutorLoading, setIsTutorLoading] = useState(false);
+  const [tutorImage, setTutorImage] = useState<AiImage | null>(null);
   const materialTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const noteCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const isNoteDrawingRef = useRef(false);
@@ -3630,14 +3692,93 @@ Write exactly one short follow-up question from the pet. The question must be ba
     clearResults();
   }
 
+  async function readStudyMaterialImage(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) return;
+
+    if (!isSupabaseConfigured) {
+      setError('Connect Supabase first so AI can read images.');
+      return;
+    }
+
+    if (file.size > maxAiImageBytes) {
+      setError(copy.imageTooLarge);
+      setNotice('');
+      return;
+    }
+
+    setIsReadingMaterialImage(true);
+    setError('');
+    setNotice('');
+
+    try {
+      const image = await readImageFileAsAiImage(file);
+      const { data, error: invokeError } = await supabase.functions.invoke<AiResponse>('ai', {
+        body: {
+          prompt: `Extract the readable study text from this textbook, worksheet, or notes image.
+Preserve the order, headings, formulas, and important punctuation as clearly as possible.
+Return only the extracted text. If there is no readable study text, return an empty response.`,
+          system: 'You are an OCR helper for a study app. Read text from educational images accurately and return only the text.',
+          image,
+        },
+      });
+
+      if (invokeError) {
+        setError(invokeError.message);
+        return;
+      }
+
+      if (data?.error) {
+        setError(data.error);
+        return;
+      }
+
+      const extractedText = data?.text?.trim() ?? '';
+      if (!extractedText) {
+        setError(copy.imageTextEmpty);
+        return;
+      }
+
+      setMaterial((currentMaterial) => [currentMaterial.trim(), extractedText].filter(Boolean).join('\n\n'));
+      setNotice(copy.imageTextAdded);
+    } catch (imageError) {
+      setError(imageError instanceof Error ? imageError.message : copy.imageTextEmpty);
+    } finally {
+      setIsReadingMaterialImage(false);
+    }
+  }
+
+  async function attachTutorImage(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) return;
+
+    if (file.size > maxAiImageBytes) {
+      setTutorError(copy.imageTooLarge);
+      return;
+    }
+
+    try {
+      const image = await readImageFileAsAiImage(file);
+      setTutorImage(image);
+      setTutorError('');
+    } catch (imageError) {
+      setTutorError(imageError instanceof Error ? imageError.message : copy.imageTextEmpty);
+    }
+  }
+
   async function askTutor() {
     const question = tutorQuestion.trim();
+    const attachedImage = tutorImage;
 
     if (!requireSignedIn(copy.signInForTutor)) {
       return;
     }
 
-    if (!question) {
+    if (!question && !attachedImage) {
       setTutorError(copy.typeTutorQuestion);
       return;
     }
@@ -3647,9 +3788,11 @@ Write exactly one short follow-up question from the pet. The question must be ba
       return;
     }
 
-    const nextMessages: TutorMessage[] = [...tutorMessages, { role: 'user', text: question }];
+    const studentQuestion = question || 'Please read this image and explain the study material in it.';
+    const nextMessages: TutorMessage[] = [...tutorMessages, { role: 'user', text: studentQuestion, imageName: attachedImage?.fileName }];
     setTutorMessages(nextMessages);
     setTutorQuestion('');
+    setTutorImage(null);
     setTutorError('');
     setIsTutorLoading(true);
 
@@ -3690,8 +3833,11 @@ Recent chat:
 ${recentChat}
 
 Student question:
-${question}`,
+${studentQuestion}
+
+${attachedImage ? 'The student also attached an image. Read any visible text in it and use it as study material for your answer.' : ''}`,
         system: 'You are a friendly AI tutor. Prioritize the student saved lessons and quiz knowledge map over general knowledge. Explain step by step, keep answers clear, ask one follow-up question when useful, and do not invent facts outside the provided material unless the student asks for general explanation.',
+        image: attachedImage,
       },
     });
 
@@ -4613,6 +4759,7 @@ ${trimmedMaterial}`;
               {tutorMessages.map((message, index) => (
                 <article className={`tutor-message ${message.role}`} key={`${message.role}-${index}`}>
                   <p className="card-label">{message.role === 'user' ? copy.you : copy.tutor}</p>
+                  {message.imageName && <p className="tutor-image-note">{copy.imageAttached}: {message.imageName}</p>}
                   <p>{message.text}</p>
                 </article>
               ))}
@@ -4625,16 +4772,31 @@ ${trimmedMaterial}`;
             </div>
 
             <div className="tutor-input-panel">
-              <label className="tutor-composer">
-                <textarea
-                  value={tutorQuestion}
-                  onChange={(event) => setTutorQuestion(event.target.value)}
-                  placeholder={copy.askTutorPlaceholder}
-                />
+              <div className="tutor-composer">
+                <div className="tutor-input-stack">
+                  <textarea
+                    value={tutorQuestion}
+                    onChange={(event) => setTutorQuestion(event.target.value)}
+                    placeholder={copy.askTutorPlaceholder}
+                  />
+                  <div className="image-upload-row compact">
+                    <label className={isTutorLoading ? 'image-upload-button disabled' : 'image-upload-button'}>
+                      <input type="file" accept="image/*" onChange={attachTutorImage} disabled={isTutorLoading} />
+                      {copy.attachImage}
+                    </label>
+                    {tutorImage ? (
+                      <button className="image-remove-button" type="button" onClick={() => setTutorImage(null)}>
+                        {copy.removeImage}: {tutorImage.fileName}
+                      </button>
+                    ) : (
+                      <span>{copy.uploadTextbookPhoto}</span>
+                    )}
+                  </div>
+                </div>
                 <button className="generate-button" type="button" onClick={askTutor} disabled={isTutorLoading}>
                   {isTutorLoading ? copy.thinking : copy.askTutor}
                 </button>
-              </label>
+              </div>
               {tutorError && <p className="message">{tutorError}</p>}
             </div>
           </section>
@@ -5338,6 +5500,18 @@ ${trimmedMaterial}`;
                     data-tutorial-target="material-box"
                   />
                 </label>
+                <div className="image-upload-row">
+                  <label className={isReadingMaterialImage ? 'image-upload-button disabled' : 'image-upload-button'}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={readStudyMaterialImage}
+                      disabled={isReadingMaterialImage || isLoading}
+                    />
+                    {isReadingMaterialImage ? copy.readingImage : copy.readTextFromImage}
+                  </label>
+                  <span>{copy.uploadTextbookPhoto}</span>
+                </div>
 
                 <div className="action-row">
                   <button className="generate-button" type="button" onClick={generateStudyHelp} disabled={isLoading}>

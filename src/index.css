@@ -709,6 +709,69 @@ select:focus {
   font-weight: 800;
 }
 
+.image-upload-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: -4px;
+}
+
+.image-upload-row.compact {
+  margin-top: 0;
+}
+
+.image-upload-row span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.image-upload-button,
+.image-remove-button {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.image-upload-button input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.image-upload-button:hover,
+.image-remove-button:hover {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.image-upload-button.disabled {
+  cursor: default;
+  opacity: 0.68;
+}
+
+.image-upload-button.disabled:hover {
+  border-color: var(--line);
+  background: var(--accent-soft);
+  color: var(--accent);
+  transform: none;
+}
+
 .message {
   color: var(--danger);
 }
@@ -1779,6 +1842,18 @@ select:focus {
   color: rgba(255, 255, 255, 0.78);
 }
 
+.tutor-image-note {
+  display: inline-flex;
+  width: fit-content;
+  margin: 2px 0 7px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  color: inherit;
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .tutor-message p:last-child {
   white-space: pre-wrap;
   line-height: 1.5;
@@ -1796,6 +1871,11 @@ select:focus {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
   align-items: end;
+}
+
+.tutor-input-stack {
+  display: grid;
+  gap: 8px;
 }
 
 .tutor-composer textarea {
