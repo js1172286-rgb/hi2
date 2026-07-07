@@ -556,7 +556,7 @@ select:focus {
 
 .action-row {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr auto auto;
   gap: 10px;
   margin-top: 14px;
 }
@@ -770,6 +770,11 @@ select:focus {
   background: var(--accent-soft);
   color: var(--accent);
   transform: none;
+}
+
+.action-image-button {
+  min-height: 48px;
+  padding: 12px 16px;
 }
 
 .message {
@@ -1876,6 +1881,33 @@ select:focus {
 .tutor-input-stack {
   display: grid;
   gap: 8px;
+}
+
+.tutor-submit-stack {
+  display: grid;
+  gap: 8px;
+  align-self: stretch;
+}
+
+.tutor-submit-stack .generate-button,
+.tutor-submit-stack .image-upload-button,
+.tutor-submit-stack .image-remove-button {
+  width: 100%;
+}
+
+.tutor-image-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.attached-image-name {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tutor-composer textarea {

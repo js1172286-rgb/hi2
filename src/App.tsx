@@ -4779,24 +4779,25 @@ ${trimmedMaterial}`;
                     onChange={(event) => setTutorQuestion(event.target.value)}
                     placeholder={copy.askTutorPlaceholder}
                   />
-                  <div className="image-upload-row compact">
+                </div>
+                <div className="tutor-submit-stack">
+                  <div className="image-upload-row compact tutor-image-row">
                     <label className={isTutorLoading ? 'image-upload-button disabled' : 'image-upload-button'}>
                       <input type="file" accept="image/*" onChange={attachTutorImage} disabled={isTutorLoading} />
                       {copy.attachImage}
                     </label>
-                    {tutorImage ? (
+                    {tutorImage && (
                       <button className="image-remove-button" type="button" onClick={() => setTutorImage(null)}>
-                        {copy.removeImage}: {tutorImage.fileName}
+                        {copy.removeImage}
                       </button>
-                    ) : (
-                      <span>{copy.uploadTextbookPhoto}</span>
                     )}
                   </div>
+                  <button className="generate-button" type="button" onClick={askTutor} disabled={isTutorLoading}>
+                    {isTutorLoading ? copy.thinking : copy.askTutor}
+                  </button>
                 </div>
-                <button className="generate-button" type="button" onClick={askTutor} disabled={isTutorLoading}>
-                  {isTutorLoading ? copy.thinking : copy.askTutor}
-                </button>
               </div>
+              {tutorImage && <p className="attached-image-name">{copy.imageAttached}: {tutorImage.fileName}</p>}
               {tutorError && <p className="message">{tutorError}</p>}
             </div>
           </section>
@@ -5500,8 +5501,12 @@ ${trimmedMaterial}`;
                     data-tutorial-target="material-box"
                   />
                 </label>
-                <div className="image-upload-row">
-                  <label className={isReadingMaterialImage ? 'image-upload-button disabled' : 'image-upload-button'}>
+
+                <div className="action-row">
+                  <button className="generate-button" type="button" onClick={generateStudyHelp} disabled={isLoading}>
+                    {getButtonLabel(mode, isLoading, copy)}
+                  </button>
+                  <label className={isReadingMaterialImage ? 'image-upload-button action-image-button disabled' : 'image-upload-button action-image-button'}>
                     <input
                       type="file"
                       accept="image/*"
@@ -5510,13 +5515,6 @@ ${trimmedMaterial}`;
                     />
                     {isReadingMaterialImage ? copy.readingImage : copy.readTextFromImage}
                   </label>
-                  <span>{copy.uploadTextbookPhoto}</span>
-                </div>
-
-                <div className="action-row">
-                  <button className="generate-button" type="button" onClick={generateStudyHelp} disabled={isLoading}>
-                    {getButtonLabel(mode, isLoading, copy)}
-                  </button>
                   <button className="save-button" type="button" onClick={saveLesson}>
                     {copy.saveLesson}
                   </button>
