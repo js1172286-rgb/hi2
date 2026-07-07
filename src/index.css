@@ -1910,12 +1910,11 @@ select:focus {
   width: 100%;
 }
 
-.tutor-image-row {
-  display: flex;
-  align-items: center;
-  justify-content: end;
-  flex-wrap: wrap;
-  gap: 6px;
+.tutor-action-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: stretch;
 }
 
 .attached-image-name {

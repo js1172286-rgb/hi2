@@ -4792,7 +4792,10 @@ ${trimmedMaterial}`;
                   />
                 </div>
                 <div className="tutor-submit-stack">
-                  <div className="image-upload-row compact tutor-image-row">
+                  <div className="tutor-action-row">
+                    <button className="generate-button" type="button" onClick={askTutor} disabled={isTutorLoading}>
+                      {isTutorLoading ? copy.thinking : copy.askTutor}
+                    </button>
                     <label
                       className={isTutorLoading ? 'image-upload-button icon-button disabled' : 'image-upload-button icon-button'}
                       aria-label={copy.attachImage}
@@ -4801,15 +4804,12 @@ ${trimmedMaterial}`;
                       <input type="file" accept="image/*" onChange={attachTutorImage} disabled={isTutorLoading} />
                       <ImageUploadIcon />
                     </label>
-                    {tutorImage && (
-                      <button className="image-remove-button" type="button" onClick={() => setTutorImage(null)}>
-                        {copy.removeImage}
-                      </button>
-                    )}
                   </div>
-                  <button className="generate-button" type="button" onClick={askTutor} disabled={isTutorLoading}>
-                    {isTutorLoading ? copy.thinking : copy.askTutor}
-                  </button>
+                  {tutorImage && (
+                    <button className="image-remove-button" type="button" onClick={() => setTutorImage(null)}>
+                      {copy.removeImage}
+                    </button>
+                  )}
                 </div>
               </div>
               {tutorImage && <p className="attached-image-name">{copy.imageAttached}: {tutorImage.fileName}</p>}
@@ -5521,6 +5521,9 @@ ${trimmedMaterial}`;
                   <button className="generate-button" type="button" onClick={generateStudyHelp} disabled={isLoading}>
                     {getButtonLabel(mode, isLoading, copy)}
                   </button>
+                  <button className="save-button" type="button" onClick={saveLesson}>
+                    {copy.saveLesson}
+                  </button>
                   <label
                     className={isReadingMaterialImage ? 'image-upload-button action-image-button icon-button disabled' : 'image-upload-button action-image-button icon-button'}
                     aria-label={isReadingMaterialImage ? copy.readingImage : copy.readTextFromImage}
@@ -5534,9 +5537,6 @@ ${trimmedMaterial}`;
                     />
                     <ImageUploadIcon />
                   </label>
-                  <button className="save-button" type="button" onClick={saveLesson}>
-                    {copy.saveLesson}
-                  </button>
                 </div>
 
                 {error && <p className="message">{error}</p>}
