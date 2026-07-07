@@ -1054,6 +1054,71 @@ function getTutorialArrowStyle(rect: TutorialTargetRect | null, placement: Tutor
   };
 }
 
+function renderSummaryInline(text: string) {
+  return text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).map((part, index) => {
+    const boldText = part.match(/^\*\*(.+)\*\*$/)?.[1];
+
+    if (boldText) {
+      return <strong key={`${boldText}-${index}`}>{boldText}</strong>;
+    }
+
+    return part.replace(/\*\*/g, '');
+  });
+}
+
+function stripSummaryMarkdown(text: string) {
+  return text.replace(/\*\*/g, '').replace(/^[-*•]\s+/, '').trim();
+}
+
+function renderSummaryContent(summaryText: string) {
+  const lines = summaryText.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+
+  return (
+    <div className="summary-content">
+      {lines.map((line, index) => {
+        const normalizedLine = line.replace(/\s+/g, ' ');
+        const bulletMatch = normalizedLine.match(/^[-*•]\s+(.*)$/);
+        const numberedMatch = normalizedLine.match(/^(\d+)[.)]\s+(.*)$/);
+        const plainLine = stripSummaryMarkdown(normalizedLine);
+        const isSmallHeading =
+          index > 0 &&
+          plainLine.length <= 44 &&
+          !bulletMatch &&
+          !numberedMatch &&
+          !/[.!?]$/.test(plainLine);
+
+        if (bulletMatch) {
+          return (
+            <div className="summary-point" key={`${normalizedLine}-${index}`}>
+              <span className="summary-point-marker" aria-hidden="true" />
+              <p>{renderSummaryInline(bulletMatch[1])}</p>
+            </div>
+          );
+        }
+
+        if (numberedMatch) {
+          return (
+            <div className="summary-point numbered" key={`${normalizedLine}-${index}`}>
+              <span className="summary-number-marker" aria-hidden="true">{numberedMatch[1]}</span>
+              <p>{renderSummaryInline(numberedMatch[2])}</p>
+            </div>
+          );
+        }
+
+        if (isSmallHeading) {
+          return <h3 key={`${normalizedLine}-${index}`}>{renderSummaryInline(normalizedLine.replace(/:$/, ''))}</h3>;
+        }
+
+        return (
+          <p className={index === 0 ? 'summary-lede' : undefined} key={`${normalizedLine}-${index}`}>
+            {renderSummaryInline(normalizedLine)}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 function getLearningTaskKey(taskId: LearningTaskId, dateKey = getTodayKey()) {
   return `${dateKey}:${taskId}`;
 }
@@ -3869,10 +3934,15 @@ ${trimmedMaterial}`;
 
     return `Summarize these study notes clearly and quickly.
 
+Return only the summary. Do not start with phrases like "Here is your summary".
+Use clean plain text, not markdown symbols. Do not use **bold** markers.
+
 Use this format:
+Topic: short topic name
 - 4 to 6 short bullet points
-- Key terms
-- One quick review question
+Key terms:
+- term: short meaning
+Review question: one quick question
 
 Study material:
 ${trimmedMaterial}`;
@@ -5530,7 +5600,7 @@ ${trimmedMaterial}`;
                 Close
               </button>
             </div>
-            <pre>{summary}</pre>
+            {renderSummaryContent(summary)}
             <button
               className={isSummaryCopied ? 'generate-button summary-copy-button copied' : 'generate-button summary-copy-button'}
               type="button"

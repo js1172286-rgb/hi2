@@ -3583,6 +3583,70 @@ select:focus {
   line-height: 1.6;
 }
 
+.summary-content {
+  max-height: 46vh;
+  overflow: auto;
+  display: grid;
+  gap: 10px;
+  padding-right: 4px;
+  color: var(--ink);
+}
+
+.summary-content p {
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.summary-content strong {
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.summary-content h3 {
+  margin-top: 4px;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.summary-lede {
+  padding-bottom: 2px;
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.summary-point {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.summary-point-marker {
+  width: 8px;
+  height: 8px;
+  margin-top: 9px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.summary-number-marker {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  margin-top: 2px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .summary-copy-button {
   justify-self: end;
   min-width: 112px;
@@ -3774,6 +3838,29 @@ select:focus {
 }
 
 @media (max-width: 620px) {
+  .summary-modal {
+    width: min(100%, 420px);
+    padding: 18px 16px;
+  }
+
+  .summary-modal-heading h2 {
+    font-size: 28px;
+    line-height: 1.05;
+  }
+
+  .summary-content {
+    gap: 9px;
+  }
+
+  .summary-content p {
+    font-size: 16px;
+    line-height: 1.48;
+  }
+
+  .summary-lede {
+    font-size: 16px;
+  }
+
   .tutorial-prompt-card,
   .tutorial-popover {
     left: 12px !important;
