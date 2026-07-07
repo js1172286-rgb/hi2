@@ -929,12 +929,10 @@ function getTutorialSeenKey(userId?: string) {
 }
 
 function hasAnsweredTutorialPrompt(userId?: string) {
-  if (!userId) return true;
   return window.localStorage.getItem(getTutorialSeenKey(userId)) === 'done';
 }
 
 function markTutorialPromptAnswered(userId?: string) {
-  if (!userId) return;
   window.localStorage.setItem(getTutorialSeenKey(userId), 'done');
 }
 
@@ -1650,6 +1648,7 @@ export default function App() {
   const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(false);
   const [learningXp, setLearningXp] = useState<LearningXpState>(emptyLearningXp);
   const [session, setSession] = useState<Session | null>(null);
+  const [hasCheckedAuth, setHasCheckedAuth] = useState(!isSupabaseConfigured);
   const [authMode, setAuthMode] = useState<AuthMode>('signIn');
   const [accountNameInput, setAccountNameInput] = useState('');
   const [accountEmail, setAccountEmail] = useState('');
@@ -1922,18 +1921,36 @@ export default function App() {
   }, [session?.user.id]);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) return;
+    if (!isSupabaseConfigured) {
+      setHasCheckedAuth(true);
+      return;
+    }
 
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
+      setHasCheckedAuth(true);
     });
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
+      setHasCheckedAuth(true);
     });
 
     return () => authListener.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!hasCheckedAuth || session || isTutorialPromptOpen || isTutorialTourOpen || hasAnsweredTutorialPrompt()) return;
+
+    const promptTimerId = window.setTimeout(() => {
+      setTutorialUserId(null);
+      setTutorialStepIndex(0);
+      setIsTutorialTourOpen(false);
+      setIsTutorialPromptOpen(true);
+    }, 700);
+
+    return () => window.clearTimeout(promptTimerId);
+  }, [hasCheckedAuth, session, isTutorialPromptOpen, isTutorialTourOpen]);
 
   useEffect(() => {
     if (page === 'otherMaterials') {
