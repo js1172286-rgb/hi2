@@ -3605,14 +3605,106 @@ select:focus {
   min-width: 0;
 }
 
-.tutorial-modal {
-  width: min(540px, 100%);
+.tutorial-prompt-card,
+.tutorial-popover {
+  position: fixed;
+  z-index: 70;
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: 0 20px 56px rgba(20, 33, 38, 0.22);
 }
 
-.tutorial-modal p {
+.tutorial-prompt-card {
+  right: 18px;
+  bottom: 98px;
+  width: min(380px, calc(100vw - 36px));
+  padding: 18px;
+}
+
+.tutorial-prompt-card h2,
+.tutorial-popover h2 {
+  color: var(--ink);
+  font-size: 24px;
+  line-height: 1.08;
+}
+
+.tutorial-prompt-card p,
+.tutorial-popover p {
   color: var(--muted);
-  font-size: 17px;
-  line-height: 1.55;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.tutorial-tour-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 68;
+  pointer-events: none;
+}
+
+.tutorial-target-halo {
+  position: fixed;
+  z-index: 68;
+  border: 3px solid var(--accent);
+  border-radius: 12px;
+  box-shadow:
+    0 0 0 5px rgba(47, 111, 115, 0.14),
+    0 0 26px rgba(47, 111, 115, 0.32);
+  pointer-events: none;
+  animation: tutorialPulse 1500ms ease-in-out infinite;
+}
+
+.tutorial-arrow {
+  position: fixed;
+  z-index: 69;
+  width: 62px;
+  height: 62px;
+  pointer-events: none;
+  transform-origin: center;
+}
+
+.tutorial-arrow::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 29px;
+  width: 42px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.tutorial-arrow::after {
+  content: '';
+  position: absolute;
+  right: 8px;
+  top: 22px;
+  width: 16px;
+  height: 16px;
+  border-top: 4px solid var(--accent);
+  border-right: 4px solid var(--accent);
+  transform: rotate(45deg);
+}
+
+.tutorial-popover {
+  padding: 16px;
+  pointer-events: auto;
+}
+
+.tutorial-popover-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tutorial-popover-heading .small-button {
+  min-width: 76px;
+  min-height: 38px;
+  padding: 8px 12px;
 }
 
 .tutorial-actions {
@@ -3645,6 +3737,57 @@ select:focus {
 
 .tutorial-progress button.active {
   background: var(--accent);
+}
+
+:root[data-theme='dark'] .tutorial-prompt-card,
+:root[data-theme='dark'] .tutorial-popover {
+  background: #0f1011;
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.45);
+}
+
+:root[data-theme='dark'] .tutorial-target-halo {
+  box-shadow:
+    0 0 0 5px rgba(94, 106, 210, 0.18),
+    0 0 26px rgba(94, 106, 210, 0.36);
+}
+
+@keyframes tutorialPulse {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+@media (max-width: 620px) {
+  .tutorial-prompt-card,
+  .tutorial-popover {
+    left: 12px !important;
+    right: 12px;
+    bottom: 86px;
+    top: auto !important;
+    width: auto !important;
+    padding: 14px;
+  }
+
+  .tutorial-prompt-card h2,
+  .tutorial-popover h2 {
+    font-size: 20px;
+  }
+
+  .tutorial-prompt-card p,
+  .tutorial-popover p {
+    font-size: 14px;
+  }
+
+  .tutorial-arrow {
+    display: none;
+  }
 }
 
 :root[data-theme='dark'] .summary-copy-button.copied {

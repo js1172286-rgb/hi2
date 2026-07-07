@@ -94,6 +94,15 @@ type TutorialStep = {
   title: string;
   body: string;
   page: Page;
+  targetSelector: string;
+  placement: 'top' | 'bottom' | 'left' | 'right';
+};
+
+type TutorialTargetRect = {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
 };
 
 type BlurtingHighlightCategory = 'good' | 'needsWork' | 'wrong';
@@ -328,28 +337,52 @@ const learningTaskDefinitions: LearningTaskDefinition[] = [
 const tutorialSteps: TutorialStep[] = [
   {
     title: 'Paste your material',
-    body: 'Start on the study page. Paste notes, a textbook section, or anything you want to learn.',
+    body: 'Paste notes, a textbook section, or anything you want to learn. You can type here while the tour stays open.',
     page: 'study',
+    targetSelector: '[data-tutorial-target="material-box"]',
+    placement: 'right',
   },
   {
     title: 'Choose how to study',
-    body: 'Use the study options to make a summary, flashcards, or a quiz from the same material.',
+    body: 'Open study options to choose summary, flashcards, quiz, or tutor-style study modes.',
     page: 'study',
+    targetSelector: '[data-tutorial-target="study-options-button"]',
+    placement: 'bottom',
   },
   {
     title: 'Save real lessons',
-    body: 'Name and save important materials so they sync to your account and work on your iPad too.',
-    page: 'lessons',
+    body: 'Lessons keeps your saved materials together so they can sync to your account.',
+    page: 'study',
+    targetSelector: '[data-tutorial-target="lessons-button"]',
+    placement: 'bottom',
+  },
+  {
+    title: 'Open other materials',
+    body: 'The magnifying glass opens shared materials from other students.',
+    page: 'study',
+    targetSelector: '[data-tutorial-target="search-button"]',
+    placement: 'top',
+  },
+  {
+    title: 'Search shared materials',
+    body: 'Search by subject, title, or text. Try typing a topic here before moving on.',
+    page: 'otherMaterials',
+    targetSelector: '[data-tutorial-target="materials-search-box"]',
+    placement: 'left',
   },
   {
     title: 'Use the tools',
     body: 'The toolbar has progress, AI tutor, calendar, study methods, notes, and calculator.',
     page: 'progress',
+    targetSelector: '[data-tutorial-target="tool-drawer"]',
+    placement: 'right',
   },
   {
     title: 'Grow your pet and XP',
     body: 'Study tasks give XP for the leaderboard and keep your streak pet warm.',
     page: 'leaderboard',
+    targetSelector: '[data-tutorial-target="streak-chip"]',
+    placement: 'bottom',
   },
 ];
 
@@ -934,6 +967,88 @@ function hasAnsweredTutorialPrompt(userId?: string) {
 
 function markTutorialPromptAnswered(userId?: string) {
   window.localStorage.setItem(getTutorialSeenKey(userId), 'done');
+}
+
+function clampNumber(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function getTutorialPopoverStyle(rect: TutorialTargetRect | null, placement: TutorialStep['placement']): CSSProperties {
+  if (typeof window === 'undefined') return {};
+
+  const gap = 22;
+  const edge = 14;
+  const width = Math.min(340, window.innerWidth - edge * 2);
+  const height = 216;
+  const fallback: CSSProperties = {
+    bottom: 86,
+    left: edge,
+    width,
+  };
+
+  if (!rect) return fallback;
+
+  if (placement === 'left' || placement === 'right') {
+    const left =
+      placement === 'right'
+        ? clampNumber(rect.left + rect.width + gap, edge, window.innerWidth - width - edge)
+        : clampNumber(rect.left - width - gap, edge, window.innerWidth - width - edge);
+
+    return {
+      top: clampNumber(rect.top + rect.height / 2 - height / 2, edge, window.innerHeight - height - edge),
+      left,
+      width,
+    };
+  }
+
+  const left = clampNumber(rect.left + rect.width / 2 - width / 2, edge, window.innerWidth - width - edge);
+  const top =
+    placement === 'top'
+      ? Math.max(edge, rect.top - height - gap)
+      : Math.min(window.innerHeight - height - edge, rect.top + rect.height + gap);
+
+  return {
+    top,
+    left,
+    width,
+  };
+}
+
+function getTutorialArrowStyle(rect: TutorialTargetRect | null, placement: TutorialStep['placement']): CSSProperties {
+  if (!rect) return {};
+
+  const arrowSize = 62;
+  const targetCenterX = rect.left + rect.width / 2;
+  const targetCenterY = rect.top + rect.height / 2;
+
+  if (placement === 'top') {
+    return {
+      top: Math.max(12, rect.top - arrowSize - 4),
+      left: targetCenterX - arrowSize / 2,
+      transform: 'rotate(90deg)',
+    };
+  }
+
+  if (placement === 'bottom') {
+    return {
+      top: rect.top + rect.height + 4,
+      left: targetCenterX - arrowSize / 2,
+      transform: 'rotate(-90deg)',
+    };
+  }
+
+  if (placement === 'right') {
+    return {
+      top: targetCenterY - arrowSize / 2,
+      left: rect.left + rect.width + 6,
+      transform: 'rotate(180deg)',
+    };
+  }
+
+  return {
+    top: targetCenterY - arrowSize / 2,
+    left: Math.max(8, rect.left - arrowSize - 6),
+  };
 }
 
 function getLearningTaskKey(taskId: LearningTaskId, dateKey = getTodayKey()) {
@@ -1660,6 +1775,7 @@ export default function App() {
   const [isTutorialPromptOpen, setIsTutorialPromptOpen] = useState(false);
   const [isTutorialTourOpen, setIsTutorialTourOpen] = useState(false);
   const [tutorialStepIndex, setTutorialStepIndex] = useState(0);
+  const [tutorialTargetRect, setTutorialTargetRect] = useState<TutorialTargetRect | null>(null);
   const [tutorMessages, setTutorMessages] = useState<TutorMessage[]>([
     {
       role: 'tutor',
@@ -1727,6 +1843,8 @@ export default function App() {
   const pomodoroBreakMinutes = pomodoroShortBreaks * 5 + pomodoroLongBreaks * 15;
   const tutorQuestionCount = tutorMessages.filter((message) => message.role === 'user').length;
   const tutorialStep = tutorialSteps[tutorialStepIndex] ?? tutorialSteps[0];
+  const tutorialPopoverStyle = getTutorialPopoverStyle(tutorialTargetRect, tutorialStep.placement);
+  const tutorialArrowStyle = getTutorialArrowStyle(tutorialTargetRect, tutorialStep.placement);
   const lessonRingSlots = Array.from({ length: maxSavedLessons }, (_, index) => savedLessons[index] ?? null);
   const weakKnowledgeStats = [...knowledgeStats].sort((a, b) => b.mistakes - a.mistakes || a.correct - b.correct).slice(0, 5);
   const flashcardPercent = flashcards.length > 0 ? ((currentFlashcardIndex + 1) / flashcards.length) * 100 : 0;
@@ -1951,6 +2069,52 @@ export default function App() {
 
     return () => window.clearTimeout(promptTimerId);
   }, [hasCheckedAuth, session, isTutorialPromptOpen, isTutorialTourOpen]);
+
+  useEffect(() => {
+    if (!isTutorialTourOpen || !tutorialStep?.targetSelector) {
+      setTutorialTargetRect(null);
+      return;
+    }
+
+    let frameId = 0;
+    let didTryScroll = false;
+    let scrollTimerId: number | null = null;
+
+    const updateTargetRect = () => {
+      const target = document.querySelector<HTMLElement>(tutorialStep.targetSelector);
+
+      if (!target) {
+        setTutorialTargetRect(null);
+        return;
+      }
+
+      const rect = target.getBoundingClientRect();
+
+      if (!didTryScroll && (rect.top < 72 || rect.bottom > window.innerHeight - 86)) {
+        didTryScroll = true;
+        target.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+        scrollTimerId = window.setTimeout(updateTargetRect, 280);
+      }
+
+      setTutorialTargetRect({
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+      });
+    };
+
+    frameId = window.requestAnimationFrame(updateTargetRect);
+    window.addEventListener('resize', updateTargetRect);
+    window.addEventListener('scroll', updateTargetRect, true);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener('resize', updateTargetRect);
+      window.removeEventListener('scroll', updateTargetRect, true);
+      if (scrollTimerId) window.clearTimeout(scrollTimerId);
+    };
+  }, [isTutorialTourOpen, tutorialStep, page]);
 
   useEffect(() => {
     if (page === 'otherMaterials') {
@@ -3868,6 +4032,7 @@ ${trimmedMaterial}`;
           <div className="header-actions">
             <div
               className={isStreakWarmToday ? 'streak-chip active' : 'streak-chip cold'}
+              data-tutorial-target="streak-chip"
               aria-label={`${copy.streak}: ${streakCount}`}
               title={isStreakWarmToday ? 'Streak warmed today' : 'Study today to warm your streak'}
             >
@@ -3879,10 +4044,20 @@ ${trimmedMaterial}`;
             </div>
             {page === 'starter' ? null : page === 'study' ? (
               <>
-                <button className="nav-button" type="button" onClick={() => setIsOptionsOpen(!isOptionsOpen)}>
+                <button
+                  className="nav-button"
+                  type="button"
+                  onClick={() => setIsOptionsOpen(!isOptionsOpen)}
+                  data-tutorial-target="study-options-button"
+                >
                   {copy.studyOptions}
                 </button>
-                <button className="nav-button" type="button" onClick={() => goToPage('lessons')}>
+                <button
+                  className="nav-button"
+                  type="button"
+                  onClick={() => goToPage('lessons')}
+                  data-tutorial-target="lessons-button"
+                >
                   {copy.lessons}
                 </button>
               </>
@@ -4071,6 +4246,7 @@ ${trimmedMaterial}`;
                       value={searchQuery}
                       onChange={(event) => setSearchQuery(event.target.value)}
                       placeholder={copy.searchPlaceholder}
+                      data-tutorial-target="materials-search-box"
                     />
                   </label>
                 </div>
@@ -5065,6 +5241,7 @@ ${trimmedMaterial}`;
                     value={material}
                     onChange={(event) => setMaterial(event.target.value)}
                     placeholder={copy.pasteMaterialFirst}
+                    data-tutorial-target="material-box"
                   />
                 </label>
 
@@ -5087,43 +5264,68 @@ ${trimmedMaterial}`;
       </section>
 
       {isTutorialPromptOpen && (
-        <div className="summary-modal-backdrop" role="presentation">
-          <section className="summary-modal tutorial-modal" role="dialog" aria-modal="true" aria-label="Tutorial prompt">
-            <div className="summary-modal-heading">
-              <div>
-                <p className="card-label">New account</p>
-                <h2>Need a quick tutorial?</h2>
-              </div>
-            </div>
-            <p>
-              I can show the important parts of Study Helper in about 1 minute: where to paste notes, save lessons,
-              find tools, and grow your XP.
-            </p>
-            <div className="tutorial-actions">
-              <button className="small-button muted-button" type="button" onClick={skipTutorial}>
-                No thanks
-              </button>
-              <button className="generate-button" type="button" onClick={startTutorial}>
-                Yes, show me
-              </button>
-            </div>
-          </section>
-        </div>
+        <section className="tutorial-prompt-card" role="dialog" aria-label="Tutorial prompt">
+          <div>
+            <p className="card-label">Quick tour</p>
+            <h2>Need a quick tutorial?</h2>
+          </div>
+          <p>
+            I can point to the important parts of Study Helper in about 1 minute. You can still click, type, and test
+            the page while it is open.
+          </p>
+          <div className="tutorial-actions">
+            <button className="small-button muted-button" type="button" onClick={skipTutorial}>
+              No thanks
+            </button>
+            <button className="generate-button" type="button" onClick={startTutorial}>
+              Yes, show me
+            </button>
+          </div>
+        </section>
       )}
 
       {isTutorialTourOpen && tutorialStep && (
-        <div className="summary-modal-backdrop" role="presentation">
-          <section className="summary-modal tutorial-modal" role="dialog" aria-modal="true" aria-label="Study Helper tutorial">
-            <div className="summary-modal-heading">
+        <div className="tutorial-tour-layer" role="presentation">
+          {tutorialTargetRect && (
+            <>
+              <div
+                className="tutorial-target-halo"
+                style={{
+                  top: tutorialTargetRect.top - 7,
+                  left: tutorialTargetRect.left - 7,
+                  width: tutorialTargetRect.width + 14,
+                  height: tutorialTargetRect.height + 14,
+                }}
+                aria-hidden="true"
+              />
+              <div
+                className="tutorial-arrow"
+                style={tutorialArrowStyle}
+                aria-hidden="true"
+              />
+            </>
+          )}
+
+          <section
+            className={`tutorial-popover ${tutorialStep.placement}`}
+            style={tutorialPopoverStyle}
+            role="dialog"
+            aria-label="Study Helper tutorial"
+          >
+            <div className="tutorial-popover-heading">
               <div>
-                <p className="card-label">1 minute tutorial</p>
+                <p className="card-label">
+                  Step {tutorialStepIndex + 1} of {tutorialSteps.length}
+                </p>
                 <h2>{tutorialStep.title}</h2>
               </div>
-              <button className="small-button" type="button" onClick={closeTutorial}>
+              <button className="small-button muted-button" type="button" onClick={closeTutorial}>
                 Close
               </button>
             </div>
+
             <p>{tutorialStep.body}</p>
+
             <div className="tutorial-progress" aria-label="Tutorial progress">
               {tutorialSteps.map((step, index) => (
                 <button
@@ -5697,7 +5899,11 @@ ${trimmedMaterial}`;
           >
             {isToolDrawerOpen ? '<' : '>'}
           </button>
-          <aside className={isToolDrawerOpen ? 'tool-drawer open' : 'tool-drawer'} aria-label="Tool menu">
+          <aside
+            className={isToolDrawerOpen ? 'tool-drawer open' : 'tool-drawer'}
+            aria-label="Tool menu"
+            data-tutorial-target="tool-drawer"
+          >
             <div className="tool-drawer-heading">
               <p className="card-label">Tools</p>
             </div>
@@ -5768,6 +5974,7 @@ ${trimmedMaterial}`;
             type="button"
             onClick={() => goToPage('otherMaterials')}
             aria-label="Open other materials page"
+            data-tutorial-target="search-button"
           >
             <svg viewBox="0 0 64 64" aria-hidden="true">
               <circle cx="27" cy="27" r="17" />
