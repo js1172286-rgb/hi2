@@ -90,6 +90,12 @@ type LearningXpState = {
   updatedAt: string;
 };
 
+type TutorialStep = {
+  title: string;
+  body: string;
+  page: Page;
+};
+
 type BlurtingHighlightCategory = 'good' | 'needsWork' | 'wrong';
 
 type BlurtingHighlight = {
@@ -234,6 +240,7 @@ const knowledgeStatsKey = 'study-helper-knowledge-stats';
 const intervalingPlansKey = 'study-helper-intervaling-plans';
 const customCalendarEventsKey = 'study-helper-calendar-events';
 const learningXpKey = 'study-helper-learning-xp';
+const tutorialSeenKey = 'study-helper-tutorial-seen';
 const languageKey = 'study-helper-language';
 const themeKey = 'study-helper-theme';
 const studyPetKey = 'study-helper-pet';
@@ -315,6 +322,34 @@ const learningTaskDefinitions: LearningTaskDefinition[] = [
     title: 'Do blurting practice',
     detail: 'Write from memory and check it.',
     xp: 50,
+  },
+];
+
+const tutorialSteps: TutorialStep[] = [
+  {
+    title: 'Paste your material',
+    body: 'Start on the study page. Paste notes, a textbook section, or anything you want to learn.',
+    page: 'study',
+  },
+  {
+    title: 'Choose how to study',
+    body: 'Use the study options to make a summary, flashcards, or a quiz from the same material.',
+    page: 'study',
+  },
+  {
+    title: 'Save real lessons',
+    body: 'Name and save important materials so they sync to your account and work on your iPad too.',
+    page: 'lessons',
+  },
+  {
+    title: 'Use the tools',
+    body: 'The toolbar has progress, AI tutor, calendar, study methods, notes, and calculator.',
+    page: 'progress',
+  },
+  {
+    title: 'Grow your pet and XP',
+    body: 'Study tasks give XP for the leaderboard and keep your streak pet warm.',
+    page: 'leaderboard',
   },
 ];
 
@@ -887,6 +922,20 @@ function getCustomCalendarEventsKey(userId?: string) {
 
 function getLearningXpKey(userId?: string) {
   return userId ? `${learningXpKey}:${userId}` : learningXpKey;
+}
+
+function getTutorialSeenKey(userId?: string) {
+  return userId ? `${tutorialSeenKey}:${userId}` : tutorialSeenKey;
+}
+
+function hasAnsweredTutorialPrompt(userId?: string) {
+  if (!userId) return true;
+  return window.localStorage.getItem(getTutorialSeenKey(userId)) === 'done';
+}
+
+function markTutorialPromptAnswered(userId?: string) {
+  if (!userId) return;
+  window.localStorage.setItem(getTutorialSeenKey(userId), 'done');
 }
 
 function getLearningTaskKey(taskId: LearningTaskId, dateKey = getTodayKey()) {
@@ -1608,6 +1657,10 @@ export default function App() {
   const [showPassword, setShowPassword] = useState(false);
   const [accountError, setAccountError] = useState('');
   const [accountNotice, setAccountNotice] = useState('');
+  const [tutorialUserId, setTutorialUserId] = useState<string | null>(null);
+  const [isTutorialPromptOpen, setIsTutorialPromptOpen] = useState(false);
+  const [isTutorialTourOpen, setIsTutorialTourOpen] = useState(false);
+  const [tutorialStepIndex, setTutorialStepIndex] = useState(0);
   const [tutorMessages, setTutorMessages] = useState<TutorMessage[]>([
     {
       role: 'tutor',
@@ -1674,6 +1727,7 @@ export default function App() {
   const pomodoroShortBreaks = Math.max(0, pomodoroFocusSessions - 1 - pomodoroLongBreaks);
   const pomodoroBreakMinutes = pomodoroShortBreaks * 5 + pomodoroLongBreaks * 15;
   const tutorQuestionCount = tutorMessages.filter((message) => message.role === 'user').length;
+  const tutorialStep = tutorialSteps[tutorialStepIndex] ?? tutorialSteps[0];
   const lessonRingSlots = Array.from({ length: maxSavedLessons }, (_, index) => savedLessons[index] ?? null);
   const weakKnowledgeStats = [...knowledgeStats].sort((a, b) => b.mistakes - a.mistakes || a.correct - b.correct).slice(0, 5);
   const flashcardPercent = flashcards.length > 0 ? ((currentFlashcardIndex + 1) / flashcards.length) * 100 : 0;
@@ -3162,6 +3216,51 @@ Write exactly one short follow-up question from the pet. The question must be ba
     setSharedNotice(copy.materialDeleted);
   }
 
+  function askNewAccountTutorial(userId?: string) {
+    if (!userId || hasAnsweredTutorialPrompt(userId)) return;
+
+    setTutorialUserId(userId);
+    setTutorialStepIndex(0);
+    setIsTutorialTourOpen(false);
+    setIsTutorialPromptOpen(true);
+  }
+
+  function skipTutorial() {
+    markTutorialPromptAnswered(tutorialUserId ?? undefined);
+    setIsTutorialPromptOpen(false);
+    setIsTutorialTourOpen(false);
+    setTutorialUserId(null);
+  }
+
+  function startTutorial() {
+    markTutorialPromptAnswered(tutorialUserId ?? undefined);
+    setIsTutorialPromptOpen(false);
+    setIsTutorialTourOpen(true);
+    setTutorialStepIndex(0);
+    goToPage(tutorialSteps[0].page);
+  }
+
+  function closeTutorial() {
+    setIsTutorialPromptOpen(false);
+    setIsTutorialTourOpen(false);
+    setTutorialUserId(null);
+  }
+
+  function goToTutorialStep(nextIndex: number) {
+    const clampedIndex = Math.min(Math.max(nextIndex, 0), tutorialSteps.length - 1);
+    setTutorialStepIndex(clampedIndex);
+    goToPage(tutorialSteps[clampedIndex].page);
+  }
+
+  function nextTutorialStep() {
+    if (tutorialStepIndex >= tutorialSteps.length - 1) {
+      closeTutorial();
+      return;
+    }
+
+    goToTutorialStep(tutorialStepIndex + 1);
+  }
+
   async function submitAccount() {
     const email = accountEmail.trim();
     const password = accountPassword;
@@ -3206,6 +3305,7 @@ Write exactly one short follow-up question from the pet. The question must be ba
       setSession(data.session);
       setAccountNotice(data.session ? copy.accountCreated : copy.accountCreatedConfirm);
       setAccountPassword('');
+      askNewAccountTutorial(data.user?.id);
       return;
     }
 
@@ -4966,8 +5066,74 @@ ${trimmedMaterial}`;
             </div>
 
           </>
-        )}
+      )}
       </section>
+
+      {isTutorialPromptOpen && (
+        <div className="summary-modal-backdrop" role="presentation">
+          <section className="summary-modal tutorial-modal" role="dialog" aria-modal="true" aria-label="Tutorial prompt">
+            <div className="summary-modal-heading">
+              <div>
+                <p className="card-label">New account</p>
+                <h2>Need a quick tutorial?</h2>
+              </div>
+            </div>
+            <p>
+              I can show the important parts of Study Helper in about 1 minute: where to paste notes, save lessons,
+              find tools, and grow your XP.
+            </p>
+            <div className="tutorial-actions">
+              <button className="small-button muted-button" type="button" onClick={skipTutorial}>
+                No thanks
+              </button>
+              <button className="generate-button" type="button" onClick={startTutorial}>
+                Yes, show me
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {isTutorialTourOpen && tutorialStep && (
+        <div className="summary-modal-backdrop" role="presentation">
+          <section className="summary-modal tutorial-modal" role="dialog" aria-modal="true" aria-label="Study Helper tutorial">
+            <div className="summary-modal-heading">
+              <div>
+                <p className="card-label">1 minute tutorial</p>
+                <h2>{tutorialStep.title}</h2>
+              </div>
+              <button className="small-button" type="button" onClick={closeTutorial}>
+                Close
+              </button>
+            </div>
+            <p>{tutorialStep.body}</p>
+            <div className="tutorial-progress" aria-label="Tutorial progress">
+              {tutorialSteps.map((step, index) => (
+                <button
+                  className={index === tutorialStepIndex ? 'active' : ''}
+                  key={step.title}
+                  type="button"
+                  onClick={() => goToTutorialStep(index)}
+                  aria-label={`Go to tutorial step ${index + 1}`}
+                />
+              ))}
+            </div>
+            <div className="tutorial-actions">
+              <button
+                className="small-button muted-button"
+                type="button"
+                onClick={() => goToTutorialStep(tutorialStepIndex - 1)}
+                disabled={tutorialStepIndex === 0}
+              >
+                Back
+              </button>
+              <button className="generate-button" type="button" onClick={nextTutorialStep}>
+                {tutorialStepIndex >= tutorialSteps.length - 1 ? 'Finish' : 'Next'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
 
       {quizKeyboardCheck && (
         <div className="summary-modal-backdrop" role="presentation">

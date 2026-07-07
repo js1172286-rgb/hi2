@@ -3605,6 +3605,48 @@ select:focus {
   min-width: 0;
 }
 
+.tutorial-modal {
+  width: min(540px, 100%);
+}
+
+.tutorial-modal p {
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.tutorial-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.tutorial-actions .generate-button,
+.tutorial-actions .small-button {
+  width: 100%;
+  min-width: 0;
+}
+
+.tutorial-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tutorial-progress button {
+  width: 100%;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(47, 111, 115, 0.16);
+  cursor: pointer;
+}
+
+.tutorial-progress button.active {
+  background: var(--accent);
+}
+
 :root[data-theme='dark'] .summary-copy-button.copied {
   background: #1f2427;
   color: #d9f1f1;
