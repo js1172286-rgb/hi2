@@ -1265,17 +1265,37 @@ function normalizeSavedNotes(value: unknown): StudyNote[] {
     .slice(0, maxSavedNotes);
 }
 
+function shouldResetMissedStudyPet(pet: StudyPet) {
+  if (!pet.hasChosenEggColor || !pet.lastStudyDate) return false;
+
+  const today = getTodayKey();
+  const yesterday = getYesterdayKey();
+  return pet.lastStudyDate !== today && pet.lastStudyDate !== yesterday;
+}
+
+function resetMissedStudyPet(pet: StudyPet): StudyPet {
+  if (!shouldResetMissedStudyPet(pet)) return pet;
+
+  return {
+    ...pet,
+    streak: 0,
+    lastStudyDate: '',
+    petType: null,
+    petImage: null,
+  };
+}
+
 function normalizeStudyPet(value: unknown): StudyPet {
   if (!isRecord(value)) return emptyStudyPet;
 
-  return {
+  return resetMissedStudyPet({
     streak: Math.max(0, Math.round(toFiniteNumber(value.streak))),
     lastStudyDate: typeof value.lastStudyDate === 'string' ? value.lastStudyDate : '',
     petType: petTypes.includes(value.petType as PetType) ? value.petType as PetType : null,
     petImage: typeof value.petImage === 'string' && value.petImage ? value.petImage : null,
     eggColor: eggColors.includes(value.eggColor as EggColor) ? value.eggColor as EggColor : 'green',
     hasChosenEggColor: Boolean(value.hasChosenEggColor),
-  };
+  });
 }
 
 function normalizeKnowledgeStats(value: unknown): KnowledgeAreaStat[] {
@@ -2294,6 +2314,19 @@ export default function App() {
   }, [page, session?.user.id, studyPet.streak, studyPet.lastStudyDate, learningXp.totalXp, learningXp.completedTaskKeys.length]);
 
   useEffect(() => {
+    const userId = session?.user.id;
+    if (!userId || !shouldResetMissedStudyPet(studyPet)) return;
+
+    setHatchPopup(null);
+    setStudyPet((currentPet) => {
+      const nextPet = resetMissedStudyPet(currentPet);
+      if (nextPet === currentPet) return currentPet;
+      window.localStorage.setItem(getStudyPetKey(userId), JSON.stringify(nextPet));
+      return nextPet;
+    });
+  }, [session?.user.id, studyPet.hasChosenEggColor, studyPet.lastStudyDate, studyPet.petImage, studyPet.petType]);
+
+  useEffect(() => {
     if (!session || !isSupabaseConfigured || accountStateLoadedUserRef.current !== session.user.id) return;
 
     if (accountStateSaveTimerRef.current) {
@@ -3277,17 +3310,18 @@ Write exactly one short follow-up question from the pet. The question must be ba
     const yesterday = getYesterdayKey();
 
     setStudyPet((currentPet) => {
-      if (currentPet.lastStudyDate === today) return currentPet;
+      const resetPet = resetMissedStudyPet(currentPet);
+      if (resetPet.lastStudyDate === today) return resetPet;
 
-      const continuedStreak = currentPet.lastStudyDate === yesterday;
-      const nextStreak = continuedStreak ? currentPet.streak + 1 : 1;
-      const shouldKeepCurrentPet = continuedStreak && (currentPet.petType || currentPet.petImage);
+      const continuedStreak = resetPet.lastStudyDate === yesterday;
+      const nextStreak = continuedStreak ? resetPet.streak + 1 : 1;
+      const shouldKeepCurrentPet = continuedStreak && (resetPet.petType || resetPet.petImage);
       const shouldHatch = nextStreak >= eggWarmDays && !shouldKeepCurrentPet;
-      const hatchPetImage = shouldHatch ? getRandomEggPetImage(currentPet.eggColor) : null;
-      const nextPetImage = shouldKeepCurrentPet && currentPet.petImage ? currentPet.petImage : null;
+      const hatchPetImage = shouldHatch ? getRandomEggPetImage(resetPet.eggColor) : null;
+      const nextPetImage = shouldKeepCurrentPet && resetPet.petImage ? resetPet.petImage : null;
       const nextPetType =
-        shouldKeepCurrentPet && currentPet.petType
-          ? currentPet.petType
+        shouldKeepCurrentPet && resetPet.petType
+          ? resetPet.petType
           : shouldHatch && !hatchPetImage
             ? petTypes[Math.floor(Math.random() * petTypes.length)]
             : null;
@@ -3296,13 +3330,13 @@ Write exactly one short follow-up question from the pet. The question must be ba
         lastStudyDate: today,
         petType: nextPetType,
         petImage: nextPetImage,
-        eggColor: currentPet.eggColor,
-        hasChosenEggColor: currentPet.hasChosenEggColor,
+        eggColor: resetPet.eggColor,
+        hasChosenEggColor: resetPet.hasChosenEggColor,
       };
 
       window.localStorage.setItem(getStudyPetKey(session.user.id), JSON.stringify(nextPet));
       if (hatchPetImage) {
-        setHatchPopup({ eggColor: currentPet.eggColor, petImage: hatchPetImage, stage: 'ready' });
+        setHatchPopup({ eggColor: resetPet.eggColor, petImage: hatchPetImage, stage: 'ready' });
       }
       return nextPet;
     });
