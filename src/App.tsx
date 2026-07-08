@@ -96,6 +96,13 @@ type LearningXpState = {
   updatedAt: string;
 };
 
+type LessonMilestoneReward = {
+  lesson: SavedLesson;
+  milestone: number;
+  key: string;
+  xp: number;
+};
+
 type TutorialStep = {
   title: string;
   body: string;
@@ -341,6 +348,11 @@ const learningTaskDefinitions: LearningTaskDefinition[] = [
     xp: 50,
   },
 ];
+const lessonProgressMilestones = [
+  { percent: 25, xp: 25 },
+  { percent: 50, xp: 50 },
+  { percent: 75, xp: 75 },
+];
 
 const tutorialSteps: TutorialStep[] = [
   {
@@ -396,6 +408,12 @@ const tutorialSteps: TutorialStep[] = [
 
 const petTypes: PetType[] = ['cat', 'dragon', 'fox', 'owl'];
 const eggColors: EggColor[] = ['green', 'gold', 'blue', 'red'];
+function getRandomEggColor(excludeColor?: EggColor) {
+  const choices = eggColors.filter((eggColor) => eggColor !== excludeColor);
+  const colors = choices.length ? choices : eggColors;
+  return colors[Math.floor(Math.random() * colors.length)];
+}
+
 const eggPetImages: Partial<Record<EggColor, string[]>> = {
   green: [
     '/pets/green/pet-1.png',
@@ -633,6 +651,7 @@ const fullTranslations = {
     addSubjectTitleMaterial: 'Add a subject, title, and material before uploading.',
     addYourEmailPassword: 'Add your email and password.',
     addYourNameEmailPassword: 'Add your name, email, and password.',
+    andNewEggReward: 'and a new egg',
     answerPlaceholder: 'Type your answer...',
     askTutorPlaceholder: 'Ask about your notes, a confusing idea, or what to study next...',
     attachImage: 'Attach image',
@@ -648,6 +667,7 @@ const fullTranslations = {
     findMaterials: 'Find materials',
     front: 'Front',
     lessonDeleted: 'Lesson deleted.',
+    lessonMilestoneReward: 'Lesson milestone reward',
     lessonSaved: 'Lesson saved.',
     load: 'Load',
     loaded: 'Loaded',
@@ -731,6 +751,7 @@ const fullTranslations = {
     addSubjectTitleMaterial: 'Добавьте предмет, название и материал перед загрузкой.',
     addYourEmailPassword: 'Добавьте email и пароль.',
     addYourNameEmailPassword: 'Добавьте имя, email и пароль.',
+    andNewEggReward: 'и новое яйцо',
     answerPlaceholder: 'Введите ответ...',
     askTutorPlaceholder: 'Спросите о конспектах, сложной теме или о том, что учить дальше...',
     attachImage: 'Прикрепить изображение',
@@ -746,6 +767,7 @@ const fullTranslations = {
     findMaterials: 'Найти материалы',
     front: 'Лицевая сторона',
     lessonDeleted: 'Урок удален.',
+    lessonMilestoneReward: 'Награда за прогресс урока',
     lessonSaved: 'Урок сохранен.',
     load: 'Загрузить',
     loaded: 'Загружено',
@@ -829,6 +851,7 @@ const fullTranslations = {
     addSubjectTitleMaterial: 'Жүктеу алдында пән, атау және материал қосыңыз.',
     addYourEmailPassword: 'Email және құпия сөз қосыңыз.',
     addYourNameEmailPassword: 'Атыңызды, email және құпия сөз қосыңыз.',
+    andNewEggReward: 'және жаңа жұмыртқа',
     answerPlaceholder: 'Жауабыңызды жазыңыз...',
     askTutorPlaceholder: 'Жазбаларыңыз, түсініксіз тақырып немесе келесі қадам туралы сұраңыз...',
     attachImage: 'Сурет тіркеу',
@@ -844,6 +867,7 @@ const fullTranslations = {
     findMaterials: 'Материал іздеу',
     front: 'Алдыңғы бет',
     lessonDeleted: 'Сабақ жойылды.',
+    lessonMilestoneReward: 'Сабақ прогресі үшін сыйлық',
     lessonSaved: 'Сабақ сақталды.',
     load: 'Жүктеу',
     loaded: 'Жүктелді',
@@ -1211,6 +1235,10 @@ function renderTutorMessageContent(text: string) {
 
 function getLearningTaskKey(taskId: LearningTaskId, dateKey = getTodayKey()) {
   return `${dateKey}:${taskId}`;
+}
+
+function getLessonMilestoneKey(lessonId: string, milestone: number) {
+  return `lesson-milestone:${lessonId}:${milestone}`;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -2327,6 +2355,11 @@ export default function App() {
   }, [session?.user.id, studyPet.hasChosenEggColor, studyPet.lastStudyDate, studyPet.petImage, studyPet.petType]);
 
   useEffect(() => {
+    if (!session || savedLessons.length === 0) return;
+    awardLessonMilestoneRewards(savedLessons);
+  }, [session?.user.id, savedLessons, learningXp.completedTaskKeys.length]);
+
+  useEffect(() => {
     if (!session || !isSupabaseConfigured || accountStateLoadedUserRef.current !== session.user.id) return;
 
     if (accountStateSaveTimerRef.current) {
@@ -3004,6 +3037,60 @@ Write exactly one short follow-up question from the pet. The question must be ba
     });
 
     markStudyActivity();
+  }
+
+  function awardLessonMilestoneRewards(lessons: SavedLesson[]) {
+    if (!session) return;
+
+    const claimedKeys = new Set(learningXp.completedTaskKeys);
+    const rewards = lessons.flatMap((lesson): LessonMilestoneReward[] => {
+      const percent = getLessonKnowledgePercent(lesson);
+
+      return lessonProgressMilestones
+        .filter((milestone) => percent >= milestone.percent)
+        .map((milestone) => ({
+          lesson,
+          milestone: milestone.percent,
+          key: getLessonMilestoneKey(lesson.id, milestone.percent),
+          xp: milestone.xp,
+        }));
+    }).filter((reward) => !claimedKeys.has(reward.key));
+
+    if (rewards.length === 0) return;
+
+    const rewardXp = rewards.reduce((total, reward) => total + reward.xp, 0);
+
+    setLearningXp((currentXp) => {
+      const newRewards = rewards.filter((reward) => !currentXp.completedTaskKeys.includes(reward.key));
+      if (newRewards.length === 0) return currentXp;
+
+      const newRewardKeys = newRewards.map((reward) => reward.key);
+      const nextXp = {
+        totalXp: currentXp.totalXp + newRewards.reduce((total, reward) => total + reward.xp, 0),
+        completedTaskKeys: [...newRewardKeys, ...currentXp.completedTaskKeys].slice(0, 600),
+        updatedAt: new Date().toISOString(),
+      };
+
+      window.localStorage.setItem(getLearningXpKey(session.user.id), JSON.stringify(nextXp));
+      return nextXp;
+    });
+
+    setStudyPet((currentPet) => {
+      const resetPet = resetMissedStudyPet(currentPet);
+      const nextPet = {
+        ...resetPet,
+        petType: null,
+        petImage: null,
+        eggColor: getRandomEggColor(resetPet.eggColor),
+        hasChosenEggColor: true,
+      };
+
+      window.localStorage.setItem(getStudyPetKey(session.user.id), JSON.stringify(nextPet));
+      return nextPet;
+    });
+
+    setHatchPopup(null);
+    setNotice(`${copy.lessonMilestoneReward}: +${rewardXp} XP ${copy.andNewEggReward}.`);
   }
 
   function deleteIntervalingPlan(planId: string) {
