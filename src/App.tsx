@@ -244,6 +244,16 @@ type HatchPopup = {
   stage: HatchStage;
 };
 
+type PetCollectionItem = {
+  id: string;
+  kind: 'egg' | 'pet';
+  eggColor: EggColor;
+  petType: PetType | null;
+  petImage: string | null;
+  collectedAt: string;
+  source: string;
+};
+
 type StudyPet = {
   streak: number;
   lastStudyDate: string;
@@ -251,6 +261,8 @@ type StudyPet = {
   petImage: string | null;
   eggColor: EggColor;
   hasChosenEggColor: boolean;
+  collection: PetCollectionItem[];
+  activeCollectionItemId: string | null;
 };
 
 type LessonRingStyle = CSSProperties & {
@@ -271,6 +283,7 @@ const maxSavedLessons = 6;
 const maxSavedNotes = 20;
 const maxIntervalingPlans = 8;
 const maxCustomCalendarEvents = 120;
+const maxPetCollectionItems = 80;
 const noteCanvasWidth = 1200;
 const noteCanvasHeight = 720;
 const maxAiImageBytes = 6 * 1024 * 1024;
@@ -284,6 +297,8 @@ const emptyStudyPet: StudyPet = {
   petImage: null,
   eggColor: 'green',
   hasChosenEggColor: false,
+  collection: [],
+  activeCollectionItemId: null,
 };
 
 const emptyLearningXp: LearningXpState = {
@@ -658,6 +673,7 @@ const fullTranslations = {
     back: 'Back',
     cancel: 'Cancel',
     cardsReady: 'cards ready to review',
+    collection: 'Collection',
     correct: 'Correct',
     delete: 'Delete',
     deleteOwnOnly: 'You can only delete materials you uploaded.',
@@ -682,6 +698,7 @@ const fullTranslations = {
     nameLessonFirst: 'Name your lesson before saving.',
     noFlashcardsYet: 'No flashcards yet.',
     noQuizYet: 'No quiz yet.',
+    noPetCollectionYet: 'No eggs or pets collected yet.',
     noSavedLessonsYet: 'No saved lessons yet.',
     noSharedMaterialsFound: 'No shared materials found.',
     noSummaryReturned: 'No summary came back. Try again with a little more text.',
@@ -704,6 +721,7 @@ const fullTranslations = {
     searchPlaceholder: 'Search by subject, title, or text...',
     shareNotes: 'Share notes by subject so other students can find them.',
     petCat: 'Study Cat',
+    petCollection: 'Pet collection',
     petDragon: 'Study Dragon',
     petEgg: 'Warm Egg',
     petFriend: 'Study Pet',
@@ -758,6 +776,7 @@ const fullTranslations = {
     back: 'Обратная сторона',
     cancel: 'Отмена',
     cardsReady: 'карточек готово',
+    collection: 'Коллекция',
     correct: 'Верно',
     delete: 'Удалить',
     deleteOwnOnly: 'Вы можете удалять только материалы, которые загрузили сами.',
@@ -782,6 +801,7 @@ const fullTranslations = {
     nameLessonFirst: 'Сначала назовите урок.',
     noFlashcardsYet: 'Карточек пока нет.',
     noQuizYet: 'Теста пока нет.',
+    noPetCollectionYet: 'Яиц или питомцев пока нет.',
     noSavedLessonsYet: 'Сохраненных уроков пока нет.',
     noSharedMaterialsFound: 'Общие материалы не найдены.',
     noSummaryReturned: 'Резюме не пришло. Попробуйте добавить немного больше текста.',
@@ -804,6 +824,7 @@ const fullTranslations = {
     searchPlaceholder: 'Искать по предмету, названию или тексту...',
     shareNotes: 'Делитесь конспектами по предметам, чтобы другие ученики могли их найти.',
     petCat: 'Учебный кот',
+    petCollection: 'Коллекция питомцев',
     petDragon: 'Учебный дракон',
     petEgg: 'Теплое яйцо',
     petFriend: 'Учебный питомец',
@@ -858,6 +879,7 @@ const fullTranslations = {
     back: 'Артқы бет',
     cancel: 'Болдырмау',
     cardsReady: 'карточка дайын',
+    collection: 'Жинақ',
     correct: 'Дұрыс',
     delete: 'Жою',
     deleteOwnOnly: 'Сіз тек өзіңіз жүктеген материалдарды жоя аласыз.',
@@ -882,6 +904,7 @@ const fullTranslations = {
     nameLessonFirst: 'Сақтау алдында сабаққа ат қойыңыз.',
     noFlashcardsYet: 'Әзірге карточка жоқ.',
     noQuizYet: 'Әзірге тест жоқ.',
+    noPetCollectionYet: 'Әзірге жұмыртқа немесе үй жануары жоқ.',
     noSavedLessonsYet: 'Әзірге сақталған сабақ жоқ.',
     noSharedMaterialsFound: 'Ортақ материалдар табылмады.',
     noSummaryReturned: 'Қысқаша жауап келмеді. Көбірек мәтін қосып көріңіз.',
@@ -904,6 +927,7 @@ const fullTranslations = {
     searchPlaceholder: 'Пән, атау немесе мәтін бойынша іздеу...',
     shareNotes: 'Басқа оқушылар табуы үшін конспекттерді пән бойынша бөлісіңіз.',
     petCat: 'Оқу мысығы',
+    petCollection: 'Үй жануарлары жинағы',
     petDragon: 'Оқу айдаһары',
     petEgg: 'Жылы жұмыртқа',
     petFriend: 'Оқу жануары',
@@ -960,6 +984,48 @@ function ImageUploadIcon() {
       <path d="M16 43l13-14 10 12 8-9 9 11" />
     </svg>
   );
+}
+
+function EggCore() {
+  return (
+    <span className="egg-core">
+      <span className="egg-spot spot-one" />
+      <span className="egg-spot spot-two" />
+      <span className="egg-spot spot-three" />
+      <span className="egg-spot spot-four" />
+      <span className="egg-spot spot-five" />
+    </span>
+  );
+}
+
+function createEggCollectionItem(eggColor: EggColor, source: string): PetCollectionItem {
+  return {
+    id: crypto.randomUUID(),
+    kind: 'egg',
+    eggColor,
+    petType: null,
+    petImage: null,
+    collectedAt: new Date().toISOString(),
+    source,
+  };
+}
+
+function createPetCollectionItem(
+  eggColor: EggColor,
+  petImage: string | null,
+  petType: PetType | null,
+  source: string,
+  id: string = crypto.randomUUID(),
+): PetCollectionItem {
+  return {
+    id,
+    kind: 'pet',
+    eggColor,
+    petType,
+    petImage,
+    collectedAt: new Date().toISOString(),
+    source,
+  };
 }
 
 function readLanguage(): Language {
@@ -1310,19 +1376,68 @@ function resetMissedStudyPet(pet: StudyPet): StudyPet {
     lastStudyDate: '',
     petType: null,
     petImage: null,
+    activeCollectionItemId: null,
   };
+}
+
+function normalizePetCollection(value: unknown): PetCollectionItem[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter(isRecord)
+    .map((item) => {
+      const petType = petTypes.includes(item.petType as PetType) ? item.petType as PetType : null;
+      const petImage = typeof item.petImage === 'string' && item.petImage ? item.petImage : null;
+      const kind: PetCollectionItem['kind'] = item.kind === 'pet' && (petType || petImage) ? 'pet' : 'egg';
+
+      return {
+        id: typeof item.id === 'string' && item.id ? item.id : crypto.randomUUID(),
+        kind,
+        eggColor: eggColors.includes(item.eggColor as EggColor) ? item.eggColor as EggColor : 'green',
+        petType: kind === 'pet' ? petType : null,
+        petImage: kind === 'pet' ? petImage : null,
+        collectedAt: typeof item.collectedAt === 'string' && item.collectedAt ? item.collectedAt : new Date().toISOString(),
+        source: typeof item.source === 'string' ? item.source : 'saved',
+      };
+    })
+    .sort((a, b) => getDateTime(b.collectedAt) - getDateTime(a.collectedAt))
+    .slice(0, maxPetCollectionItems);
 }
 
 function normalizeStudyPet(value: unknown): StudyPet {
   if (!isRecord(value)) return emptyStudyPet;
+  const petType = petTypes.includes(value.petType as PetType) ? value.petType as PetType : null;
+  const petImage = typeof value.petImage === 'string' && value.petImage ? value.petImage : null;
+  const eggColor = eggColors.includes(value.eggColor as EggColor) ? value.eggColor as EggColor : 'green';
+  const hasChosenEggColor = Boolean(value.hasChosenEggColor);
+  const normalizedCollection = normalizePetCollection(value.collection);
+  const legacyCollectionItem =
+    normalizedCollection.length === 0 && hasChosenEggColor
+      ? {
+          id: `legacy-${eggColor}-${petImage || petType || 'egg'}`,
+          kind: petImage || petType ? 'pet' : 'egg',
+          eggColor,
+          petType,
+          petImage,
+          collectedAt: typeof value.lastStudyDate === 'string' && value.lastStudyDate ? `${value.lastStudyDate}T00:00:00.000Z` : new Date().toISOString(),
+          source: 'legacy',
+        } satisfies PetCollectionItem
+      : null;
+  const collection = legacyCollectionItem ? [legacyCollectionItem] : normalizedCollection;
+  const activeCollectionItemId =
+    typeof value.activeCollectionItemId === 'string' && collection.some((item) => item.id === value.activeCollectionItemId)
+      ? value.activeCollectionItemId
+      : (legacyCollectionItem?.id ?? null);
 
   return resetMissedStudyPet({
     streak: Math.max(0, Math.round(toFiniteNumber(value.streak))),
     lastStudyDate: typeof value.lastStudyDate === 'string' ? value.lastStudyDate : '',
-    petType: petTypes.includes(value.petType as PetType) ? value.petType as PetType : null,
-    petImage: typeof value.petImage === 'string' && value.petImage ? value.petImage : null,
-    eggColor: eggColors.includes(value.eggColor as EggColor) ? value.eggColor as EggColor : 'green',
-    hasChosenEggColor: Boolean(value.hasChosenEggColor),
+    petType,
+    petImage,
+    eggColor,
+    hasChosenEggColor,
+    collection,
+    activeCollectionItemId,
   });
 }
 
@@ -1733,6 +1848,7 @@ function hasUserAppStateContent(state: UserAppState) {
     state.customCalendarEvents.length > 0 ||
     state.learningXp.totalXp > 0 ||
     state.learningXp.completedTaskKeys.length > 0 ||
+    state.studyPet.collection.length > 0 ||
     state.studyPet.streak > 0 ||
     state.studyPet.hasChosenEggColor ||
     Boolean(state.studyPet.petImage || state.studyPet.petType)
@@ -1772,13 +1888,39 @@ function getStudyPetScore(pet: StudyPet) {
   return (
     (pet.hasChosenEggColor ? 20 : 0) +
     (pet.petImage || pet.petType ? 40 : 0) +
+    pet.collection.length * 3 +
     pet.streak * 8 +
     lastStudyScore
   );
 }
 
+function mergePetCollections(remoteCollection: PetCollectionItem[], localCollection: PetCollectionItem[]) {
+  const itemsById = new Map<string, PetCollectionItem>();
+
+  [...remoteCollection, ...localCollection].forEach((item) => {
+    const existing = itemsById.get(item.id);
+    if (!existing || getDateTime(item.collectedAt) >= getDateTime(existing.collectedAt)) {
+      itemsById.set(item.id, item);
+    }
+  });
+
+  return Array.from(itemsById.values())
+    .sort((a, b) => getDateTime(b.collectedAt) - getDateTime(a.collectedAt))
+    .slice(0, maxPetCollectionItems);
+}
+
 function mergeStudyPet(remotePet: StudyPet, localPet: StudyPet) {
-  return getStudyPetScore(localPet) > getStudyPetScore(remotePet) ? localPet : remotePet;
+  const bestPet = getStudyPetScore(localPet) > getStudyPetScore(remotePet) ? localPet : remotePet;
+  const collection = mergePetCollections(remotePet.collection, localPet.collection);
+  const activeCollectionItemId = collection.some((item) => item.id === bestPet.activeCollectionItemId)
+    ? bestPet.activeCollectionItemId
+    : null;
+
+  return {
+    ...bestPet,
+    collection,
+    activeCollectionItemId,
+  };
 }
 
 function mergeKnowledgeStats(remoteStats: KnowledgeAreaStat[], localStats: KnowledgeAreaStat[]) {
@@ -1902,6 +2044,7 @@ export default function App() {
   const [studyPet, setStudyPet] = useState<StudyPet>(emptyStudyPet);
   const [pendingEggColor, setPendingEggColor] = useState<EggColor>('green');
   const [hatchPopup, setHatchPopup] = useState<HatchPopup | null>(null);
+  const [isPetCollectionOpen, setIsPetCollectionOpen] = useState(false);
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [currentFlashcardIndex, setCurrentFlashcardIndex] = useState(0);
   const [isFlashcardFlipped, setIsFlashcardFlipped] = useState(false);
@@ -3077,12 +3220,23 @@ Write exactly one short follow-up question from the pet. The question must be ba
 
     setStudyPet((currentPet) => {
       const resetPet = resetMissedStudyPet(currentPet);
+      const existingRewardSources = new Set(resetPet.collection.map((item) => item.source));
+      const newEggItems = rewards
+        .filter((reward) => !existingRewardSources.has(`milestone:${reward.lesson.id}:${reward.milestone}`))
+        .map((reward) =>
+          createEggCollectionItem(getRandomEggColor(resetPet.eggColor), `milestone:${reward.lesson.id}:${reward.milestone}`),
+        );
+      if (newEggItems.length === 0) return resetPet;
+
+      const activeEggItem = newEggItems[0] ?? null;
       const nextPet = {
         ...resetPet,
         petType: null,
         petImage: null,
-        eggColor: getRandomEggColor(resetPet.eggColor),
+        eggColor: activeEggItem?.eggColor ?? getRandomEggColor(resetPet.eggColor),
         hasChosenEggColor: true,
+        collection: [...newEggItems, ...resetPet.collection].slice(0, maxPetCollectionItems),
+        activeCollectionItemId: activeEggItem?.id ?? resetPet.activeCollectionItemId,
       };
 
       window.localStorage.setItem(getStudyPetKey(session.user.id), JSON.stringify(nextPet));
@@ -3412,6 +3566,15 @@ Write exactly one short follow-up question from the pet. The question must be ba
           : shouldHatch && !hatchPetImage
             ? petTypes[Math.floor(Math.random() * petTypes.length)]
             : null;
+      const fallbackCollectionItem =
+        shouldHatch && !hatchPetImage && nextPetType
+          ? createPetCollectionItem(resetPet.eggColor, null, nextPetType, 'hatched', resetPet.activeCollectionItemId ?? crypto.randomUUID())
+          : null;
+      const nextCollection = fallbackCollectionItem
+        ? resetPet.collection.some((item) => item.id === fallbackCollectionItem.id)
+          ? resetPet.collection.map((item) => item.id === fallbackCollectionItem.id ? fallbackCollectionItem : item)
+          : [fallbackCollectionItem, ...resetPet.collection]
+        : resetPet.collection;
       const nextPet = {
         streak: nextStreak,
         lastStudyDate: today,
@@ -3419,6 +3582,8 @@ Write exactly one short follow-up question from the pet. The question must be ba
         petImage: nextPetImage,
         eggColor: resetPet.eggColor,
         hasChosenEggColor: resetPet.hasChosenEggColor,
+        collection: nextCollection.slice(0, maxPetCollectionItems),
+        activeCollectionItemId: fallbackCollectionItem?.id ?? resetPet.activeCollectionItemId,
       };
 
       window.localStorage.setItem(getStudyPetKey(session.user.id), JSON.stringify(nextPet));
@@ -3438,6 +3603,7 @@ Write exactly one short follow-up question from the pet. The question must be ba
     if (!session || isPetHatched || studyPet.hasChosenEggColor) return;
 
     setStudyPet((currentPet) => {
+      const collectionItem = createEggCollectionItem(pendingEggColor, 'chosen');
       const nextPet = {
         ...currentPet,
         streak: 0,
@@ -3445,6 +3611,8 @@ Write exactly one short follow-up question from the pet. The question must be ba
         petImage: null,
         eggColor: pendingEggColor,
         hasChosenEggColor: true,
+        collection: [collectionItem, ...currentPet.collection].slice(0, maxPetCollectionItems),
+        activeCollectionItemId: collectionItem.id,
       };
       window.localStorage.setItem(getStudyPetKey(session.user.id), JSON.stringify(nextPet));
       return nextPet;
@@ -3466,12 +3634,26 @@ Write exactly one short follow-up question from the pet. The question must be ba
         if (!currentPopup) return currentPopup;
 
         setStudyPet((currentPet) => {
+          const collectionItemId = currentPet.activeCollectionItemId ?? crypto.randomUUID();
+          const petCollectionItem = createPetCollectionItem(
+            currentPopup.eggColor,
+            currentPopup.petImage,
+            null,
+            'hatched',
+            collectionItemId,
+          );
+          const hasActiveCollectionItem = currentPet.collection.some((item) => item.id === collectionItemId);
+          const nextCollection = hasActiveCollectionItem
+            ? currentPet.collection.map((item) => item.id === collectionItemId ? petCollectionItem : item)
+            : [petCollectionItem, ...currentPet.collection];
           const nextPet = {
             ...currentPet,
             petType: null,
             petImage: currentPopup.petImage,
             eggColor: currentPopup.eggColor,
             hasChosenEggColor: true,
+            collection: nextCollection.slice(0, maxPetCollectionItems),
+            activeCollectionItemId: collectionItemId,
           };
           window.localStorage.setItem(getStudyPetKey(userId), JSON.stringify(nextPet));
           return nextPet;
@@ -4783,6 +4965,9 @@ ${trimmedMaterial}`;
               )}
             </div>
             <div className="pet-panel">
+              <button className="small-button pet-collection-button" type="button" onClick={() => setIsPetCollectionOpen(true)}>
+                {copy.collection}
+              </button>
               <div
                 className={`${isPetHatched ? 'pet-visual hatched' : `pet-visual egg egg-${displayedEggColor}`} ${isPetFrozen ? 'frozen' : ''}`}
                 aria-hidden="true"
@@ -4792,13 +4977,7 @@ ${trimmedMaterial}`;
                 ) : isPetHatched ? (
                   getPetFace(studyPet.petType)
                 ) : (
-                  <span className="egg-core">
-                    <span className="egg-spot spot-one" />
-                    <span className="egg-spot spot-two" />
-                    <span className="egg-spot spot-three" />
-                    <span className="egg-spot spot-four" />
-                    <span className="egg-spot spot-five" />
-                  </span>
+                  <EggCore />
                 )}
               </div>
               <div className="pet-copy">
@@ -5863,6 +6042,58 @@ ${trimmedMaterial}`;
                     </div>
                   </article>
                 ))}
+              </div>
+            )}
+          </section>
+        </div>
+      )}
+
+      {isPetCollectionOpen && (
+        <div className="summary-modal-backdrop" role="presentation">
+          <section className="summary-modal pet-collection-modal" role="dialog" aria-modal="true" aria-label={copy.petCollection}>
+            <div className="summary-modal-heading">
+              <div>
+                <p className="card-label">{copy.collection}</p>
+                <h2>{copy.petCollection}</h2>
+              </div>
+              <button className="small-button" type="button" onClick={() => setIsPetCollectionOpen(false)}>
+                Close
+              </button>
+            </div>
+
+            {studyPet.collection.length === 0 ? (
+              <p className="empty-state large">{copy.noPetCollectionYet}</p>
+            ) : (
+              <div className="pet-collection-grid">
+                {studyPet.collection.map((item) => {
+                  const isActiveItem = item.id === studyPet.activeCollectionItemId;
+                  const itemName = item.kind === 'pet'
+                    ? getPetName(item.petType, item.petImage, copy)
+                    : `${eggColorLabels[item.eggColor]} ${copy.petEgg}`;
+
+                  return (
+                    <article className={isActiveItem ? 'pet-collection-card active' : 'pet-collection-card'} key={item.id}>
+                      <div
+                        className={
+                          item.kind === 'pet'
+                            ? 'pet-visual collection-visual hatched'
+                            : `pet-visual collection-visual egg egg-${item.eggColor}`
+                        }
+                        aria-hidden="true"
+                      >
+                        {item.kind === 'pet' && item.petImage ? (
+                          <img className="pet-image" src={item.petImage} alt="" />
+                        ) : item.kind === 'pet' ? (
+                          getPetFace(item.petType)
+                        ) : (
+                          <EggCore />
+                        )}
+                      </div>
+                      <strong>{itemName}</strong>
+                      <span>{new Date(item.collectedAt).toLocaleDateString()}</span>
+                    </article>
+                  );
+                })}
               </div>
             )}
           </section>
