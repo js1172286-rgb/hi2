@@ -3668,6 +3668,31 @@ Write exactly one short follow-up question from the pet. The question must be ba
     }, 850);
   }
 
+  function selectPetCollectionItem(selectedItem: PetCollectionItem) {
+    const userId = session?.user.id;
+    if (!userId) return;
+
+    setPendingEggColor(selectedItem.eggColor);
+    setStudyPet((currentPet) => {
+      const savedItem = currentPet.collection.find((item) => item.id === selectedItem.id) ?? selectedItem;
+
+      const nextPet = {
+        ...currentPet,
+        petType: savedItem.kind === 'pet' ? savedItem.petType : null,
+        petImage: savedItem.kind === 'pet' ? savedItem.petImage : null,
+        eggColor: savedItem.eggColor,
+        hasChosenEggColor: true,
+        activeCollectionItemId: savedItem.id,
+      };
+
+      window.localStorage.setItem(getStudyPetKey(userId), JSON.stringify(nextPet));
+      return nextPet;
+    });
+
+    setHatchPopup(null);
+    setIsPetCollectionOpen(false);
+  }
+
   function clearResults() {
     setSummary('');
     setIsSummaryCopied(false);
@@ -6072,7 +6097,12 @@ ${trimmedMaterial}`;
                     : `${eggColorLabels[item.eggColor]} ${copy.petEgg}`;
 
                   return (
-                    <article className={isActiveItem ? 'pet-collection-card active' : 'pet-collection-card'} key={item.id}>
+                    <button
+                      className={isActiveItem ? 'pet-collection-card active' : 'pet-collection-card'}
+                      key={item.id}
+                      type="button"
+                      onClick={() => selectPetCollectionItem(item)}
+                    >
                       <div
                         className={
                           item.kind === 'pet'
@@ -6091,7 +6121,7 @@ ${trimmedMaterial}`;
                       </div>
                       <strong>{itemName}</strong>
                       <span>{new Date(item.collectedAt).toLocaleDateString()}</span>
-                    </article>
+                    </button>
                   );
                 })}
               </div>
