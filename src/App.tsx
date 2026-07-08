@@ -1193,6 +1193,22 @@ function renderSummaryContent(summaryText: string) {
   );
 }
 
+function renderTutorMessageContent(text: string) {
+  const lines = text.split(/\r?\n/);
+
+  return (
+    <div className="tutor-message-text">
+      {lines.map((line, index) =>
+        line.trim() ? (
+          <p key={`${line}-${index}`}>{renderSummaryInline(line.trim())}</p>
+        ) : (
+          <span className="tutor-message-break" key={`break-${index}`} aria-hidden="true" />
+        ),
+      )}
+    </div>
+  );
+}
+
 function getLearningTaskKey(taskId: LearningTaskId, dateKey = getTodayKey()) {
   return `${dateKey}:${taskId}`;
 }
@@ -4771,7 +4787,7 @@ ${trimmedMaterial}`;
                 <article className={`tutor-message ${message.role}`} key={`${message.role}-${index}`}>
                   <p className="card-label">{message.role === 'user' ? copy.you : copy.tutor}</p>
                   {message.imageName && <p className="tutor-image-note">{copy.imageAttached}: {message.imageName}</p>}
-                  <p>{message.text}</p>
+                  {renderTutorMessageContent(message.text)}
                 </article>
               ))}
               {isTutorLoading && (

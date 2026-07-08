@@ -1875,9 +1875,22 @@ select:focus {
   font-weight: 900;
 }
 
-.tutor-message p:last-child {
-  white-space: pre-wrap;
+.tutor-message-text {
+  display: grid;
+  gap: 6px;
   line-height: 1.5;
+}
+
+.tutor-message-text p {
+  white-space: normal;
+}
+
+.tutor-message-text strong {
+  font-weight: 900;
+}
+
+.tutor-message-break {
+  height: 4px;
 }
 
 .tutor-input-panel {
